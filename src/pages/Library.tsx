@@ -3,6 +3,7 @@ import '../styles/design.css';
 import '../styles/library.css';
 import { useState } from 'react';
 import starIcon from '../assets/icons/star.png';
+import Recent from '../library/Recent';
 
 interface FileItem {
   id: number;
@@ -62,41 +63,46 @@ export default function Library() {
 
         {/* 메인 콘텐츠 */}
         <main className="library-main">
+          {activeMenu === 'recent' ? (
+            <Recent />
+          ) : (
+            <>
+              {/* 검색바 */}
+              <div className="library-search">
+                <span className="search-icon">🔍</span>
+                <input 
+                  type="text" 
+                  placeholder="검색어를 입력해주세요"
+                  className="search-input"
+                />
+              </div>
 
-          {/* 검색바 */}
-          <div className="library-search">
-            <span className="search-icon">🔍</span>
-            <input 
-              type="text" 
-              placeholder="검색어를 입력해주세요"
-              className="search-input"
-            />
-          </div>
+              {/* 새폴더 버튼 */}
+              <button className="new-folder-btn">+ 새폴더</button>
 
-          {/* 새폴더 버튼 */}
-          <button className="new-folder-btn">+ 새폴더</button>
-
-          {/* 파일 테이블 */}
-          <div className="files-table">
-            <div className="table-header">
-              <div className="column-header">이름</div>
-              <div className="column-header">수정 날짜</div>
-              <div className="column-header">위치</div>
-            </div>
-            <div className="table-body">
-              {files.map((file) => (
-                <div key={file.id} className="table-row">
-                  <div className="table-cell name-cell">
-                    <img src={starIcon} alt="즐겨찾기" className="table-star" />
-                    {file.name}
-                  </div>
-                  <div className="table-cell">{file.date}</div>
-                  <div className="table-cell">{file.location}</div>
-                  <div className="table-menu">⋮</div>
+              {/* 파일 테이블 */}
+              <div className="files-table">
+                <div className="table-header">
+                  <div className="column-header">이름</div>
+                  <div className="column-header">수정 날짜</div>
+                  <div className="column-header">위치</div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="table-body">
+                  {files.map((file) => (
+                    <div key={file.id} className="table-row">
+                      <div className="table-cell name-cell">
+                        <img src={starIcon} alt="즐겨찾기" className="table-star" />
+                        {file.name}
+                      </div>
+                      <div className="table-cell">{file.date}</div>
+                      <div className="table-cell">{file.location}</div>
+                      <div className="table-menu">⋮</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </main>
       </div>
     </div>
