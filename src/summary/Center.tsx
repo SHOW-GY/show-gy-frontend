@@ -46,7 +46,7 @@ export default function Center() {
   useEffect(() => {
     const updatePositions = () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const scrollThreshold = 75; // keep elements anchored until threshold is passed
+      const scrollThreshold = 75;
       const targetTop = 70 + Math.max(0, scrollTop - scrollThreshold);
       setSidebarTop(targetTop);
       setPanelTop(targetTop);
@@ -93,10 +93,9 @@ export default function Center() {
     };
   }, [activeTab]);
 
-  // Paginate document text into pages using hidden measurement element
   useEffect(() => {
-    const pageHeight = 1123 - 71 - 71; // center-document height minus vertical padding
-    const contentWidth = 793 - 83 - 83; // center-document width minus horizontal padding
+    const pageHeight = 1123 - 71 - 71;
+    const contentWidth = 793 - 83 - 83;
     const measure = measureRef.current;
     if (!measure) return;
     const text = documentText || '';
@@ -112,7 +111,6 @@ export default function Center() {
     const result: string[] = [];
     let start = 0;
     while (start < text.length) {
-      // Binary search largest chunk that fits this page
       let low = start + 1;
       let high = text.length;
       let fitIndex = start + 1;
@@ -178,9 +176,7 @@ export default function Center() {
 
   return (
     <div className="center-container">
-      {/* Left Sidebar */}
       <div className="center-sidebar" style={{ top: `${sidebarTop}px` }}>
-        {/* Icons */}
         <img src={fontIcon} alt="sidebar icon" className="sidebar-icon-1" />
         
         <div className="sidebar-counter-container">
@@ -214,7 +210,6 @@ export default function Center() {
         <img src={save} alt="sidebar icon" className="sidebar-icon-9" />
       </div>
 
-      {/* Main Document Pages */}
       {pages.map((content, idx) => (
         <div
           key={idx}
@@ -236,7 +231,6 @@ export default function Center() {
           )}
         </div>
       ))}
-      {/* Hidden measurement element for pagination */}
       <div
         ref={measureRef}
         style={{
@@ -251,9 +245,7 @@ export default function Center() {
         }}
       />
 
-      {/* Right Panel */}
       <div className="center-panel" style={{ top: `${panelTop}px` }}>
-        {/* Tabs */}
         <div className="panel-tabs" ref={tabsContainerRef}>
           <div
             className={`panel-tab ${activeTab === 'chat' ? 'active' : ''}`}
@@ -283,7 +275,6 @@ export default function Center() {
         </div>
         {renderPanelContent()}
       </div>
-      {/* Header */}
       <Header activeMenu="summary" />
     </div>
   );

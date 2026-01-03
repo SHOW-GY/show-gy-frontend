@@ -15,22 +15,18 @@ export default function Summary() {
   };
   return (
     <div className="home-container">
-      {/* Noise overlays */}
       <div className="noise-large"></div>
       <div className="noise-small"></div>
 
-      {/* Blob decorations */}
       <div className="blob-purple"></div>
       <div className="blob-pink"></div>
       <div className="blob-cyan"></div>
 
-      {/* Hero content */}
       <div className="hero-title">
         <p className="hero-title-main animate-reveal-left">안녕하세요, 박성철님</p>
         <p className="hero-title-sub animate-reveal-left">원하는 문서를 업로드 또는 작성해주세요.</p>
       </div>
 
-      {/* Input and file upload */} 
       <div className="summary-input-area">
         <div className="summary-input-shell">
           <input
@@ -55,10 +51,8 @@ export default function Summary() {
         </div>
       </div>
 
-      {/* University info */}
       <div className="summary-university-info">한양대학교 ERICA x 롯데이노베이트</div>
 
-      {/* Header */}
       <Header activeMenu="summary" />
     </div>
   );

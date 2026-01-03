@@ -26,14 +26,6 @@ html, body {
   backdrop-filter: blur(10px);
 }
 
-.header-inner {
-  width: 100%;
-  height: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  position: absolute;
-}
-
 .brand {
   width: 166.30px;
   height: 35.84px;
@@ -55,7 +47,6 @@ html, body {
   letter-spacing: 2px;
 }
 
-/* Menu */
 .menu {
   width: 446px;
   height: 27px;
@@ -140,7 +131,6 @@ html, body {
   overflow: hidden;
 }
 
-/* Decorative blobs */
 .blob-purple {
   width: 120px;
   height: 120px;
@@ -183,7 +173,6 @@ html, body {
   z-index: 2;
 }
 
-/* Noise overlays */
 .noise-large {
   width: 100%;
   height: 100%;
@@ -208,7 +197,6 @@ html, body {
   z-index: 1;
 }
 
-/* Hero title section */
 .hero-title {
   width: 942px;
   height: 208px;
@@ -248,7 +236,6 @@ html, body {
   word-wrap: break-word;
 }
 
-/* University info */
 .university-info {
   width: 632.29px;
   height: 35.84px;
@@ -298,7 +285,6 @@ html, body {
   z-index: 5;
 }
 
-/* Summary input & upload */
 .summary-input-area {
   display: block;
 }
@@ -402,7 +388,6 @@ html, body {
 
 /* ----- Center (Summary Detail Page) ----- */
 .center-container {
-  /* width: 100vw; */
   min-height: 160vh;
   position: relative;
   background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%);
@@ -412,7 +397,6 @@ html, body {
   overflow-y: auto;
 }
 
-/* Left Sidebar */
 .center-sidebar {
   width: 100px;
   height: 690px;
@@ -622,7 +606,6 @@ html, body {
   transition: transform 0.2s;
 }
 
-/* Main Document Area */
 .center-document {
   width: 793px;
   height: 1123px;
@@ -659,7 +642,6 @@ html, body {
   font-weight: 500;
 }
 
-/* Editable Document Input */
 .document-input {
   width: 100%;
   height: 100%;
@@ -680,7 +662,6 @@ html, body {
   white-space: pre-wrap;
 }
 
-/* Right Panel */
 .center-panel {
   width: 530px;
   height: 720px;
