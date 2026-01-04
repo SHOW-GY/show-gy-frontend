@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
+import Chatbot from '../helper/Chatbot';
+import Feedback from '../helper/Feedback';
+import Search from '../helper/Search';
 import '../styles/design.css';
 import '../styles/animations.css';
 import fontIcon from '../assets/icons/font.png';
@@ -14,15 +17,12 @@ import sort from '../assets/icons/sort.png';
 import triangle from '../assets/icons/inverse_triangle.png';
 import save from '../assets/icons/save.png';
 import settings from '../assets/icons/settings.png';
-import fileupload from '../assets/icons/fileupload.png';
-import search from '../assets/icons/search.png';
 
 export default function Center() {
   const [fontSize, setFontSize] = useState(13);
   const [sidebarTop, setSidebarTop] = useState(70);
   const [panelTop, setPanelTop] = useState(70);
   const [activeTab, setActiveTab] = useState<'chat' | 'feedback' | 'reference'>('chat');
-  const [chatInput, setChatInput] = useState('');
   const [documentText, setDocumentText] = useState('');
   const [pages, setPages] = useState<string[]>(['']);
   const measureRef = useRef<HTMLDivElement | null>(null);
@@ -137,41 +137,14 @@ export default function Center() {
 
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
-      return (
-        <>
-          <div className="panel-chat-message">
-            <p>SHOW-GY 챗봇입니다.<br />무엇을 도와드릴까요?</p>
-          </div>
-
-          <div className="panel-input-bar">
-            <textarea
-              className="panel-input-field"
-              placeholder="메시지를 입력하세요"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              rows={1}
-            />
-            <img src={fileupload} alt="파일 업로드" className="panel-input-rect" />
-            <img src={search} alt="검색" className="panel-input-square" />
-            <div className="panel-input-plus">+</div>
-          </div>
-        </>
-      );
+      return <Chatbot />;
     }
 
     if (activeTab === 'feedback') {
-      return (
-        <div className="panel-chat-message">
-          <p>피드백을 남겨주세요.<br />검토 후 답변드릴게요.</p>
-        </div>
-      );
+      return <Feedback />;
     }
 
-    return (
-      <div className="panel-chat-message">
-        <p>참고자료를 불러오고 있습니다.<br />잠시만 기다려주세요.</p>
-      </div>
-    );
+    return <Search />;
   };
 
   return (
