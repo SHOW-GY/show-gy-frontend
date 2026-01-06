@@ -1,0 +1,1719 @@
+/* 로그인 컨테이너 */
+.login-container {
+  width: 100%;
+  left : calc(50% - 423.5px);
+  top : 80px;
+  max-width: 847px;
+  position: absolute;
+  padding: 60px 50px;
+}
+
+/* 헤더 섹션 */
+.login-header {
+  text-align: center;
+  margin-bottom: 80px;
+  position: relative;
+}
+
+.login-title {
+  color: #f8fafc;
+  font-size: 35px;
+  font-family: Orbitron, sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  line-height: 1.2;
+}
+
+.login-underline {
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(90deg, #f59e0b 0%, #8b5cf6 50%, #ec4899 100%);
+  border-radius: 2px;
+  margin: 10px auto 0;
+}
+
+/* 폼 그룹 */
+.login-form-group {
+  margin-bottom: 60px;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-label {
+  color: #f59e0b;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.login-input {
+  width: 100%;
+  height: 56px;
+  background-color: #fff7f7;
+  border: 1px solid #000000;
+  border-radius: 0;
+  padding: 0 16px;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 300;
+  color: #0f0f23;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.login-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* 로그인 버튼 */
+.login-button {
+  width: 100%;
+  height: 62px;
+  margin-top: 40px;
+  margin-bottom: 80px;
+  background: linear-gradient(167deg, #f59e0b 0%, #8b5cf6 100%);
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.3);
+  border: none;
+  border-radius: 15px;
+  color: #0f0f23;
+  font-size: 17.6px;
+  font-family: Rajdhani, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 15px 30px rgba(245, 158, 11, 0.4);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+/* 하단 링크 */
+.login-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.login-link {
+  color: #ffffff;
+  font-size: 16px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 300;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.login-link:hover {
+  color: #f59e0b;
+}
+
+.login-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #f59e0b;
+  transition: width 0.3s ease;
+}
+
+.login-link:hover::after {
+  width: 100%;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 40px 30px;
+  }
+
+  .login-title {
+    font-size: 36px;
+    letter-spacing: 2px;
+  }
+
+  .login-header {
+    margin-bottom: 50px;
+  }
+
+  .login-form-group {
+    margin-bottom: 40px;
+  }
+
+  .login-label {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .login-input {
+    height: 48px;
+    font-size: 16px;
+  }
+
+  .login-button {
+    height: 52px;
+    font-size: 15px;
+    margin-bottom: 60px;
+  }
+
+  .login-footer-links {
+    gap: 20px;
+  }
+
+  .login-link {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-wrapper {
+    padding: 20px 10px;
+  }
+
+  .login-container {
+    padding: 30px 20px;
+  }
+
+  .login-title {
+    font-size: 28px;
+    letter-spacing: 1px;
+  }
+
+  .login-header {
+    margin-bottom: 40px;
+  }
+
+  .login-form-group {
+    margin-bottom: 30px;
+  }
+
+  .login-label {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .login-input {
+    height: 44px;
+    font-size: 14px;
+    padding: 0 12px;
+  }
+
+  .login-button {
+    height: 48px;
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  .login-footer-links {
+    gap: 15px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .login-link {
+    font-size: 13px;
+  }
+}
+
+/* --- Signup --- */
+.signup-title-inner {
+  width: 747px;
+  height: 81.92px;
+  left: 15%;
+  top: 120px;
+  justify-content: center;
+  position: absolute;
+}
+
+.signup-title-text {
+  width: 711.12px;
+  height: 64px;
+  right: 13%;
+  top: 8px;
+  position: absolute;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F8FAFC;
+  font-size: 51.20px;
+  font-family: Orbitron;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 81.92px;
+  letter-spacing: 4px;
+  word-wrap: break-word;
+}
+
+.signup-title-underline {
+  width: 120px;
+  height: 4px;
+  left: 32%;
+  top: 92.92px;
+  position: absolute;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  border-radius: 2px;
+}
+
+.signup-confirm-button {
+  width: 271px;
+  height: 62px;
+  left: 288px;
+  top: 1206px;
+  position: absolute;
+  background: linear-gradient(167deg, #F59E0B 0%, #8B5CF6 100%);
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.30);
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.signup-confirm-text {
+  width: 209.06px;
+  height: 22px;
+  left: 31.14px;
+  top: 20px;
+  position: absolute;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #0F0F23;
+  font-size: 17.60px;
+  font-family: Rajdhani;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  word-wrap: break-word;
+}
+
+.signup-label-id {
+  width: 99px;
+  height: 32px;
+  left: 147px;
+  top: 268px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 700;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+.signup-label-password {
+  width: 99px;
+  height: 32px;
+  left: 147px;
+  top: 414px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 700;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+.signup-label-confirm-password {
+  width: 120px;
+  height: 32px;
+  left: 147px;
+  top: 567px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 700;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+.signup-label-name {
+  width: 120px;
+  height: 32px;
+  left: 147px;
+  top: 724px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 700;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+.signup-label-phone {
+  width: 120px;
+  height: 32px;
+  left: 147px;
+  top: 870px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 700;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+.signup-label-email {
+  width: 120px;
+  height: 32px;
+  left: 147px;
+  top: 1010px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 700;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+.signup-input-id-wrapper {
+  width: 553px;
+  height: 56px;
+  left: 147px;
+  top: 308px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-id {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-id-check-button {
+  width: 94px;
+  height: 45px;
+  left: 598px;
+  top: 314px;
+  position: absolute;
+  background: rgba(245, 158, 11, 0.20);
+  border-radius: 20px;
+  outline: 1px #F59E0B solid;
+  outline-offset: -1px;
+  cursor: pointer;
+}
+
+.signup-id-check-text {
+  width: 53px;
+  height: 17px;
+  left: 21px;
+  top: 15px;
+  position: absolute;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 13px;
+  font-family: Space Grotesk;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 20.48px;
+  letter-spacing: 1px;
+  word-wrap: break-word;
+}
+
+.signup-input-password-wrapper {
+  width: 553px;
+  height: 56px;
+  left: 147px;
+  top: 454px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-password {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-input-confirm-password-wrapper {
+  width: 553px;
+  height: 56px;
+  left: 147px;
+  top: 607px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-confirm-password {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-input-name-wrapper {
+  width: 553px;
+  height: 56px;
+  left: 147px;
+  top: 764px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-name {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-input-phone-wrapper {
+  width: 553px;
+  height: 56px;
+  left: 147px;
+  top: 910px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-phone {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-input-email-prefix-wrapper {
+  width: 240px;
+  height: 56px;
+  left: 147px;
+  top: 1050px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-email-prefix {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-input-email-domain-wrapper {
+  width: 215px;
+  height: 56px;
+  left: 456px;
+  top: 1050px;
+  position: absolute;
+  background: #FFF7F7;
+  border: 1px black solid;
+}
+
+.signup-input-email-domain {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  color: #918080;
+  padding-left: 8px;
+}
+
+.signup-email-at {
+  width: 66px;
+  height: 40px;
+  left: 390px;
+  top: 1059px;
+  position: absolute;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 20px;
+  font-family: Open Sans;
+  font-weight: 300;
+  line-height: 68px;
+  word-wrap: break-word;
+}
+
+/* --- Signup1 --- */
+/* 가장 바깥쪽 전체 컨테이너 */
+.home-container {
+  width: 100%;
+  min-height: 100vh; /* 화면 전체 높이를 차지하도록 설정 */
+  background-color: #0F0F23; /* 배경을 어두운 남색으로 고정 */
+  position: relative;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+}
+
+/* 헤더 스타일 */
+.signup1-header {
+  width: 100%;
+  height: 60px;
+  position: relative;
+  background: rgba(15, 15, 35, 0.85);
+  border-bottom: 1px rgba(139, 92, 246, 0.30) solid;
+  backdrop-filter: blur(10px);
+}
+
+.signup1-brand {
+  width: 166.30px;
+  height: 35.84px;
+  left: calc(50% - 600px);
+  top: 23%;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 22.40px;
+  font-family: 'Cafe24Decobox', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 35.84px;
+  letter-spacing: 2px;
+}
+
+.signup1-menu {
+  width: 446px;
+  height: 27px;
+  left: 60%;
+  transform: translateX(-50%);
+  top: 23%;
+  position: absolute;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.signup1-menu-home {
+  color: #F8FAFC;
+  font-size: 16px;
+  font-family: 'Cafe24Decobox', system-ui, sans-serif;
+  text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.signup1-menu-home:hover {
+  transform: scale(1.1);
+}
+
+.signup1-menu-underline {
+  width: 40.97px;
+  height: 3px;
+  left: calc(50% - 20px);
+  top: 30px;
+  position: absolute;
+  background: linear-gradient(90deg, #F59E0B 0%, #EC4899 100%);
+  box-shadow: 0px 0px 8px #8B5CF6;
+  border-radius: 2px;
+}
+
+.signup1-menu-summary {
+  color: #F8FAFC;
+  font-size: 16px;
+  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.signup1-menu-summary:hover {
+  transform: scale(1.1);
+}
+
+.signup1-menu-library {
+  color: #F8FAFC;
+  font-size: 16px;
+  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.signup1-menu-library:hover {
+  transform: scale(1.1);
+}
+
+.signup1-menu-login {
+  color: #F8FAFC;
+  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-size: 16px;
+  left : 200px;
+  text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.signup1-menu-item {
+  position: relative;
+}
+.signup1-menu-login:hover {
+  transform: scale(1.1);
+}
+
+.signup1-container {
+  width: 600px;
+  height: 800px;
+  top : 10%;
+  left : calc(50% - 300px);
+  position: absolute;
+  background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.signup1-title-inner {
+  width: 747px;
+  height: 81.92px;
+  left: 20px;
+  top: 10%;
+  position: absolute;
+}
+
+.signup1-title-text {
+  width: 711.12px;
+  height: 64px;
+  top: 8px;
+  left : 27%;
+  position: absolute;
+  color: #F8FAFC;
+  font-size: 40px;
+  font-family: Orbitron;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 81.92px;
+  letter-spacing: 4px;
+  word-wrap: break-word;
+}
+
+.signup1-title-underline {
+  width: 120px;
+  height: 4px;
+  left: 30%;
+  top: 88px;
+  position: absolute;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  border-radius: 2px;
+}
+
+.signup1-confirm-button {
+  width: 250px;
+  height: 62px;
+  left: 180px;
+  top: 500px;
+  position: absolute;
+  background: linear-gradient(167deg, #F59E0B 0%, #8B5CF6 100%);
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.30);
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.signup1-confirm-text {
+  width: 209.06px;
+  height: 22px;
+  left: 20px;
+  top: 20px;
+  position: absolute;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #0F0F23;
+  font-size: 17.60px;
+  font-family: Rajdhani;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  word-wrap: break-word;
+}
+
+.signup1-congrats-text {
+  width: 500px;
+  height: 200px;
+  left: 50px;
+  top: 230px;
+  position: absolute;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  color: #F59E0B;
+  font-size: 50px;
+  font-family: Orbitron;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 65px;
+  letter-spacing: 3px;
+  word-wrap: break-word;
+}
+
+/* --- Findid --- */
+.findid-wrapper {
+  justify-content: center;
+  align-items: center;
+  width: 800px;
+  height: 800px;
+  top : 10%;
+  margin: 0 auto;
+  position: absolute;
+  background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  padding: 40px 20px;
+}
+
+/* 헤더 */
+.findid-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.findid-title {
+  font-size: 51.2px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #F8FAFC;
+  letter-spacing: 4px;
+  margin: 0;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.findid-underline {
+  width: 120px;
+  height: 4px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  border-radius: 2px;
+}
+
+/* 설명 텍스트 */
+.findid-description {
+  text-align: center;
+  font-size: 22.4px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 400;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 60px;
+  opacity: 0.9;
+}
+
+/* 폼 그룹 */
+.findid-form-group {
+  margin-bottom: 50px;
+  left : 90px;
+  position: relative;
+}
+
+.findid-label {
+  display: block;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+  color: #F59E0B;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+/* 이메일 입력 */
+.findid-email-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.findid-email-input {
+  flex: 0 0 231px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  box-sizing: border-box;
+}
+
+.findid-email-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+.findid-at-symbol {
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 300;
+  color: #F59E0B;
+  min-width: 20px;
+  text-align: center;
+}
+
+.findid-domain-select {
+  flex: 0 0 191px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.findid-domain-select option {
+  color: #918080;
+}
+
+/* 인증번호 입력 */
+.findid-verify-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.findid-verify-input {
+  width : 430px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  box-sizing: border-box;
+}
+
+.findid-verify-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+.findid-verify-button {
+  flex: 0 0 94px;
+  height: 45px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #F59E0B;
+  border-radius: 20px;
+  font-size: 13px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.findid-verify-button:hover {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+/* 확인 버튼 */
+.findid-confirm-button {
+  width: 271px;
+  height: 62px;
+  margin: 40px auto 0;
+  top : 20px;
+  position: relative;
+  display: block;
+  background: linear-gradient(167deg, #F59E0B 0%, #8B5CF6 100%);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.3);
+  font-size: 17.6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  color: #0F0F23;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.findid-confirm-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 15px 30px rgba(245, 158, 11, 0.4);
+}
+
+.findid-confirm-button:active {
+  transform: translateY(0);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .findid-title {
+    font-size: 36px;
+  }
+
+  .findid-description {
+    font-size: 18px;
+  }
+
+  .findid-email-container {
+    flex-wrap: wrap;
+  }
+
+  .findid-email-input,
+  .findid-domain-select {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .findid-confirm-button {
+    width: 100%;
+    max-width: 271px;
+  }
+}
+
+@media (max-width: 480px) {
+  .findid-wrapper {
+    padding: 20px 15px;
+  }
+
+  .findid-title {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+
+  .findid-description {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .findid-label {
+    font-size: 16px;
+  }
+
+  .findid-email-container,
+  .findid-verify-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .findid-email-input,
+  .findid-domain-select,
+  .findid-verify-input {
+    width: 100%;
+    flex: none !important;
+  }
+
+  .findid-verify-button {
+    width: 100%;
+  }
+
+  .findid-confirm-button {
+    width: 100%;
+  }
+}
+
+/* --- Findid1 --- */
+.findid1-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 800px;
+  height: 760px;
+  top : 10%;
+  margin: 0 auto;
+  position: absolute;
+  background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  padding: 40px 20px;
+}
+
+.findid1-container {
+  width: 500px;
+  height: 600px;
+  top : 5%;
+  position: relative;
+}
+
+/* 헤더 */
+.findid1-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.findid1-title {
+  font-size: 51.2px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #F8FAFC;
+  letter-spacing: 4px;
+  margin: 0;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.findid1-underline {
+  width: 120px;
+  height: 4px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  border-radius: 2px;
+}
+
+/* 결과 메시지 */
+.findid1-message {
+  font-size: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin: 5px 0 80px;
+  opacity: 0.9;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 아이디 박스 */
+.findid1-id-box {
+  width: 100%;
+  height: 56px;
+  margin: 0 auto 80px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.findid1-id-text {
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 버튼 그룹 */
+.findid1-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 55px;
+}
+
+.findid1-button {
+  width: 271px;
+  height: 62px;
+  margin: 0 auto;
+  background: linear-gradient(167deg, #F59E0B 0%, #8B5CF6 100%);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.3);
+  font-size: 17.6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  color: #0F0F23;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.findid1-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 15px 30px rgba(245, 158, 11, 0.4);
+}
+
+.findid1-button:active {
+  transform: translateY(0);
+}
+
+.findid1-password-btn {
+  order: 1;
+}
+
+.findid1-login-btn {
+  order: 2;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .findid1-title {
+    font-size: 36px;
+  }
+
+  .findid1-message {
+    font-size: 40px;
+  }
+
+  .findid1-id-box {
+    max-width: 100%;
+  }
+
+  .findid1-button {
+    width: 100%;
+    max-width: 271px;
+  }
+}
+
+@media (max-width: 480px) {
+  .findid1-wrapper {
+    padding: 20px 15px;
+  }
+
+  .findid1-title {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+
+  .findid1-message {
+    font-size: 30px;
+    letter-spacing: 1px;
+  }
+
+  .findid1-id-box {
+    max-width: 100%;
+    height: 48px;
+  }
+
+  .findid1-id-text {
+    font-size: 16px;
+  }
+
+  .findid1-button {
+    width: 100%;
+    height: 56px;
+    font-size: 14px;
+  }
+}
+
+/* --- Findpw --- */
+.findpw-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 800px;
+  height:900px;
+  top : 10%;
+  margin: 0 auto;
+  position: absolute;  
+  background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  padding: 40px 20px;
+}
+
+/* 헤더 */
+.findpw-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.findpw-title {
+  font-size: 51.2px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #F8FAFC;
+  letter-spacing: 4px;
+  margin: 0;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.findpw-underline {
+  width: 120px;
+  height: 4px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  border-radius: 2px;
+}
+
+/* 설명 텍스트 */
+.findpw-description {
+  text-align: center;
+  font-size: 22.4px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 400;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 80px;
+  opacity: 0.9;
+}
+
+/* 폼 그룹 */
+.findpw-form-group {
+  margin-bottom: 40px;
+}
+
+.findpw-label {
+  display: block;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+  color: #F59E0B;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+/* 아이디 입력 */
+.findpw-input {
+  width: 560px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  box-sizing: border-box;
+}
+
+.findpw-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+/* 이메일 입력 */
+.findpw-email-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.findpw-email-input {
+  flex: 0 0 231px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  box-sizing: border-box;
+}
+
+.findpw-email-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+.findpw-at-symbol {
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 300;
+  color: #F59E0B;
+  min-width: 20px;
+  text-align: center;
+}
+
+.findpw-domain-select {
+  flex: 0 0 220px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.findpw-domain-select option {
+  color: #918080;
+}
+
+/* 인증번호 입력 */
+.findpw-verify-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.findpw-verify-input {
+  flex: 1;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  box-sizing: border-box;
+}
+
+.findpw-verify-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+.findpw-verify-button {
+  flex: 0 0 94px;
+  height: 45px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #F59E0B;
+  border-radius: 20px;
+  font-size: 13px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.findpw-verify-button:hover {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+/* 다음 버튼 */
+.findpw-next-button {
+  width: 271px;
+  height: 62px;
+  margin: 60px auto 0;
+  display: block;
+  background: linear-gradient(167deg, #F59E0B 0%, #8B5CF6 100%);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.3);
+  font-size: 17.6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  color: #0F0F23;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.findpw-next-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 15px 30px rgba(245, 158, 11, 0.4);
+}
+
+.findpw-next-button:active {
+  transform: translateY(0);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .findpw-title {
+    font-size: 36px;
+  }
+
+  .findpw-description {
+    font-size: 18px;
+  }
+
+  .findpw-input {
+    max-width: 100%;
+  }
+
+  .findpw-email-container {
+    flex-wrap: wrap;
+  }
+
+  .findpw-email-input,
+  .findpw-domain-select {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .findpw-next-button {
+    width: 100%;
+    max-width: 271px;
+  }
+}
+
+@media (max-width: 480px) {
+  .findpw-wrapper {
+    padding: 20px 15px;
+  }
+
+  .findpw-title {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+
+  .findpw-description {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .findpw-label {
+    font-size: 16px;
+  }
+
+  .findpw-input {
+    max-width: 100%;
+  }
+
+  .findpw-email-container,
+  .findpw-verify-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .findpw-email-input,
+  .findpw-domain-select,
+  .findpw-verify-input {
+    width: 100%;
+    flex: none !important;
+  }
+
+  .findpw-verify-button {
+    width: 100%;
+  }
+
+  .findpw-next-button {
+    width: 100%;
+  }
+}
+
+/* --- Findpw1 --- */
+.findpw1-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width : 800px;
+  height: 800px;
+  top : 10%;
+  margin: 0 auto;
+  position: absolute; 
+  background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  padding: 40px 20px;
+}
+
+/* 헤더 */
+.findpw1-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.findpw1-title {
+  font-size: 51.2px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #F8FAFC;
+  letter-spacing: 4px;
+  margin: 0;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.findpw1-underline {
+  width: 120px;
+  height: 4px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
+  border-radius: 2px;
+}
+
+/* 설명 텍스트 */
+.findpw1-description {
+  text-align: center;
+  font-size: 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 400;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 75px;
+  opacity: 0.9;
+}
+
+/* 폼 그룹 */
+.findpw1-form-group {
+  margin-bottom: 40px;
+}
+
+.findpw1-label {
+  display: block;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+  color: #F59E0B;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+/* 입력 필드 */
+.findpw1-input {
+  width: 488px;
+  height: 56px;
+  padding: 0 15px;
+  background: #FFF7F7;
+  border: 1px solid #000;
+  font-size: 20px;
+  font-family: 'Open Sans', sans-serif;
+  color: #918080;
+  box-sizing: border-box;
+}
+
+.findpw1-input::placeholder {
+  color: #918080;
+  font-weight: 300;
+}
+
+.findpw1-input:focus {
+  outline: none;
+  border-color: #F59E0B;
+}
+
+/* 확인 버튼 */
+.findpw1-confirm-button {
+  width: 271px;
+  height: 62px;
+  margin: 80px auto 0;
+  display: block;
+  background: linear-gradient(167deg, #F59E0B 0%, #8B5CF6 100%);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0px 10px 20px rgba(245, 158, 11, 0.3);
+  font-size: 17.6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  color: #0F0F23;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.findpw1-confirm-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 15px 30px rgba(245, 158, 11, 0.4);
+}
+
+.findpw1-confirm-button:active {
+  transform: translateY(0);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .findpw1-title {
+    font-size: 36px;
+  }
+
+  .findpw1-description {
+    font-size: 18px;
+  }
+
+  .findpw1-input {
+    max-width: 100%;
+  }
+
+  .findpw1-confirm-button {
+    width: 100%;
+    max-width: 271px;
+  }
+}
+
+@media (max-width: 480px) {
+  .findpw1-wrapper {
+    padding: 20px 15px;
+  }
+
+  .findpw1-title {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+
+  .findpw1-description {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .findpw1-label {
+    font-size: 16px;
+  }
+
+  .findpw1-input {
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .findpw1-confirm-button {
+    width: 100%;
+  }
+}
