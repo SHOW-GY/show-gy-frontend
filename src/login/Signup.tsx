@@ -1,7 +1,6 @@
 import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/login.css';
-import '../styles/signup.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

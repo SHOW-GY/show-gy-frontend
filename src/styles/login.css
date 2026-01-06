@@ -834,7 +834,7 @@
   height: 800px;
   top : 10%;
   margin: 0 auto;
-  position: relative;
+  position: absolute;
   background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
   padding: 40px 20px;
 }
@@ -881,7 +881,8 @@
 /* 폼 그룹 */
 .findid-form-group {
   margin-bottom: 50px;
-  right : 50px;
+  left : 90px;
+  position: relative;
 }
 
 .findid-label {
@@ -952,7 +953,7 @@
 }
 
 .findid-verify-input {
-  flex: 1;
+  width : 430px;
   height: 56px;
   padding: 0 15px;
   background: #FFF7F7;
@@ -1095,7 +1096,7 @@
   height: 760px;
   top : 10%;
   margin: 0 auto;
-  position: relative;
+  position: absolute;
   background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
   padding: 40px 20px;
 }
@@ -1273,7 +1274,7 @@
   height:900px;
   top : 10%;
   margin: 0 auto;
-  position: relative;  
+  position: absolute;  
   background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
   padding: 40px 20px;
 }
@@ -1557,7 +1558,7 @@
   height: 800px;
   top : 10%;
   margin: 0 auto;
-  position: relative; 
+  position: absolute; 
   background: linear-gradient(137deg, rgba(30, 58, 138, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
   padding: 40px 20px;
 }

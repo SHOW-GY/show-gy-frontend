@@ -1,9 +1,7 @@
 import Header from '../components/Header';
 import '../styles/design.css';
-import '../styles/signup1.css';
 import { useNavigate } from 'react-router-dom';
 import '../styles/login.css';
-import '../styles/signup.css';
 import { useState } from 'react';
 
 export default function Signup1() {

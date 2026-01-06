@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import '../styles/design.css';
-import '../styles/findpw1.css';
+import '../styles/login.css';
 
 export default function Findpw1() {
   const navigate = useNavigate();
