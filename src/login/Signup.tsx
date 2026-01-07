@@ -3,6 +3,7 @@ import '../styles/design.css';
 import '../styles/login.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createUser } from '../apis';
 
 export default function Signup() {
   const [userId, setUserId] = useState('');
@@ -13,16 +14,81 @@ export default function Signup() {
   const [emailPrefix, setEmailPrefix] = useState('');
   const [emailDomain, setEmailDomain] = useState('');
   const [customDomain, setCustomDomain] = useState('');
+  const [isIdChecked, setIsIdChecked] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSignup = () => {
+  // 이메일 조합
+  const getFullEmail = () => {
     const finalDomain = emailDomain === 'custom' ? customDomain : emailDomain;
-    console.log('Signup:', { userId, password, confirmPassword, name, phone, email: `${emailPrefix}@${finalDomain}` });
-    navigate('/login');
+    return `${emailPrefix}@${finalDomain}`;
   };
 
+  // 아이디 중복확인 (임시 - 백엔드 API가 있으면 수정)
   const handleIdCheck = () => {
-    console.log('ID Check:', userId);
+    if (!userId) {
+      alert('아이디를 입력해주세요.');
+      return;
+    }
+    if (userId.length < 6 || userId.length > 20) {
+      alert('아이디는 6~20자로 입력해주세요.');
+      return;
+    }
+    // TODO: 백엔드에 아이디 중복 확인 API 호출
+    setIsIdChecked(true);
+    alert('사용 가능한 아이디입니다.');
+  };
+
+  // 회원가입 처리
+  const handleSignup = async () => {
+    // 유효성 검사
+    if (!userId || !password || !confirmPassword || !name || !emailPrefix || !emailDomain) {
+      alert('모든 필수 항목을 입력해주세요.');
+      return;
+    }
+
+    if (!isIdChecked) {
+      alert('아이디 중복확인을 해주세요.');
+      return;
+    }
+
+    if (userId.length < 6 || userId.length > 20) {
+      alert('아이디는 6~20자로 입력해주세요.');
+      return;
+    }
+
+    if (password.length < 8 || password.length > 20) {
+      alert('비밀번호는 8~20자로 입력해주세요.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const email = getFullEmail();
+      await createUser({
+        type: true,
+        user_id: userId,
+        email,
+      });
+      
+      alert('회원가입이 완료되었습니다!');
+      navigate('/login');
+    } catch (error: any) {
+      console.error('회원가입 실패:', error);
+      const errorMessage = error.response?.data?.detail 
+        ? (typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : JSON.stringify(error.response.data.detail))
+        : error.message || '회원가입에 실패했습니다.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -136,8 +202,12 @@ export default function Signup() {
           </div>
         </div>
 
-        <button className="signup-submit-btn" onClick={handleSignup}>
-          확인
+        <button 
+          className="signup-submit-btn" 
+          onClick={handleSignup}
+          disabled={loading}
+        >
+          {loading ? '처리 중...' : '확인'}
         </button>
       </div>
     </div>

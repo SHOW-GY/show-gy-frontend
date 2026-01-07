@@ -6,6 +6,7 @@ import Signup from './login/Signup';
 import Summary from './pages/Summary';
 import Library from './pages/Library';
 import Center from './summary/Center';
+import ApiTest from './apis/testApi';
 
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/summary" element={<Summary />} />
         <Route path="/library" element={<Library />} />
         <Route path="/summary/center" element={<Center />} />
+        <Route path="/api-test" element={<ApiTest />} />
       </Routes>
     </Router>
   );
