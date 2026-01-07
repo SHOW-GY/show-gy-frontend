@@ -15,25 +15,27 @@ html, body {
   min-height: 100%;
   background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%);
   background-attachment: fixed;
-  scrollbar-gutter: stable;
 }
 
 /* ------ Header ------ */
 .header {
   width: 100%;
   height: 45px;
+  left : 0px;
   position: relative;
   background: rgba(15, 15, 35, 0.85);
   border-bottom: 1px rgba(139, 92, 246, 0.30) solid;
   backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 450px;
 }
 
 .brand {
   width: 166.30px;
   height: 30px;
-  left: calc(50% - 450px);
-  top: 23%;
-  position: absolute;
+  position: relative;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -52,10 +54,7 @@ html, body {
 .menu {
   width: 446px;
   height: 27px;
-  left: 70%;
-  transform: translateX(-50%);
-  top: 23%;
-  position: absolute;
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -128,13 +127,12 @@ html, body {
 /* ----- HOME ----- */
 .home-container {
   width: 100%;
-  height: 100vh;
+  min-height: 100%;
   position: relative;
   background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%);
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow: hidden;
 }
 
 .blob-purple {
