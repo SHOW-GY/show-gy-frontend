@@ -30,12 +30,18 @@ export default function Login() {
       navigate('/');  // 홈으로 이동
     } catch (error: any) {
       console.error('로그인 실패:', error);
-      const errorMessage = error.response?.data?.detail 
-        ? (typeof error.response.data.detail === 'string' 
-          ? error.response.data.detail 
-          : JSON.stringify(error.response.data.detail))
-        : error.message || '로그인에 실패했습니다.';
-      alert(errorMessage);
+      
+      // 404 에러일 때
+      if (error.response?.status === 404) {
+        alert('로그인에 실패하였습니다');
+      } else {
+        const errorMessage = error.response?.data?.detail 
+          ? (typeof error.response.data.detail === 'string' 
+            ? error.response.data.detail 
+            : JSON.stringify(error.response.data.detail))
+          : error.message || '로그인에 실패했습니다.';
+        alert(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

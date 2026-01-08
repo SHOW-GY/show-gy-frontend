@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import '../styles/design.css';
@@ -8,7 +8,20 @@ import searchIcon from '../assets/icons/search.png';
 
 export default function Summary() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [userNickname, setUserNickname] = useState<string>('사용자');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserNickname(user.nickname || user.name || '사용자');
+      } catch (e) {
+        console.error('사용자 정보 파싱 실패:', e);
+      }
+    }
+  }, []);
 
   const handleSearch = () => {
     navigate('/summary/center');
@@ -23,7 +36,7 @@ export default function Summary() {
       <div className="blob-cyan"></div>
 
       <div className="hero-title">
-        <p className="hero-title-main animate-reveal-left">안녕하세요, 박성철님</p>
+        <p className="hero-title-main animate-reveal-left">안녕하세요, {userNickname}님</p>
         <p className="hero-title-sub animate-reveal-left">원하는 문서를 업로드 또는 작성해주세요.</p>
       </div>
 

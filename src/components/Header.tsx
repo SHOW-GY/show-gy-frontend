@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import '../styles/design.css';
 
 interface HeaderProps {
-  activeMenu?: 'home' | 'summary' | 'library' | 'login';
+  activeMenu?: 'home' | 'summary' | 'library' | 'login' | 'mypage';
 }
 
 export default function Header({ activeMenu = 'home' }: HeaderProps) {
@@ -50,20 +50,34 @@ export default function Header({ activeMenu = 'home' }: HeaderProps) {
         </div>
 
         <div style={{ position: 'relative' }}>
-          <div className="menu-summary" onClick={() => navigate('/summary')}>문서요약</div>
+          <div className="menu-summary" onClick={() => {
+            if (userNickname) {
+              navigate('/summary');
+            } else {
+              alert('로그인이 필요한 페이지입니다');
+              navigate('/login');
+            }
+          }}>문서요약</div>
           {activeMenu === 'summary' && <div className="menu-underline" />}
         </div>
 
         <div style={{ position: 'relative' }}>
-          <div className="menu-library" onClick={() => navigate('/library')}>문서보관함</div>
+          <div className="menu-library" onClick={() => {
+            if (userNickname) {
+              navigate('/library');
+            } else {
+              alert('로그인이 필요한 페이지입니다');
+              navigate('/login');
+            }
+          }}>문서보관함</div>
           {activeMenu === 'library' && <div className="menu-underline" />}
         </div>
 
         <div style={{ position: 'relative' }}>
-          <div className="menu-login" onClick={() => navigate('/login')}>
+          <div className="menu-login" onClick={() => navigate(userNickname ? '/mypage' : '/login')}>
             {userNickname ? `${userNickname}님` : '로그인'}
           </div>
-          {activeMenu === 'login' && <div className="menu-underline" />}
+          {(activeMenu === 'login' || activeMenu === 'mypage') && <div className="menu-underline" />}
         </div>
       </div>
     </div>

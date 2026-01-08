@@ -239,6 +239,28 @@
   background: rgba(245, 158, 11, 0.3);
 }
 
+.verification-request-btn {
+  width: 100%;
+  height: 50px;
+  margin-top: 10px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid #8B5CF6;
+  border-radius: 8px;
+  color: #8B5CF6;
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.verification-request-btn:hover {
+  background: rgba(139, 92, 246, 0.3);
+  transform: translateY(-1px);
+}
+
 .name-input-group {
   display: flex;
   align-items: center;
