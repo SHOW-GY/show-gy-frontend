@@ -2,8 +2,11 @@
 
 // 사용자 관련 타입
 export interface CreateUserRequest {
-  type: boolean;
   user_id: string;
+  user_pw: string;
+  last_name: string;
+  first_name: string;
+  nickname: string;
   email: string;
 }
 

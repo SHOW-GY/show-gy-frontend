@@ -23,9 +23,12 @@ const ApiTest: React.FC = () => {
     setLoading(true);
     try {
       const userData = {
+        user_id: 'testuser123',
+        user_pw: 'testPassword123!',
+        last_name: '김',
+        first_name: '테스트',
+        nickname: '테스트유저',
         email: 'test@example.com',
-        password: 'testPassword123!',
-        name: '테스트 유저',
       };
       const user = await createUser(userData);
       showResult(user, '회원가입 성공');

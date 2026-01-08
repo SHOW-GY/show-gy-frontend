@@ -9,8 +9,9 @@ export default function Signup() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [emailPrefix, setEmailPrefix] = useState('');
   const [emailDomain, setEmailDomain] = useState('');
   const [customDomain, setCustomDomain] = useState('');
@@ -18,7 +19,6 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 이메일 조합
   const getFullEmail = () => {
     const finalDomain = emailDomain === 'custom' ? customDomain : emailDomain;
     return `${emailPrefix}@${finalDomain}`;
@@ -42,7 +42,7 @@ export default function Signup() {
   // 회원가입 처리
   const handleSignup = async () => {
     // 유효성 검사
-    if (!userId || !password || !confirmPassword || !name || !emailPrefix || !emailDomain) {
+    if (!userId || !password || !confirmPassword || !firstName || !lastName || !nickname || !emailPrefix || !emailDomain) {
       alert('모든 필수 항목을 입력해주세요.');
       return;
     }
@@ -71,9 +71,12 @@ export default function Signup() {
     try {
       const email = getFullEmail();
       await createUser({
-        type: true,
         user_id: userId,
-        email,
+        user_pw: password,
+        last_name: lastName,
+        first_name: firstName,
+        nickname: nickname,
+        email: email,
       });
       
       alert('회원가입이 완료되었습니다!');
@@ -142,23 +145,32 @@ export default function Signup() {
 
           <div className="form-group">
             <label className="form-label">이름</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="이름을 입력해주세요."
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <div className="name-input-group">
+              <input
+                type="text"
+                className="form-input name-first"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+              <input
+                type="text"
+                className="form-input name-last"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">전화번호</label>
+            <label className="form-label">닉네임</label>
             <input
-              type="tel"
+              type="text"
               className="form-input"
-              placeholder="휴대폰 번호 입력('-' 제외 11자리 입력)."
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              placeholder="닉네임을 입력해주세요."
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
             />
           </div>
 

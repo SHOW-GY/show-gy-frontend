@@ -239,6 +239,20 @@
   background: rgba(245, 158, 11, 0.3);
 }
 
+.name-input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.name-input-group .name-first {
+  flex: 1;
+}
+
+.name-input-group .name-last {
+  flex: 1;
+}
+
 .email-input-group {
   display: flex;
   align-items: center;
