@@ -24,12 +24,13 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  nickname?: string;
   created_at: string;
 }
 
 // 인증 관련 타입
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 

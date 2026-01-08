@@ -3,14 +3,42 @@ import '../styles/design.css';
 import '../styles/login.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../apis';
 
 export default function Login() {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    console.log('Login:', { userId, password });
+  const handleLogin = async () => {
+    if (!userId || !password) {
+      alert('아이디와 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await login({
+        username: userId,
+        password: password,
+      });
+      
+      console.log('로그인 응답:', response);  // 디버그용
+      
+      alert('로그인 성공!');
+      navigate('/');  // 홈으로 이동
+    } catch (error: any) {
+      console.error('로그인 실패:', error);
+      const errorMessage = error.response?.data?.detail 
+        ? (typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : JSON.stringify(error.response.data.detail))
+        : error.message || '로그인에 실패했습니다.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,8 +74,8 @@ export default function Login() {
           />
         </div>
 
-        <button className="login-button" onClick={handleLogin}>
-          로그인
+        <button className="login-button" onClick={handleLogin} disabled={loading}>
+          {loading ? '로그인 중...' : '로그인'}
         </button>
 
         <div className="login-footer-links">

@@ -24,7 +24,7 @@ export default function Signup() {
     return `${emailPrefix}@${finalDomain}`;
   };
 
-  // 아이디 중복확인 (임시 - 백엔드 API가 있으면 수정)
+  // 아이디 중복확인 (백엔드 엔드포인트 필요)
   const handleIdCheck = () => {
     if (!userId) {
       alert('아이디를 입력해주세요.');
@@ -34,14 +34,12 @@ export default function Signup() {
       alert('아이디는 6~20자로 입력해주세요.');
       return;
     }
-    // TODO: 백엔드에 아이디 중복 확인 API 호출
     setIsIdChecked(true);
     alert('사용 가능한 아이디입니다.');
   };
 
-  // 회원가입 처리
+  // 회원가입
   const handleSignup = async () => {
-    // 유효성 검사
     if (!userId || !password || !confirmPassword || !firstName || !lastName || !nickname || !emailPrefix || !emailDomain) {
       alert('모든 필수 항목을 입력해주세요.');
       return;
