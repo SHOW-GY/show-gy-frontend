@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 import Header from '../components/Header';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
@@ -25,7 +27,8 @@ export default function Center() {
   const [activeTab, setActiveTab] = useState<'chat' | 'feedback' | 'reference'>('chat');
   const [pages, setPages] = useState<string[]>(['']);
   const measureRef = useRef<HTMLDivElement | null>(null);
-  const pageRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const quillInstances = useRef<(Quill | null)[]>([]);
   const documentContainerRef = useRef<HTMLDivElement | null>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 60, width: 79 });
   const timeoutRef = useRef<number | null>(null);
@@ -36,6 +39,49 @@ export default function Center() {
     feedback: null,
     reference: null,
   });
+
+  // Initialize Quill editors when pages change
+  useEffect(() => {
+    pageRefs.current.forEach((el, idx) => {
+      if (el && !quillInstances.current[idx]) {
+        const quill = new Quill(el, {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              ['bold', 'italic', 'underline'],
+              [{ 'size': ['small', false, 'large', 'huge'] }],
+              [{ 'color': [] }, { 'background': [] }],
+            ],
+          },
+          placeholder: idx === 0 ? '문서를 입력하세요' : '',
+        });
+        
+        quill.root.style.fontSize = `${fontSize}px`;
+        
+        if (pages[idx]) {
+          quill.clipboard.dangerouslyPasteHTML(pages[idx]);
+        }
+        
+        quill.on('text-change', () => {
+          const html = quill.root.innerHTML;
+          const selection = quill.getSelection();
+          const caretPos = selection ? selection.index : 0;
+          handlePageChange(idx, html, caretPos);
+        });
+        
+        quillInstances.current[idx] = quill;
+      }
+    });
+  }, [pages.length]);
+
+  // Update font size for all Quill instances
+  useEffect(() => {
+    quillInstances.current.forEach(quill => {
+      if (quill) {
+        quill.root.style.fontSize = `${fontSize}px`;
+      }
+    });
+  }, [fontSize]);
 
   // Constants
   const pageHeight = 1123 - 71 * 4;
@@ -144,10 +190,10 @@ export default function Center() {
     // Handle focus and caret positioning after state update
     if (targetPageForFocus !== undefined && targetCaretPos !== undefined) {
       setTimeout(() => {
-        const targetTextarea = pageRefs.current[targetPageForFocus];
-        if (targetTextarea) {
-          targetTextarea.focus();
-          targetTextarea.setSelectionRange(targetCaretPos, targetCaretPos);
+        const targetQuill = quillInstances.current[targetPageForFocus];
+        if (targetQuill) {
+          targetQuill.focus();
+          targetQuill.setSelection(targetCaretPos, 0);
         }
       }, 0);
     }
@@ -334,10 +380,10 @@ export default function Center() {
       if (targetPage > pageIndex) {
         // Focus next page with calculated caret position
         setTimeout(() => {
-          const nextTextarea = pageRefs.current[targetPage];
-          if (nextTextarea) {
-            nextTextarea.focus();
-            nextTextarea.setSelectionRange(targetCaret, targetCaret);
+          const nextQuill = quillInstances.current[targetPage];
+          if (nextQuill) {
+            nextQuill.focus();
+            nextQuill.setSelection(targetCaret, 0);
           }
         }, 0);
       } else {
@@ -464,20 +510,12 @@ export default function Center() {
           className="center-document"
           style={{ top: `${70 + idx * (1123 + 30)}px` }}
         >
-          <textarea
+          <div
             ref={el => (pageRefs.current[idx] = el)}
             className="document-input"
-            placeholder={idx === 0 ? "문서를 입력하세요" : ""}
-            value={content}
-            onChange={(e) => {
-              const textarea = e.target;
-              const caretPos = textarea.selectionStart;
-              handlePageChange(idx, textarea.value, caretPos);
-            }}
-            style={{ fontSize: `${fontSize}px` }}
           />
         </div>
-      ))}
+      ))}  
       </div>
       <div
         ref={measureRef}
