@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import cameraIcon from '../assets/icons/camera.png';
 import { deleteUser } from '../apis/userApi';
+import { logout } from '../apis/authApi';
 import '../styles/design.css';
 import '../styles/mypage.css';
 
@@ -25,11 +26,15 @@ export default function Mypage() {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('user_id');
-    alert('로그아웃되었습니다.');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      alert('로그아웃되었습니다.');
+      navigate('/');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      alert('로그아웃 중 오류가 발생했습니다.');
+    }
   };
 
   const handleDeleteUser = async () => {

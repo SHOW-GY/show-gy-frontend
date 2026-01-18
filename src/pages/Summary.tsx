@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/animations.css';
+import { uploadDocument } from '../apis/documentApi';
 import fileuploadIcon from '../assets/icons/fileupload.png';
 import searchIcon from '../assets/icons/search.png';
 
@@ -10,6 +11,8 @@ export default function Summary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userNickname, setUserNickname] = useState<string>('사용자');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,8 +42,72 @@ export default function Summary() {
     }
   };
 
-  const handleSearch = () => {
-    navigate('/summary/center');
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setSearchQuery(e.target.value);
+    // 높이 자동 조절 (최대 5줄)
+    e.target.style.height = 'auto';
+    const maxHeight = 135; // 약 5줄 (18px * 1.5 * 5 = 135px)
+    e.target.style.height = `${Math.min(e.target.scrollHeight, maxHeight)}px`;
+  };
+
+  const handleSearch = async () => {
+    try {
+      const hasText = searchQuery.trim().length > 0;
+      const hasFile = !!uploadedFile;
+
+      if (!hasText && !hasFile) {
+        setErrorMessage('문서를 업로드 또는 작성해주세요');
+        return;
+      }
+      setErrorMessage('');
+
+      setIsUploading(true);
+      
+      if (hasFile) {
+        // 필수 쿼리 파라미터 준비 (team_id, approver_id, creator_id)
+        const userStr = localStorage.getItem('user');
+        let creatorId: string | undefined;
+        try {
+          if (userStr) {
+            const u = JSON.parse(userStr);
+            creatorId = u?.user_id;
+          }
+        } catch {}
+
+        let teamId = localStorage.getItem('team_id') || undefined;
+        let approverId = localStorage.getItem('approver_id') || undefined;
+
+        // 필요한 경우 간단히 입력 받기 (임시)
+        if (!teamId) {
+          teamId = window.prompt('team_id가 필요합니다. 값을 입력해주세요.') || undefined;
+          if (teamId) localStorage.setItem('team_id', teamId);
+        }
+        if (!approverId) {
+          approverId = window.prompt('approver_id가 필요합니다. 값을 입력해주세요.') || undefined;
+          if (approverId) localStorage.setItem('approver_id', approverId);
+        }
+
+        const res = await uploadDocument(uploadedFile!, {
+          team_id: teamId,
+          approver_id: approverId,
+          creator_id: creatorId,
+        });
+        console.log('문서 업로드 결과:', res);
+      }
+
+      if (hasText) {
+        // 텍스트를 Center 초기 문서로 전달
+        localStorage.setItem('draft_document', searchQuery);
+      }
+      
+      // state로도 전달
+      navigate('/summary/center', { state: { draftText: hasText ? searchQuery : null } });
+    } catch (err) {
+      console.error('문서 업로드 실패:', err);
+      alert('문서 업로드에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsUploading(false);
+    }
   };
   return (
     <div className="home-container">
@@ -65,12 +132,20 @@ export default function Summary() {
           </div>
         )}
         <div className="summary-input-shell">
-          <input
-            type="text"
+          <textarea
             className="summary-text-input"
             placeholder="문서 링크 또는 제목을 입력하세요"
             aria-label="문서 링크 또는 제목을 입력하세요"
+            value={searchQuery}
+            onChange={handleInputChange}
+            rows={1}
+            style={{ resize: 'none' }}
           />
+          {errorMessage && (
+            <div className="summary-error-msg" aria-live="polite" style={{ color: '#ff6b6b', marginTop: 8 }}>
+              {errorMessage}
+            </div>
+          )}
           <div className="summary-upload-group">
             <input 
               type="file" 

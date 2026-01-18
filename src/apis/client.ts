@@ -2,7 +2,6 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 
 // FastAPI Server URL
 const BACKEND_URL = 'http://127.0.0.1:8000';
-const AI_URL = 'http://127.0.0.1:7000';
 
 // Axios Instacne
 const apiClient: AxiosInstance = axios.create({

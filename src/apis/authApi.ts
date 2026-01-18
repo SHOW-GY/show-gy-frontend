@@ -38,6 +38,9 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
     const userInfo = {
       user_id: response.data.data.user_id,
       nickname: response.data.data.nickname,
+      first_name: response.data.data.first_name,
+      last_name: response.data.data.last_name,
+      email: response.data.data.email,
       register_date: response.data.data.register_date
     };
     localStorage.setItem('user', JSON.stringify(userInfo));

@@ -362,31 +362,34 @@ html, body {
 .summary-input-shell {
   position: relative;
   width: 942px;
-  height: 77px;
   background: #FFF7F7;
   border-radius: 50px;
   border: 1px #0D0101 solid;
   box-sizing: border-box;
   z-index: 5;
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 16px 24px;
+  gap: 8px;
 }
 
 .summary-text-input {
   width: 100%;
-  height: 100%;
-  padding: 0 180px 0 32px;
+  padding: 8px 0;
   border: none;
   outline: none;
   background: transparent;
   font-size: 18px;
   color: #0D0101;
-  border-radius: 50px;
+  border-radius: 10px;
   box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1.5;
+  overflow-y: auto;
 }
 
 .summary-upload-group {
-  position: absolute;
-  right: 24px;
-  top: 16px;
+  position: relative;
   width: 110px;
   height: 45px;
   display: flex;

@@ -3,12 +3,16 @@ import fileupload from '../assets/icons/fileupload.png';
 import search from '../assets/icons/search.png';
 import { sendChatbotMessage } from '../apis/chatbotApi';
 
+interface ChatbotProps {
+  documentText?: string;
+}
+
 interface ChatMessage {
   role: 'user' | 'bot';
   content: string;
 }
 
-export default function Chatbot() {
+export default function Chatbot({ documentText }: ChatbotProps) {
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'bot', content: 'SHOW-GY 챗봇입니다.\n무엇을 도와드릴까요?' }
@@ -34,7 +38,13 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const response = await sendChatbotMessage(userMessage);
+      const response = await sendChatbotMessage(
+        userMessage,
+        'default',
+        'chat',
+        documentText || '',
+        ''
+      );
       
       // 봇 응답 추가
       const botResponse = response.session || '응답을 받았습니다.';

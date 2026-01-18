@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import Header from '../components/Header';
@@ -7,7 +8,7 @@ import Feedback from '../helper/Feedback';
 import Search from '../helper/Search';
 import '../styles/design.css';
 import '../styles/animations.css';
-import fontIcon from '../assets/icons/font.png';
+// import fontIcon from '../assets/icons/font.png';
 import plus from '../assets/icons/plus.png';
 import minus from '../assets/icons/minus.png';
 import B from '../assets/icons/B.png';
@@ -26,12 +27,23 @@ Size.whitelist = ['small', false, 'large', 'huge'];
 Quill.register(Size, true);
 
 export default function Center() {
+  const location = useLocation();
   const [fontSize, setFontSize] = useState(13);
   const [selectedFont, setSelectedFont] = useState('sans-serif');
   const [sidebarTop, setSidebarTop] = useState(70);
   const [panelTop, setPanelTop] = useState(70);
   const [activeTab, setActiveTab] = useState<'chat' | 'feedback' | 'reference'>('chat');
-  const [pages, setPages] = useState<string[]>(['']);
+  const [typingText, setTypingText] = useState<string>('');
+  const [isTyping, setIsTyping] = useState(false);
+  const hasTypingStartedRef = useRef(false);
+  
+  // Initialize pages with draft if available
+  const getInitialPages = () => {
+    // 타이핑 효과를 위해 빈 페이지로 시작
+    return [''];
+  };
+  
+  const [pages, setPages] = useState<string[]>(getInitialPages());
   const [isBoldActive, setIsBoldActive] = useState(false);
   const [isUnderlineActive, setIsUnderlineActive] = useState(false);
   const [isItalicActive, setIsItalicActive] = useState(false);
@@ -44,6 +56,7 @@ export default function Center() {
   const measureRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const quillInstances = useRef<(Quill | null)[]>([]);
+  const suppressChangeRef = useRef<boolean[]>([]);
   const lastFocusedQuillRef = useRef<Quill | null>(null);
   const documentContainerRef = useRef<HTMLDivElement | null>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 60, width: 79 });
@@ -56,7 +69,63 @@ export default function Center() {
     reference: null,
   });
 
-  // Initialize Quill editors when pages change
+  // Typing effect initialization
+  useEffect(() => {
+    if (hasTypingStartedRef.current) return;
+    
+    const stateDraft = (location.state as any)?.draftText;
+    const draft = stateDraft || localStorage.getItem('draft_document');
+    
+    if (draft && draft.trim()) {
+      setTypingText(draft);
+      setIsTyping(true);
+      hasTypingStartedRef.current = true;
+      localStorage.removeItem('draft_document');
+    }
+  }, [location.state]);
+
+  // Typing effect execution
+  useEffect(() => {
+    if (!isTyping || !typingText) return;
+    
+    const quill = quillInstances.current[0];
+    if (!quill) return;
+    
+    let currentIndex = 0;
+    const typingSpeed = 30; // ms per character
+    let typingTimeoutId: number | null = null;
+    
+    const typeNextChar = () => {
+      if (currentIndex < typingText.length) {
+        const char = typingText[currentIndex];
+        const currentLength = quill.getLength();
+        
+        if (char === '\n') {
+          quill.insertText(currentLength - 1, '\n');
+        } else {
+          quill.insertText(currentLength - 1, char);
+        }
+        
+        currentIndex++;
+        typingTimeoutId = window.setTimeout(typeNextChar, typingSpeed);
+      } else {
+        // 타이핑 완료 - Quill 내용을 pages에 저장
+        const html = quill.root.innerHTML;
+        setPages([html]);
+        setIsTyping(false);
+      }
+    };
+    
+    typeNextChar();
+    
+    return () => {
+      if (typingTimeoutId !== null) {
+        clearTimeout(typingTimeoutId);
+      }
+    };
+  }, [isTyping, typingText, quillInstances.current[0]]);
+
+  // Initialize Quill editors when pages length changes (structure changes only)
   useEffect(() => {
     pageRefs.current.forEach((el, idx) => {
       if (el && !quillInstances.current[idx]) {
@@ -70,9 +139,14 @@ export default function Center() {
         });
         
         quill.root.style.fontSize = `${fontSize}px`;
+        quill.root.style.paddingTop = '8px';
         
         if (pages[idx]) {
+          suppressChangeRef.current[idx] = true;
           quill.clipboard.dangerouslyPasteHTML(pages[idx]);
+          setTimeout(() => { 
+            suppressChangeRef.current[idx] = false;
+          }, 0);
         }
 
         quill.on('selection-change', () => {
@@ -91,6 +165,7 @@ export default function Center() {
         });
 
         quill.on('text-change', () => {
+          if (suppressChangeRef.current[idx]) return;
           const html = quill.root.innerHTML;
           const selection = quill.getSelection();
           const caretPos = selection ? selection.index : 0;
@@ -101,6 +176,31 @@ export default function Center() {
       }
     });
   }, [pages.length]);
+
+  // Keep Quill editors in sync with pages content
+  useEffect(() => {
+    // 타이핑 중에는 동기화 스킵
+    if (isTyping) return;
+    
+    pages.forEach((html, idx) => {
+      // 현재 변경 중인 페이지는 스킵
+      if (suppressChangeRef.current[idx]) return;
+      
+      const quill = quillInstances.current[idx];
+      if (!quill) return;
+      const current = quill.root.innerHTML;
+      if (current !== html) {
+        suppressChangeRef.current[idx] = true;
+        quill.clipboard.dangerouslyPasteHTML(html);
+        setTimeout(() => { suppressChangeRef.current[idx] = false; }, 0);
+      }
+    });
+    // Clean up extra quill instances if pages shrank
+    for (let i = pages.length; i < quillInstances.current.length; i++) {
+      quillInstances.current[i] = null;
+    }
+    quillInstances.current.length = pages.length;
+  }, [pages, isTyping]);
 
   // Update font size for all Quill instances
   useEffect(() => {
@@ -119,7 +219,7 @@ export default function Center() {
   const fits = (text: string): boolean => {
     const measure = measureRef.current;
     if (!measure) return true;
-    measure.textContent = text;
+    measure.innerHTML = text;
     return measure.scrollHeight <= pageHeight;
   };
 
@@ -489,6 +589,20 @@ export default function Center() {
 
   // Handle page text change
   const handlePageChange = (pageIndex: number, newText: string, caretPos: number) => {
+    // 타이핑 중에는 페이지 분할하지 않고 내용만 업데이트
+    if (isTyping) {
+      suppressChangeRef.current[pageIndex] = true;
+      setPages(prevPages => {
+        const newPages = [...prevPages];
+        newPages[pageIndex] = newText;
+        return newPages;
+      });
+      setTimeout(() => {
+        suppressChangeRef.current[pageIndex] = false;
+      }, 0);
+      return;
+    }
+    
     const prevText = pages[pageIndex];
     const wasInsertion = newText.length > prevText.length;
     const wasDeletion = newText.length < prevText.length;
@@ -501,7 +615,6 @@ export default function Center() {
       const [head, tail] = splitToFit(newText);
       
       // Calculate where the caret should be
-      // If caret is beyond the head, it should move to next page
       let targetPage = pageIndex;
       let targetCaret = caretPos;
       
@@ -511,7 +624,16 @@ export default function Center() {
         targetCaret = caretPos - head.length;
       }
       
-      // Update pages
+      // Update pages - only modify current and next pages
+      suppressChangeRef.current[pageIndex] = true;
+      
+      // 새 페이지를 추가하는 경우 미리 suppressChangeRef 배열 확장
+      if (pageIndex + 1 >= pages.length) {
+        suppressChangeRef.current[pageIndex + 1] = true;
+      } else {
+        suppressChangeRef.current[pageIndex + 1] = true;
+      }
+      
       setPages(prevPages => {
         const newPages = [...prevPages];
         newPages[pageIndex] = head;
@@ -526,9 +648,13 @@ export default function Center() {
         return newPages;
       });
       
+      setTimeout(() => {
+        suppressChangeRef.current[pageIndex] = false;
+        suppressChangeRef.current[pageIndex + 1] = false;
+      }, 0);
+      
       // Move caret to appropriate position
       if (targetPage > pageIndex) {
-        // Focus next page with calculated caret position
         setTimeout(() => {
           const nextQuill = quillInstances.current[targetPage];
           if (nextQuill) {
@@ -536,78 +662,65 @@ export default function Center() {
             nextQuill.setSelection(targetCaret, 0);
           }
         }, 0);
-      } else {
-        // Stay on current page
-        reflowFrom(pageIndex + 1); // Reflow starting from next page
       }
     } else if (wasDeletion) {
-      // Update current page
+      // Simply update current page, don't pull from next page for pages > 0
+      // This prevents affecting previous pages
+      suppressChangeRef.current[pageIndex] = true;
+      
+      setPages(prevPages => {
+        const newPages = [...prevPages];
+        newPages[pageIndex] = newText;
+        
+        // Only for first page, try to pull from next page
+        if (pageIndex === 0 && pageIndex + 1 < newPages.length) {
+          const combined = newPages[pageIndex] + newPages[pageIndex + 1];
+          if (fits(combined)) {
+            newPages[pageIndex] = combined;
+            newPages.splice(pageIndex + 1, 1);
+          } else {
+            const [head, tail] = splitToFit(combined);
+            newPages[pageIndex] = head;
+            newPages[pageIndex + 1] = tail;
+            
+            if (newPages[pageIndex + 1] === '' || newPages[pageIndex + 1] === '<p><br></p>') {
+              newPages.splice(pageIndex + 1, 1);
+            }
+          }
+        }
+        
+        return newPages;
+      });
+      
+      setTimeout(() => {
+        suppressChangeRef.current[pageIndex] = false;
+      }, 0);
+    } else {
+      // Normal update, no overflow
+      suppressChangeRef.current[pageIndex] = true;
+      
       setPages(prevPages => {
         const newPages = [...prevPages];
         newPages[pageIndex] = newText;
         return newPages;
       });
       
-      // Pull from next page if there's space
       setTimeout(() => {
-        setPages(prevPages => {
-          const newPages = [...prevPages];
-          
-          // Try to pull from next page
-          if (pageIndex + 1 < newPages.length && !fits(newPages[pageIndex] + newPages[pageIndex + 1])) {
-            const combined = newPages[pageIndex] + newPages[pageIndex + 1];
-            const [head, tail] = splitToFit(combined);
-            newPages[pageIndex] = head;
-            newPages[pageIndex + 1] = tail;
-            
-            // Remove empty pages
-            if (newPages[pageIndex + 1] === '') {
-              newPages.splice(pageIndex + 1, 1);
-            }
-          } else if (pageIndex + 1 < newPages.length) {
-            // Can fit everything, merge
-            const combined = newPages[pageIndex] + newPages[pageIndex + 1];
-            if (fits(combined)) {
-              newPages[pageIndex] = combined;
-              newPages.splice(pageIndex + 1, 1);
-            } else {
-              const [head, tail] = splitToFit(combined);
-              newPages[pageIndex] = head;
-              newPages[pageIndex + 1] = tail;
-              
-              if (newPages[pageIndex + 1] === '') {
-                newPages.splice(pageIndex + 1, 1);
-              }
-            }
-          }
-          
-          // Remove trailing empty pages
-          while (newPages.length > 1 && newPages[newPages.length - 1] === '') {
-            newPages.pop();
-          }
-          
-          // Ensure at least one page
-          if (newPages.length === 0) {
-            newPages.push('');
-          }
-          
-          return newPages;
-        });
+        suppressChangeRef.current[pageIndex] = false;
       }, 0);
-    } else {
-      // Normal update, no overflow
-      setPages(prevPages => {
-        const newPages = [...prevPages];
-        newPages[pageIndex] = newText;
-        return newPages;
-      });
     }
   };
 
   // Panel content renderer
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
-      return <Chatbot />;
+      const htmlToText = (html: string) => {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        return (div.textContent || div.innerText || '').trim();
+      };
+      const documentText = pages.map(htmlToText).join('\n\n');
+      return <Chatbot documentText={documentText} />;
     }
 
     if (activeTab === 'feedback') {

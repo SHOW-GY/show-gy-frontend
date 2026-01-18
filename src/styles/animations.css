@@ -44,6 +44,26 @@
   }
 }
 
+/* Typing cursor blink animation */
+@keyframes typingCursorBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Typing text reveal animation */
+@keyframes typingReveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Sidebar slide in from left */
 @keyframes sidebarSlideInLeft {
   from {
