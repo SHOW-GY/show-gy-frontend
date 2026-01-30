@@ -44,7 +44,7 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-size: 17px;
-  font-family: 'Cafe24Decobox', system-ui, sans-serif;
+  font-family: 'MoveSans', system-ui, sans-serif;
   font-weight: 600;
   text-transform: uppercase;
   line-height: 35.84px;
@@ -63,7 +63,7 @@ html, body {
 .menu-home {
   color: #F8FAFC;
   font-size: 15px;
-  font-family: 'Cafe24Decobox', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
   transition: transform 0.2s;
@@ -87,7 +87,7 @@ html, body {
 .menu-summary {
   color: #F8FAFC;
   font-size: 14px;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
   transition: transform 0.2s;
@@ -100,7 +100,7 @@ html, body {
 .menu-library {
   color: #F8FAFC;
   font-size: 14px;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
   transition: transform 0.2s;
@@ -112,7 +112,7 @@ html, body {
 
 .menu-login {
   color: #F8FAFC;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   font-size: 14px;
   left : 200px;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
@@ -217,7 +217,7 @@ html, body {
 .hero-title-main {
   color: #F8FAFC;
   font-size: 40px;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   font-weight: 900;
   text-transform: uppercase;
   line-height: 115.20px;
@@ -230,7 +230,7 @@ html, body {
 .hero-title-sub {
   color: #F8FAFC;
   font-size: 40px;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   line-height: 115.20px;
@@ -256,7 +256,7 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-size: 22.40px;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   line-height: 35.84px;
@@ -281,7 +281,7 @@ html, body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-size: 22.40px;
-  font-family: 'YeogiOttaeJalnan', system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   font-weight: 400;
   text-transform: uppercase;
   line-height: 35.84px;
@@ -478,9 +478,9 @@ html, body {
 }
 
 .center-sidebar {
-  width: 100px;
+  width: 120px;
   height: 690px;
-  left: calc(50% - 730px);
+  left: calc(50% - 750px);
   top: 70px;
   position: absolute;
   background: rgba(139, 92, 246, 0.05);
@@ -825,7 +825,7 @@ html, body {
 .panel-tab {
   color: #F8FAFC;
   font-size: 22px;
-  font-family: 'Anonymous Pro', monospace, system-ui, sans-serif;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
   font-weight: 400;
   text-align: center;
   cursor: pointer;
@@ -903,7 +903,7 @@ html, body {
   margin: 0;
   color: white;
   font-size: 15px;
-  font-family: 'Anonymous Pro', monospace, system-ui, sans-serif;
+  font-family: 'Nanum Gothic', monospace, system-ui, sans-serif;
   font-weight: 400;
   line-height: 22px;
 }
@@ -1001,14 +1001,14 @@ html, body {
 }
 
 .sidebar-selector-button {
+  height : 30px;
   padding: 6px 10px;
   border: 1px solid #404050;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   color: #fff;
   font-family: Inter, system-ui, sans-serif;
-  width: 70px;
+  width : 150px;
   text-align: center;
 }
 
@@ -1017,15 +1017,15 @@ html, body {
 }
 
 .sidebar-selector-dropdown {
+  width : 150px;
   position: absolute;
   top: 100%;
   left: 0;
   background: #1e1e2e;
   border: 1px solid #404050;
-  border-radius: 4px;
-  min-width: 80px;
   z-index: 1000;
-  margin-top: 4px;
+  min-height : 400px;
+  overflow-y : auto;
 }
 
 .sidebar-selector-item {
@@ -1049,6 +1049,7 @@ html, body {
 .sidebar-selector-item:last-child {
   border-bottom: none;
 }
+
 
 /* ------ Margin Settings Modal ------ */
 .margin-settings-overlay {
@@ -1261,4 +1262,48 @@ html, body {
   background: #f5f5f5;
 }
 
+/* 이미지 기본: 가운데 정렬-friendly */
+.ql-editor img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 8px auto;
+}
 
+/* 좌/우 배치용 클래스 */
+.ql-editor img.img-float-left {
+  float: left;
+  margin: 0 12px 12px 0;
+  display: inline;
+}
+
+.ql-editor img.img-float-right {
+  float: right;
+  margin: 0 0 12px 12px;
+  display: inline;
+}
+
+/* Quill 기본 정렬 클래스가 달린 블록 안의 이미지 정렬 */
+.ql-editor .ql-align-center img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ql-editor .ql-align-right img {
+  display: block;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.ql-editor .ql-align-left img {
+  display: block;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* 혹시 p 대신 다른 블록에 align이 붙는 케이스 대비 */
+.ql-editor img {
+  max-width: 100%;
+  height: auto;
+}

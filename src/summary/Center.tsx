@@ -1,18 +1,27 @@
+// React 라이브러리 호출
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import {marked} from "marked";
+
+// Quill 라이브러리 호출
 import Quill from 'quill';
+import * as ImageResize from "quill-image-resize-module-plus";
+import {marked} from "marked";
 import QuillMarkdown from 'quilljs-markdown';
 import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import { pdfExporter } from "quill-to-pdf";
 import { saveAs } from "file-saver";
+
+// 컴포넌트 호출
 import Header from '../components/Header';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
 import Search from '../helper/Search';
 import '../styles/design.css';
 import '../styles/animations.css';
+import "../assets/font/font.css";
+
+// 아이콘 호출
 import plus from '../assets/icons/plus.png';
 import minus from '../assets/icons/minus.png';
 import B from '../assets/icons/B.png';
@@ -25,10 +34,37 @@ import triangle from '../assets/icons/inverse_triangle.png';
 import save from '../assets/icons/save.png';
 import settings from '../assets/icons/settings.png';
 
+
 // Quill size 포맷 설정
-const Size = Quill.import('formats/size') as any;
-Size.whitelist = ['small', false, 'large', 'huge'];
-Quill.register(Size, true);
+const Q: any = (Quill as any).default ?? Quill;
+const Size = Q.import("formats/size");
+Size.whitelist = ["small", false, "large", "huge"];
+Q.register(Size, true);
+
+// Font 등록
+const Font = Q.import("formats/font");
+Font.whitelist = [
+  "sans-serif", "serif", "monospace",
+  "YeogiOttaeJalnan",
+  "OngleipParkDahyeon",
+  "KerisKeduLine",
+  "Yeongwol",
+  "Hamchorom",
+  "Simple",
+  "DaeguDongseongRo",
+  "GiantsInline",
+  "Mujeokhaebeong",
+  "Cafe24Decobox",
+  "NanumGothic",
+  "NanumMyeongjo",
+  "JejuGothic",
+  "BlackHanSans",
+];
+Q.register(Font, true);
+
+// Image Resize 모듈 등록 (default export 꼬임 방지)
+const ImageResizeModule = (ImageResize as any).default ?? ImageResize;
+Quill.register("modules/imageResize", ImageResizeModule);
 
 export default function Center() {
   const location = useLocation();
@@ -41,21 +77,10 @@ export default function Center() {
   const [isTyping, setIsTyping] = useState(false);
   const hasTypingStartedRef = useRef(false);
   const [alignOpen, setAlignOpen] = useState(false);
-  const [activePageIdx, setActivePageIdx] = useState(0);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<Quill | null>(null);
   const suppressRef = useRef(false);
-  const loadedOnceRef = useRef(false);
-  const [docHtml, setDocHtml] = useState<string>('');
-
-  
-  // Initialize pages with draft if available
-  const getInitialPages = () => {
-    // 타이핑 효과를 위해 빈 페이지로 시작
-    return [''];
-  };
-  
-  const [pages, setPages] = useState<string[]>(getInitialPages());
+  const [fontLabel, setFontLabel] = useState(""); // sidebar-selector-button에 보여줄 텍스트
   const [isBoldActive, setIsBoldActive] = useState(false);
   const [isUnderlineActive, setIsUnderlineActive] = useState(false);
   const [isItalicActive, setIsItalicActive] = useState(false);
@@ -65,10 +90,6 @@ export default function Center() {
   const [showLineSpacingPicker, setShowLineSpacingPicker] = useState(false);
   const [showMarginSettings, setShowMarginSettings] = useState(false);
   const [margins, setMargins] = useState({ top: 71, bottom: 71, left: 83, right: 83 });
-  const measureRef = useRef<HTMLDivElement | null>(null);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const quillInstances = useRef<(Quill | null)[]>([]);
-  const suppressChangeRef = useRef<boolean[]>([]);
   const lastFocusedQuillRef = useRef<Quill | null>(null);
   const documentContainerRef = useRef<HTMLDivElement | null>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 60, width: 79 });
@@ -81,20 +102,23 @@ export default function Center() {
     reference: null,
   });
   const draftText = (location.state as any)?.draftText as string | null;
-  
-  // Center에서 draftText 받아서 pages[0]에 html로 세팅
+
+  // Draft text 적용
   useEffect(() => {
     if (!draftText) return;
+    const quill = quillRef.current;
+    if (!quill) return;
 
     (async () => {
       const html = await marked.parse(draftText);
-      console.log("MD -> HTML:", html);
 
-      setPages(prev => {
-        const next = prev.length ? [...prev] : [""];
-        next[0] = html;
-        return next;
-      });
+      suppressRef.current = true;
+      quill.setText(""); // 기존 내용 비우고
+      quill.clipboard.dangerouslyPasteHTML(html);
+      setTimeout(() => (suppressRef.current = false), 0);
+
+      // 라벨/버튼 상태 한번 갱신하고 싶으면
+      quill.focus();
     })();
   }, [draftText]);
 
@@ -126,7 +150,6 @@ export default function Center() {
         return;
       }
       
-      // quill.setText("");
       let currentIndex = 0;
       const typingSpeed = 30;
 
@@ -157,23 +180,24 @@ export default function Center() {
     };
   }, [isTyping, typingText]);
 
-
-  // ✅ 1) Quill 생성: 딱 한 번만
+  // 1) Quill 생성: 딱 한 번만
   useEffect(() => {
     const el = editorRef.current;
     if (!el || quillRef.current) return;
 
     const quill = new Quill(el, {
       theme: "snow",
-      modules: { toolbar: false },
+      modules: { 
+        toolbar: false,
+        imageResize: {},
+      },
       formats: [
         "size", "font", "bold", "italic", "underline", "color", "align",
-        "header", "list", "blockquote", "code-block",
+        "header", "list", "blockquote", "code-block", "image",
       ],
-      placeholder: "", // 원하면 "문서를 입력하세요"
+      placeholder: "",
     });
 
-    // 마크다운 입력 UX
     new QuillMarkdown(quill, {});
 
     quill.root.style.paddingTop = "8px";
@@ -181,26 +205,36 @@ export default function Center() {
     quillRef.current = quill;
     lastFocusedQuillRef.current = quill;
 
-    // 포맷 버튼 활성화 갱신
-    quill.on("selection-change", () => {
+    quill.on("selection-change", (range) => {
       lastFocusedQuillRef.current = quill;
-      const selection = quill.getSelection();
-      if (selection) {
-        const format = quill.getFormat(selection.index, selection.length);
-        setIsBoldActive(!!format.bold);
-        setIsUnderlineActive(!!format.underline);
-        setIsItalicActive(!!format.italic);
-      } else {
+
+      if (!range) {
         setIsBoldActive(false);
         setIsUnderlineActive(false);
         setIsItalicActive(false);
+        setFontLabel(""); 
+        return;
+      }
+
+      // 기존: 버튼 활성화
+      const format = quill.getFormat(range.index, range.length);
+      setIsBoldActive(!!format.bold);
+      setIsUnderlineActive(!!format.underline);
+      setIsItalicActive(!!format.italic);
+
+      if (range.length === 0) {
+        const f = (quill.getFormat(range).font as string | undefined) ?? "";
+        setFontLabel(f);
+      } else {
+        const uniform = getUniformFontInRange(quill, range.index, range.length);
+        setFontLabel(uniform ?? "");
       }
     });
+
 
     // 문서 변경 저장
     quill.on("text-change", () => {
       if (suppressRef.current) return;
-      setDocHtml(quill.root.innerHTML);
     });
 
     return () => {
@@ -208,34 +242,12 @@ export default function Center() {
     };
   }, []);
 
-  // ✅ 2) fontSize 변경 시: 단일 Quill에만 적용
+  // 2) fontSize 변경 시: 단일 Quill에만 적용
   useEffect(() => {
     const q = quillRef.current;
     if (!q) return;
     q.root.style.fontSize = `${fontSize}px`;
   }, [fontSize]);
-
-  // ✅ 3) 초기 docHtml 로드: 딱 1번만 (새로고침/불러오기용)
-  useEffect(() => {
-    const q = quillRef.current;
-    if (!q) return;
-    if (loadedOnceRef.current) return;
-
-    if (docHtml && docHtml.trim().length > 0) {
-      suppressRef.current = true;
-      q.clipboard.dangerouslyPasteHTML(docHtml);
-      setTimeout(() => (suppressRef.current = false), 0);
-    }
-
-    loadedOnceRef.current = true;
-  }, [docHtml]);
-
-
-
-
-  // Constants
-  const pageHeight = 1123 - 71 * 4;
-  const contentWidth = 793 - 83 * 2;
 
   // Font size handlers
   const handleIncrease = () => {
@@ -323,16 +335,24 @@ export default function Center() {
   // Font handler
   const handleFont = (font: string) => {
     const quill = lastFocusedQuillRef.current;
-    if (quill) {
-      const selection = quill.getSelection();
-      if (selection && selection.length > 0) {
-        quill.formatText(selection.index, selection.length, 'font', font);
-      }
-      quill.focus();
+    if (!quill) return;
+
+    const selection = quill.getSelection();
+    if (!selection) return;
+
+    if (selection.length > 0) {
+      quill.formatText(selection.index, selection.length, 'font', font);
+    } else {
+      // ✅ 커서만 있을 때: 다음 입력부터 적용
+      quill.format('font', font);
     }
+
+    quill.focus();
     setSelectedFont(font);
     setShowFontPicker(false);
+    setFontLabel(font);
   };
+
 
   // Size selector handler
   const handleSize = (size: string) => {
@@ -446,69 +466,6 @@ export default function Center() {
     };
   }, [activeTab]);
 
-  // Update measureRef when fontSize changes
-  useEffect(() => {
-    const measure = measureRef.current;
-    if (!measure) return;
-    measure.style.width = `${contentWidth}px`;
-    measure.style.fontSize = `${fontSize}px`;
-  }, [fontSize, contentWidth]);
-
-
-  // Repaginate all pages when font size changes
-  useEffect(() => {
-    // Combine all pages into one text
-    const fullText = pages.join('');
-    
-    // Re-split from scratch
-    const measure = measureRef.current;
-    if (!measure) return;
-    
-    const result: string[] = [];
-    let start = 0;
-    
-    while (start < fullText.length) {
-      let low = start + 1;
-      let high = fullText.length;
-      let fitIndex = start + 1;
-      
-      while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        const candidate = fullText.slice(start, mid);
-        measure.textContent = candidate;
-        if (measure.scrollHeight <= pageHeight) {
-          fitIndex = mid;
-          low = mid + 1;
-        } else {
-          high = mid - 1;
-        }
-      }
-      
-      result.push(fullText.slice(start, fitIndex));
-      start = fitIndex;
-    }
-    
-    if (result.length === 0) {
-      setPages(['']);
-    } else {
-      setPages(result);
-    }
-  }, [fontSize]); // Only trigger on fontSize change
-
-  // Quill 생성할 때 "포커스 감지"로 activePageIdx 갱신
-  useEffect(() => {
-    pageRefs.current.forEach((el, idx) => {
-      if (el && !quillInstances.current[idx]) {
-        const quill = new Quill(el, { /* ... */ });
-        quillInstances.current[idx] = quill;
-
-        quill.on("selection-change", (range) => {
-          if (range) setActivePageIdx(idx);
-        });
-      }
-    });
-  }, [pages, fontSize /* 필요한 것들 */]);
-
   // 정렬 적용 함수
   const applyAlign = (value: "left" | "center" | "right") => {
     const quill = lastFocusedQuillRef.current ?? quillRef.current;
@@ -525,31 +482,33 @@ export default function Center() {
 
   // Markdown 적용 함수
   const applyMarkdown = async (md: string) => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
     const html = await marked.parse(md);
 
-    setPages(prev => {
-      const next = prev.length ? [...prev] : [""];
-      next[0] = html;
-      return next;
-    });
+    suppressRef.current = true;
+    quill.setText("");
+    quill.clipboard.dangerouslyPasteHTML(html);
+    setTimeout(() => (suppressRef.current = false), 0);
+
+    quill.focus();
   };
 
   // Panel content renderer
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
-      const htmlToText = (html: string) => {
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        return (div.textContent || div.innerText || '').trim();
-      };
-      const documentText = pages.map(htmlToText).join('\n\n');
+      const quill = quillRef.current;
+      const html = quill?.root?.innerHTML ?? "";
+
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      const documentText = (div.textContent || div.innerText || "").trim();
+
       return <Chatbot documentText={documentText} />;
     }
 
-    if (activeTab === 'feedback') {
-      return <Feedback />;
-    }
-
+    if (activeTab === 'feedback') return <Feedback />;
     return <Search />;
   };
 
@@ -558,16 +517,75 @@ export default function Center() {
     const quill = quillRef.current;
     if (!quill) return;
 
-    // ✅ quill의 raw content (Delta)
+    // quill의 raw content (Delta)
     const delta = quill.getContents();
 
-    // ✅ PDF 생성 (Blob 반환)
+    // PDF 생성 (Blob 반환)
     const blob = await pdfExporter.generatePdf(delta);
 
-    // ✅ 다운로드
+    // 다운로드
     saveAs(blob as Blob, "document.pdf");
   };
 
+  // 주어진 범위 내에서 단일 폰트인지 확인하는 유틸리티 함수
+  const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
+    const contents = quill.getContents(index, length);
+    const fonts = new Set<string>();
+
+    for (const op of contents.ops || []) {
+      if (typeof op.insert !== "string") continue;
+
+      const f = (op.attributes as any)?.font ?? "__DEFAULT__";
+      fonts.add(f);
+
+      if (fonts.size > 1) return null;
+    }
+
+    const only = [...fonts][0];
+    if (!only || only === "__DEFAULT__") return null;
+    return only;
+  };
+
+  // CSS 텍스트에서 font-family 추출 유틸리티 함수
+  const parseFontFamiliesFromCssText = (cssText: string) => {
+    // @font-face 블록에서 font-family:'...' 만 뽑는다
+    const families = new Set<string>();
+    const re = /@font-face\s*{[^}]*font-family\s*:\s*['"]([^'"]+)['"][^}]*}/gms;
+
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(cssText)) !== null) {
+      families.add(m[1]);
+    }
+    return Array.from(families);
+  };
+
+  // Font 목록
+  const FONT_LIST = [
+    { key: 'sans-serif', label: 'Sans Serif', cssFamily: 'sans-serif' },
+    { key: 'serif', label: 'Serif', cssFamily: 'serif' },
+    { key: 'monospace', label: 'Monospace', cssFamily: 'monospace' },
+
+    { key: 'YeogiOttaeJalnan', label: '잘난체', cssFamily: "'YeogiOttaeJalnan'" },
+    { key: 'OngleipParkDahyeon', label: '박다현체', cssFamily: "'OngleipParkDahyeon'" },
+    { key: 'KerisKeduLine', label: '케리스케두', cssFamily: "'KerisKeduLine'" },
+    { key: 'Yeongwol', label: '영월', cssFamily: "'Yeongwol'" },
+    { key: 'Hamchorom', label: '함초롬바탕', cssFamily: "'Hamchorom'" },
+    { key: 'Simple', label: '단조', cssFamily: "'Simple'" },
+    { key: 'DaeguDongseongRo', label: '대구동성로', cssFamily: "'DaeguDongseongRo'" },
+    { key: 'GiantsInline', label: '롯데자이언츠', cssFamily: "'GiantsInline'" },
+    { key: 'Mujeokhaebeong', label: '무적해병', cssFamily: "'Mujeokhaebeong'" },
+    { key: 'Cafe24Decobox', label: '카페24데코', cssFamily: "'Cafe24Decobox'" },
+
+    { key: 'NanumGothic', label: '나눔고딕', cssFamily: "'Nanum Gothic', sans-serif" },
+    { key: 'NanumMyeongjo', label: '나눔명조', cssFamily: "'Nanum Myeongjo', serif" },
+    { key: 'JejuGothic', label: '제주고딕', cssFamily: "'Jeju Gothic', sans-serif" },
+    { key: 'BlackHanSans', label: '검은고딕', cssFamily: "'Black Han Sans', sans-serif" },
+  ] as const;
+
+
+  const currentFontLabel = 
+    FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.label ?? "Font";
+  
   // Render
   return (
     <div className="center-container">
@@ -596,22 +614,42 @@ export default function Center() {
             className="sidebar-selector-button"
             onClick={() => setShowFontPicker(!showFontPicker)}
           >
-            {selectedFont === 'sans-serif' ? 'Sans' : selectedFont === 'serif' ? 'Serif' : 'Mono'}
+            {currentFontLabel}
           </div>
           {showFontPicker && (
             <div className="sidebar-selector-dropdown">
-              {['sans-serif', 'serif', 'monospace'].map(font => (
+              {/* Font Selector */}
+              <div className="sidebar-selector-container">
                 <div
-                  key={font}
-                  className={`sidebar-selector-item ${selectedFont === font ? 'selected' : ''}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleFont(font);
+                  className="sidebar-selector-button"
+                  onClick={() => setShowFontPicker(v => !v)}
+                  style={{
+                    fontFamily:
+                      FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.cssFamily ?? 'sans-serif',
                   }}
                 >
-                  {font === 'sans-serif' ? 'Sans Serif' : font === 'serif' ? 'Serif' : 'Monospace'}
+                  {currentFontLabel}
                 </div>
-              ))}
+
+                {showFontPicker && (
+                  <div className="sidebar-selector-dropdown">
+                    {FONT_LIST.map(f => (
+                      <div
+                        key={f.key}
+                        className={`sidebar-selector-item ${selectedFont === f.key ? 'selected' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleFont(f.key);
+                        }}
+                        style={{ fontFamily: f.cssFamily }}  // ✅ 미리보기
+                      >
+                        {f.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
         </div>
@@ -763,20 +801,6 @@ export default function Center() {
           <div ref={editorRef} className="document-input" />
         </div>
       </div>
-
-      <div
-        ref={measureRef}
-        style={{
-          position: 'absolute',
-          left: -99999,
-          top: -99999,
-          width: 627,
-          fontFamily: 'Inter, system-ui, sans-serif',
-          lineHeight: 1.5,
-          whiteSpace: 'pre-wrap',
-          visibility: 'hidden',
-        }}
-      />
 
       <div className="center-panel" style={{ top: `${panelTop}px` }}>
         <div className="panel-tabs" ref={tabsContainerRef}>
