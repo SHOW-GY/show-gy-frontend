@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { marked } from "marked";
+import Quill from 'quill';
+import QuillMarkdown from 'quilljs-markdown';
+import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
+import 'quill/dist/quill.snow.css';
 import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/animations.css';
@@ -14,7 +19,9 @@ export default function Summary() {
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const navigate = useNavigate();
+  const quillInstances = useRef<(Quill | null)[]>([]);
 
+  // 사용자 정보 로드
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -27,6 +34,7 @@ export default function Summary() {
     }
   }, []);
 
+  // 파일 선택 핸들러
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -34,6 +42,7 @@ export default function Summary() {
     }
   };
 
+  // 파일 제거 핸들러
   const handleFileRemove = () => {
     setUploadedFile(null);
     const fileInput = document.getElementById('summary-file-input') as HTMLInputElement;
@@ -42,14 +51,15 @@ export default function Summary() {
     }
   };
 
+  // 텍스트 입력 핸들러
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSearchQuery(e.target.value);
-    // 높이 자동 조절 (최대 5줄)
     e.target.style.height = 'auto';
-    const maxHeight = 135; // 약 5줄 (18px * 1.5 * 5 = 135px)
+    const maxHeight = 135;
     e.target.style.height = `${Math.min(e.target.scrollHeight, maxHeight)}px`;
   };
 
+  // 검색/업로드 핸들러
   const handleSearch = async () => {
     try {
       const hasText = searchQuery.trim().length > 0;
@@ -94,13 +104,12 @@ export default function Summary() {
         });
         console.log('문서 업로드 결과:', res);
       }
-
+      
+      // 요약 페이지로 이동
       if (hasText) {
-        // 텍스트를 Center 초기 문서로 전달
         localStorage.setItem('draft_document', searchQuery);
       }
       
-      // state로도 전달
       navigate('/summary/center', { state: { draftText: hasText ? searchQuery : null } });
     } catch (err) {
       console.error('문서 업로드 실패:', err);
@@ -109,6 +118,18 @@ export default function Summary() {
       setIsUploading(false);
     }
   };
+
+  const insertMarkdownToQuill = async (md: string, pageIdx = 0) => {
+    const quill = quillInstances.current[pageIdx];
+    if (!quill) return;
+
+    // Markdown -> HTML
+    const html = await marked.parse(md);
+
+
+    quill.clipboard.dangerouslyPasteHTML(html);
+  };
+
   return (
     <div className="home-container">
       <div className="noise-large"></div>
@@ -134,8 +155,8 @@ export default function Summary() {
         <div className="summary-input-shell">
           <textarea
             className="summary-text-input"
-            placeholder="문서 링크 또는 제목을 입력하세요"
-            aria-label="문서 링크 또는 제목을 입력하세요"
+            placeholder="문서 내용을 입력하세요."
+            aria-label="문서 내용을 입력하세요"
             value={searchQuery}
             onChange={handleInputChange}
             rows={1}

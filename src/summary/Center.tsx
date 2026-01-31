@@ -1,14 +1,29 @@
+// React 라이브러리 호출
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+
+// Quill 라이브러리 호출
 import Quill from 'quill';
+import * as ImageResize from "quill-image-resize-module-plus";
+import {marked} from "marked";
+import QuillMarkdown from 'quilljs-markdown';
+import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
+import { pdfExporter } from "quill-to-pdf";
+import { saveAs } from "file-saver";
+import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
+import html2pdf from "html2pdf.js";
+
+// 컴포넌트 호출
 import Header from '../components/Header';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
 import Search from '../helper/Search';
 import '../styles/design.css';
 import '../styles/animations.css';
-// import fontIcon from '../assets/icons/font.png';
+import "../assets/font/font.css";
+
+// 아이콘 호출
 import plus from '../assets/icons/plus.png';
 import minus from '../assets/icons/minus.png';
 import B from '../assets/icons/B.png';
@@ -21,10 +36,37 @@ import triangle from '../assets/icons/inverse_triangle.png';
 import save from '../assets/icons/save.png';
 import settings from '../assets/icons/settings.png';
 
+
 // Quill size 포맷 설정
-const Size = Quill.import('formats/size') as any;
-Size.whitelist = ['small', false, 'large', 'huge'];
-Quill.register(Size, true);
+const Q: any = (Quill as any).default ?? Quill;
+const Size = Q.import("formats/size");
+Size.whitelist = ["small", false, "large", "huge"];
+Q.register(Size, true);
+
+// Font 등록
+const Font = Q.import("formats/font");
+Font.whitelist = [
+  "sans-serif", "serif", "monospace",
+  "YeogiOttaeJalnan",
+  "OngleipParkDahyeon",
+  "KerisKeduLine",
+  "Yeongwol",
+  "Hamchorom",
+  "Simple",
+  "DaeguDongseongRo",
+  "GiantsInline",
+  "Mujeokhaebeong",
+  "Cafe24Decobox",
+  "NanumGothic",
+  "NanumMyeongjo",
+  "JejuGothic",
+  "BlackHanSans",
+];
+Q.register(Font, true);
+
+// Image Resize 모듈 등록 (default export 꼬임 방지)
+const ImageResizeModule = (ImageResize as any).default ?? ImageResize;
+Quill.register("modules/imageResize", ImageResizeModule);
 
 export default function Center() {
   const location = useLocation();
@@ -36,14 +78,11 @@ export default function Center() {
   const [typingText, setTypingText] = useState<string>('');
   const [isTyping, setIsTyping] = useState(false);
   const hasTypingStartedRef = useRef(false);
-  
-  // Initialize pages with draft if available
-  const getInitialPages = () => {
-    // 타이핑 효과를 위해 빈 페이지로 시작
-    return [''];
-  };
-  
-  const [pages, setPages] = useState<string[]>(getInitialPages());
+  const [alignOpen, setAlignOpen] = useState(false);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<Quill | null>(null);
+  const suppressRef = useRef(false);
+  const [fontLabel, setFontLabel] = useState(""); // sidebar-selector-button에 보여줄 텍스트
   const [isBoldActive, setIsBoldActive] = useState(false);
   const [isUnderlineActive, setIsUnderlineActive] = useState(false);
   const [isItalicActive, setIsItalicActive] = useState(false);
@@ -53,10 +92,6 @@ export default function Center() {
   const [showLineSpacingPicker, setShowLineSpacingPicker] = useState(false);
   const [showMarginSettings, setShowMarginSettings] = useState(false);
   const [margins, setMargins] = useState({ top: 71, bottom: 71, left: 83, right: 83 });
-  const measureRef = useRef<HTMLDivElement | null>(null);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const quillInstances = useRef<(Quill | null)[]>([]);
-  const suppressChangeRef = useRef<boolean[]>([]);
   const lastFocusedQuillRef = useRef<Quill | null>(null);
   const documentContainerRef = useRef<HTMLDivElement | null>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 60, width: 79 });
@@ -68,6 +103,27 @@ export default function Center() {
     feedback: null,
     reference: null,
   });
+  const draftText = (location.state as any)?.draftText as string | null;
+  const [exportHtml, setExportHtml] = useState<string>("");
+
+  // Draft text 적용
+  useEffect(() => {
+    if (!draftText) return;
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    (async () => {
+      const html = await marked.parse(draftText);
+
+      suppressRef.current = true;
+      quill.setText(""); // 기존 내용 비우고
+      quill.clipboard.dangerouslyPasteHTML(html);
+      setTimeout(() => (suppressRef.current = false), 0);
+
+      // 라벨/버튼 상태 한번 갱신하고 싶으면
+      quill.focus();
+    })();
+  }, [draftText]);
 
   // Typing effect initialization
   useEffect(() => {
@@ -84,248 +140,117 @@ export default function Center() {
     }
   }, [location.state]);
 
-  // Typing effect execution
   useEffect(() => {
     if (!isTyping || !typingText) return;
-    
-    const quill = quillInstances.current[0];
-    if (!quill) return;
-    
-    let currentIndex = 0;
-    const typingSpeed = 30; // ms per character
+
     let typingTimeoutId: number | null = null;
-    
-    const typeNextChar = () => {
-      if (currentIndex < typingText.length) {
-        const char = typingText[currentIndex];
-        const currentLength = quill.getLength();
-        
-        if (char === '\n') {
-          quill.insertText(currentLength - 1, '\n');
-        } else {
-          quill.insertText(currentLength - 1, char);
-        }
-        
-        currentIndex++;
-        typingTimeoutId = window.setTimeout(typeNextChar, typingSpeed);
-      } else {
-        // 타이핑 완료 - Quill 내용을 pages에 저장
-        const html = quill.root.innerHTML;
-        setPages([html]);
-        setIsTyping(false);
+    let cancelled = false;
+
+    const waitForQuillAndStart = () => {
+      const quill = quillRef.current;
+      if (!quill) {
+        typingTimeoutId = window.setTimeout(waitForQuillAndStart, 50);
+        return;
       }
+      
+      let currentIndex = 0;
+      const typingSpeed = 30;
+
+      const typeNextChar = () => {
+        if (cancelled) return;
+
+        if (currentIndex < typingText.length) {
+          const char = typingText[currentIndex];
+          const insertAt = quill.getLength() - 1;
+
+          quill.insertText(insertAt, char);
+          currentIndex++;
+
+          typingTimeoutId = window.setTimeout(typeNextChar, typingSpeed);
+        } else {
+          setIsTyping(false);
+        }
+      };
+
+      typeNextChar();
     };
-    
-    typeNextChar();
-    
+
+    waitForQuillAndStart();
+
     return () => {
-      if (typingTimeoutId !== null) {
-        clearTimeout(typingTimeoutId);
-      }
+      cancelled = true;
+      if (typingTimeoutId !== null) clearTimeout(typingTimeoutId);
     };
-  }, [isTyping, typingText, quillInstances.current[0]]);
+  }, [isTyping, typingText]);
 
-  // Initialize Quill editors when pages length changes (structure changes only)
+  // 1) Quill 생성: 딱 한 번만
   useEffect(() => {
-    pageRefs.current.forEach((el, idx) => {
-      if (el && !quillInstances.current[idx]) {
-        const quill = new Quill(el, {
-          theme: 'snow',
-          modules: {
-            toolbar: false,
-          },
-          formats: ['size', 'font', 'bold', 'italic', 'underline', 'color'],
-          placeholder: idx === 0 ? '문서를 입력하세요' : '',
-        });
-        
-        quill.root.style.fontSize = `${fontSize}px`;
-        quill.root.style.paddingTop = '8px';
-        
-        if (pages[idx]) {
-          suppressChangeRef.current[idx] = true;
-          quill.clipboard.dangerouslyPasteHTML(pages[idx]);
-          setTimeout(() => { 
-            suppressChangeRef.current[idx] = false;
-          }, 0);
-        }
+    const el = editorRef.current;
+    if (!el || quillRef.current) return;
 
-        quill.on('selection-change', () => {
-          lastFocusedQuillRef.current = quill;
-          const selection = quill.getSelection();
-          if (selection) {
-            const format = quill.getFormat(selection.index, selection.length);
-            setIsBoldActive(!!format.bold);
-            setIsUnderlineActive(!!format.underline);
-            setIsItalicActive(!!format.italic);
-          } else {
-            setIsBoldActive(false);
-            setIsUnderlineActive(false);
-            setIsItalicActive(false);
-          }
-        });
-
-        quill.on('text-change', () => {
-          if (suppressChangeRef.current[idx]) return;
-          const html = quill.root.innerHTML;
-          const selection = quill.getSelection();
-          const caretPos = selection ? selection.index : 0;
-          handlePageChange(idx, html, caretPos);
-        });
-        
-        quillInstances.current[idx] = quill;
-      }
+    const quill = new Quill(el, {
+      theme: "snow",
+      modules: { 
+        toolbar: false,
+        imageResize: {},
+      },
+      formats: [
+        "size", "font", "bold", "italic", "underline", "color", "align",
+        "header", "list", "blockquote", "code-block", "image",
+      ],
+      placeholder: "",
     });
-  }, [pages.length]);
 
-  // Keep Quill editors in sync with pages content
-  useEffect(() => {
-    // 타이핑 중에는 동기화 스킵
-    if (isTyping) return;
-    
-    pages.forEach((html, idx) => {
-      // 현재 변경 중인 페이지는 스킵
-      if (suppressChangeRef.current[idx]) return;
-      
-      const quill = quillInstances.current[idx];
-      if (!quill) return;
-      const current = quill.root.innerHTML;
-      if (current !== html) {
-        suppressChangeRef.current[idx] = true;
-        quill.clipboard.dangerouslyPasteHTML(html);
-        setTimeout(() => { suppressChangeRef.current[idx] = false; }, 0);
+    new QuillMarkdown(quill, {});
+
+    quill.root.style.paddingTop = "8px";
+
+    quillRef.current = quill;
+    lastFocusedQuillRef.current = quill;
+
+    quill.on("selection-change", (range) => {
+      lastFocusedQuillRef.current = quill;
+
+      if (!range) {
+        setIsBoldActive(false);
+        setIsUnderlineActive(false);
+        setIsItalicActive(false);
+        setFontLabel(""); 
+        return;
       }
-    });
-    // Clean up extra quill instances if pages shrank
-    for (let i = pages.length; i < quillInstances.current.length; i++) {
-      quillInstances.current[i] = null;
-    }
-    quillInstances.current.length = pages.length;
-  }, [pages, isTyping]);
 
-  // Update font size for all Quill instances
-  useEffect(() => {
-    quillInstances.current.forEach(quill => {
-      if (quill) {
-        quill.root.style.fontSize = `${fontSize}px`;
-      }
-    });
-  }, [fontSize]);
+      // 기존: 버튼 활성화
+      const format = quill.getFormat(range.index, range.length);
+      setIsBoldActive(!!format.bold);
+      setIsUnderlineActive(!!format.underline);
+      setIsItalicActive(!!format.italic);
 
-  // Constants
-  const pageHeight = 1123 - 71 * 4;
-  const contentWidth = 793 - 83 * 2;
-
-  // Helper: Check if text fits within one page
-  const fits = (text: string): boolean => {
-    const measure = measureRef.current;
-    if (!measure) return true;
-    measure.innerHTML = text;
-    return measure.scrollHeight <= pageHeight;
-  };
-
-  // Helper: Split text into [head, tail] where head is max prefix that fits
-  const splitToFit = (text: string): [string, string] => {
-    if (fits(text)) {
-      return [text, ''];
-    }
-    
-    let low = 0;
-    let high = text.length;
-    let fitIndex = 0;
-    
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const candidate = text.slice(0, mid);
-      if (fits(candidate)) {
-        fitIndex = mid;
-        low = mid + 1;
+      if (range.length === 0) {
+        const f = (quill.getFormat(range).font as string | undefined) ?? "";
+        setFontLabel(f);
       } else {
-        high = mid - 1;
+        const uniform = getUniformFontInRange(quill, range.index, range.length);
+        setFontLabel(uniform ?? "");
       }
-    }
-    
-    return [text.slice(0, fitIndex), text.slice(fitIndex)];
-  };
-
-  // Helper: Reflow pages starting from pageIndex
-  const reflowFrom = (pageIndex: number, targetPageForFocus?: number, targetCaretPos?: number) => {
-    setPages(prevPages => {
-      const newPages = [...prevPages];
-      
-      // Ensure pageIndex is valid
-      if (pageIndex < 0 || pageIndex >= newPages.length) {
-        return prevPages;
-      }
-      
-      // Start reflowing from the edited page
-      let i = pageIndex;
-      while (i < newPages.length) {
-        const currentPage = newPages[i];
-        
-        // Check if current page overflows
-        if (!fits(currentPage)) {
-          const [head, tail] = splitToFit(currentPage);
-          newPages[i] = head;
-          
-          // Push overflow to next page
-          if (i + 1 < newPages.length) {
-            newPages[i + 1] = tail + newPages[i + 1];
-          } else {
-            newPages.push(tail);
-          }
-          i++;
-        } else {
-          // Current page fits, try to pull from next page
-          if (i + 1 < newPages.length) {
-            const combined = currentPage + newPages[i + 1];
-            const [head, tail] = splitToFit(combined);
-            
-            // Only pull if we can fit more
-            if (head.length > currentPage.length) {
-              newPages[i] = head;
-              newPages[i + 1] = tail;
-              
-              // If next page is now empty, remove it
-              if (newPages[i + 1] === '') {
-                newPages.splice(i + 1, 1);
-              } else {
-                i++;
-              }
-            } else {
-              // Can't pull more, move to next page
-              i++;
-            }
-          } else {
-            // Last page and it fits, done
-            break;
-          }
-        }
-      }
-      
-      // Remove trailing empty pages
-      while (newPages.length > 1 && newPages[newPages.length - 1] === '') {
-        newPages.pop();
-      }
-      
-      // Ensure at least one page
-      if (newPages.length === 0) {
-        newPages.push('');
-      }
-      
-      return newPages;
     });
 
-    // Handle focus and caret positioning after state update
-    if (targetPageForFocus !== undefined && targetCaretPos !== undefined) {
-      setTimeout(() => {
-        const targetQuill = quillInstances.current[targetPageForFocus];
-        if (targetQuill) {
-          targetQuill.focus();
-          targetQuill.setSelection(targetCaretPos, 0);
-        }
-      }, 0);
-    }
-  };
+
+    // 문서 변경 저장
+    quill.on("text-change", () => {
+      if (suppressRef.current) return;
+    });
+
+    return () => {
+      quillRef.current = null;
+    };
+  }, []);
+
+  // 2) fontSize 변경 시: 단일 Quill에만 적용
+  useEffect(() => {
+    const q = quillRef.current;
+    if (!q) return;
+    q.root.style.fontSize = `${fontSize}px`;
+  }, [fontSize]);
 
   // Font size handlers
   const handleIncrease = () => {
@@ -413,16 +338,24 @@ export default function Center() {
   // Font handler
   const handleFont = (font: string) => {
     const quill = lastFocusedQuillRef.current;
-    if (quill) {
-      const selection = quill.getSelection();
-      if (selection && selection.length > 0) {
-        quill.formatText(selection.index, selection.length, 'font', font);
-      }
-      quill.focus();
+    if (!quill) return;
+
+    const selection = quill.getSelection();
+    if (!selection) return;
+
+    if (selection.length > 0) {
+      quill.formatText(selection.index, selection.length, 'font', font);
+    } else {
+      // ✅ 커서만 있을 때: 다음 입력부터 적용
+      quill.format('font', font);
     }
+
+    quill.focus();
     setSelectedFont(font);
     setShowFontPicker(false);
+    setFontLabel(font);
   };
+
 
   // Size selector handler
   const handleSize = (size: string) => {
@@ -430,11 +363,8 @@ export default function Center() {
     if (quill) {
       const selection = quill.getSelection();
       if (selection && selection.length > 0) {
-        // normal은 false로, 나머지는 그대로 적용
         const sizeValue = size === 'normal' ? false : size;
-        // formatText 대신 format 메서드를 사용하여 적용
         quill.formatText(selection.index, selection.length, 'size', sizeValue);
-        // 선택 유지 및 포커스
         setTimeout(() => {
           quill.setSelection(selection.index, selection.length);
         }, 0);
@@ -539,199 +469,52 @@ export default function Center() {
     };
   }, [activeTab]);
 
-  // Update measureRef when fontSize changes
-  useEffect(() => {
-    const measure = measureRef.current;
-    if (!measure) return;
-    measure.style.width = `${contentWidth}px`;
-    measure.style.fontSize = `${fontSize}px`;
-  }, [fontSize, contentWidth]);
+  // 정렬 적용 함수
+  const applyAlign = (value: "left" | "center" | "right") => {
+    const quill = lastFocusedQuillRef.current ?? quillRef.current;
+    if (!quill) return;
 
-  // Repaginate all pages when font size changes
-  useEffect(() => {
-    // Combine all pages into one text
-    const fullText = pages.join('');
-    
-    // Re-split from scratch
-    const measure = measureRef.current;
-    if (!measure) return;
-    
-    const result: string[] = [];
-    let start = 0;
-    
-    while (start < fullText.length) {
-      let low = start + 1;
-      let high = fullText.length;
-      let fitIndex = start + 1;
-      
-      while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        const candidate = fullText.slice(start, mid);
-        measure.textContent = candidate;
-        if (measure.scrollHeight <= pageHeight) {
-          fitIndex = mid;
-          low = mid + 1;
-        } else {
-          high = mid - 1;
-        }
-      }
-      
-      result.push(fullText.slice(start, fitIndex));
-      start = fitIndex;
-    }
-    
-    if (result.length === 0) {
-      setPages(['']);
+    if (value === "left") {
+      quill.format("align", false);
     } else {
-      setPages(result);
+      quill.format("align", value);
     }
-  }, [fontSize]); // Only trigger on fontSize change
 
-  // Handle page text change
-  const handlePageChange = (pageIndex: number, newText: string, caretPos: number) => {
-    // 타이핑 중에는 페이지 분할하지 않고 내용만 업데이트
-    if (isTyping) {
-      suppressChangeRef.current[pageIndex] = true;
-      setPages(prevPages => {
-        const newPages = [...prevPages];
-        newPages[pageIndex] = newText;
-        return newPages;
-      });
-      setTimeout(() => {
-        suppressChangeRef.current[pageIndex] = false;
-      }, 0);
-      return;
-    }
-    
-    const prevText = pages[pageIndex];
-    const wasInsertion = newText.length > prevText.length;
-    const wasDeletion = newText.length < prevText.length;
-    
-    // Check if new text overflows
-    const overflows = !fits(newText);
-    
-    if (overflows && wasInsertion) {
-      // Split the text that fits vs overflow
-      const [head, tail] = splitToFit(newText);
-      
-      // Calculate where the caret should be
-      let targetPage = pageIndex;
-      let targetCaret = caretPos;
-      
-      if (caretPos > head.length) {
-        // Caret is in the overflow area, move to next page
-        targetPage = pageIndex + 1;
-        targetCaret = caretPos - head.length;
-      }
-      
-      // Update pages - only modify current and next pages
-      suppressChangeRef.current[pageIndex] = true;
-      
-      // 새 페이지를 추가하는 경우 미리 suppressChangeRef 배열 확장
-      if (pageIndex + 1 >= pages.length) {
-        suppressChangeRef.current[pageIndex + 1] = true;
-      } else {
-        suppressChangeRef.current[pageIndex + 1] = true;
-      }
-      
-      setPages(prevPages => {
-        const newPages = [...prevPages];
-        newPages[pageIndex] = head;
-        
-        // Push tail to next page
-        if (pageIndex + 1 < newPages.length) {
-          newPages[pageIndex + 1] = tail + newPages[pageIndex + 1];
-        } else {
-          newPages.push(tail);
-        }
-        
-        return newPages;
-      });
-      
-      setTimeout(() => {
-        suppressChangeRef.current[pageIndex] = false;
-        suppressChangeRef.current[pageIndex + 1] = false;
-      }, 0);
-      
-      // Move caret to appropriate position
-      if (targetPage > pageIndex) {
-        setTimeout(() => {
-          const nextQuill = quillInstances.current[targetPage];
-          if (nextQuill) {
-            nextQuill.focus();
-            nextQuill.setSelection(targetCaret, 0);
-          }
-        }, 0);
-      }
-    } else if (wasDeletion) {
-      // Simply update current page, don't pull from next page for pages > 0
-      // This prevents affecting previous pages
-      suppressChangeRef.current[pageIndex] = true;
-      
-      setPages(prevPages => {
-        const newPages = [...prevPages];
-        newPages[pageIndex] = newText;
-        
-        // Only for first page, try to pull from next page
-        if (pageIndex === 0 && pageIndex + 1 < newPages.length) {
-          const combined = newPages[pageIndex] + newPages[pageIndex + 1];
-          if (fits(combined)) {
-            newPages[pageIndex] = combined;
-            newPages.splice(pageIndex + 1, 1);
-          } else {
-            const [head, tail] = splitToFit(combined);
-            newPages[pageIndex] = head;
-            newPages[pageIndex + 1] = tail;
-            
-            if (newPages[pageIndex + 1] === '' || newPages[pageIndex + 1] === '<p><br></p>') {
-              newPages.splice(pageIndex + 1, 1);
-            }
-          }
-        }
-        
-        return newPages;
-      });
-      
-      setTimeout(() => {
-        suppressChangeRef.current[pageIndex] = false;
-      }, 0);
-    } else {
-      // Normal update, no overflow
-      suppressChangeRef.current[pageIndex] = true;
-      
-      setPages(prevPages => {
-        const newPages = [...prevPages];
-        newPages[pageIndex] = newText;
-        return newPages;
-      });
-      
-      setTimeout(() => {
-        suppressChangeRef.current[pageIndex] = false;
-      }, 0);
-    }
+    setAlignOpen(false);
+  };
+
+  // Markdown 적용 함수
+  const applyMarkdown = async (md: string) => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    const html = await marked.parse(md);
+
+    suppressRef.current = true;
+    quill.setText("");
+    quill.clipboard.dangerouslyPasteHTML(html);
+    setTimeout(() => (suppressRef.current = false), 0);
+
+    quill.focus();
   };
 
   // Panel content renderer
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
-      const htmlToText = (html: string) => {
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        return (div.textContent || div.innerText || '').trim();
-      };
-      const documentText = pages.map(htmlToText).join('\n\n');
+      const quill = quillRef.current;
+      const html = quill?.root?.innerHTML ?? "";
+
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      const documentText = (div.textContent || div.innerText || "").trim();
+
       return <Chatbot documentText={documentText} />;
     }
 
-    if (activeTab === 'feedback') {
-      return <Feedback />;
-    }
-
+    if (activeTab === 'feedback') return <Feedback />;
     return <Search />;
   };
 
-<<<<<<< Updated upstream
-=======
   // Center 컴포넌트 내부에 추가
   const exportPdf = async () => {
     const quill = quillRef.current;
@@ -926,7 +709,7 @@ export default function Center() {
 
     setExportHtml(html);
   };
->>>>>>> Stashed changes
+
   // Render
   return (
     <div className="center-container">
@@ -955,22 +738,42 @@ export default function Center() {
             className="sidebar-selector-button"
             onClick={() => setShowFontPicker(!showFontPicker)}
           >
-            {selectedFont === 'sans-serif' ? 'Sans' : selectedFont === 'serif' ? 'Serif' : 'Mono'}
+            {currentFontLabel}
           </div>
           {showFontPicker && (
             <div className="sidebar-selector-dropdown">
-              {['sans-serif', 'serif', 'monospace'].map(font => (
+              {/* Font Selector */}
+              <div className="sidebar-selector-container">
                 <div
-                  key={font}
-                  className={`sidebar-selector-item ${selectedFont === font ? 'selected' : ''}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleFont(font);
+                  className="sidebar-selector-button"
+                  onClick={() => setShowFontPicker(v => !v)}
+                  style={{
+                    fontFamily:
+                      FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.cssFamily ?? 'sans-serif',
                   }}
                 >
-                  {font === 'sans-serif' ? 'Sans Serif' : font === 'serif' ? 'Serif' : 'Monospace'}
+                  {currentFontLabel}
                 </div>
-              ))}
+
+                {showFontPicker && (
+                  <div className="sidebar-selector-dropdown">
+                    {FONT_LIST.map(f => (
+                      <div
+                        key={f.key}
+                        className={`sidebar-selector-item ${selectedFont === f.key ? 'selected' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleFont(f.key);
+                        }}
+                        style={{ fontFamily: f.cssFamily }}  // ✅ 미리보기
+                      >
+                        {f.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
         </div>
@@ -1044,11 +847,27 @@ export default function Center() {
         
         <div className="sidebar-sort-container">
           <img src={sort} alt="sort" className="sidebar-icon-sort" />
-          <img src={triangle} alt="triangle" className="sidebar-icon-triangle" />
+          <img src={triangle} alt="triangle" className="sidebar-icon-triangle" onClick={() => setAlignOpen((v) => !v)} />
+
+          {alignOpen && (
+            <div className="align-dropdown">
+              <button type = "button" onClick = {() => applyAlign('left')}>왼쪽 정렬</button>
+              <button type = "button" onClick = {() => applyAlign('center')}>가운데 정렬</button>
+              <button type = "button" onClick = {() => applyAlign('right')}>오른쪽 정렬</button>
+            </div>
+          )}
         </div>
         <img src={settings} alt="sidebar icon" className="sidebar-icon-10" onClick={() => setShowMarginSettings(!showMarginSettings)} style={{ cursor: 'pointer' }} />
-        <img src={save} alt="sidebar icon" className="sidebar-icon-9" />
+        <img
+          src={save}
+          alt="sidebar icon"
+          className="sidebar-icon-9"
+          onClick={exportPdf}   // ✅ 여기만 exportPdf -> exportHtmlTest
+          style={{ cursor: 'pointer' }}
+        />
       </div>
+
+
       {showMarginSettings && (
         <div className="margin-settings-overlay" onClick={() => setShowMarginSettings(false)}>
           <div className="margin-settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -1102,36 +921,18 @@ export default function Center() {
           </div>
         </div>
       )}
+
       <div ref={documentContainerRef}>
-      {pages.map((content, idx) => (
         <div
-          key={idx}
           className="center-document"
-          style={{ 
-            top: `${70 + idx * (1123 + 30)}px`,
-            padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`
+          style={{
+            top: "70px",
+            padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`,
           }}
         >
-          <div
-            ref={el => (pageRefs.current[idx] = el)}
-            className="document-input"
-          />
+          <div ref={editorRef} className="document-input" />
         </div>
-      ))}  
       </div>
-      <div
-        ref={measureRef}
-        style={{
-          position: 'absolute',
-          left: -99999,
-          top: -99999,
-          width: 627,
-          fontFamily: 'Inter, system-ui, sans-serif',
-          lineHeight: 1.5,
-          whiteSpace: 'pre-wrap',
-          visibility: 'hidden',
-        }}
-      />
 
       <div className="center-panel" style={{ top: `${panelTop}px` }}>
         <div className="panel-tabs" ref={tabsContainerRef}>
