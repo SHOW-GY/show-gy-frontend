@@ -5,8 +5,12 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   server: { port: 5173 },
+  css: {
+    devSourcemap: false,
+  },
+
   build: {
     outDir: 'docs',
     emptyOutDir: true,
   },
-})
+});

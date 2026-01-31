@@ -1,4 +1,21 @@
 /* 한글 */
+
+/* 나눔명조 */
+@import url('//fonts.googleapis.com/earlyaccess/nanummyeongjo.css');
+
+/* 나눔고딕 */
+/* src/index.css or src/styles/global.css */
+@import url("https://fonts.googleapis.com/earlyaccess/nanumgothic.css");
+
+/* 검은고딕 */
+@import url('https://fonts.googleapis.com/css?family=Black+Han+Sans:400');
+
+/* 갈무리 */
+@import url('https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
+
+/* 제주고딕 */
+@import url('//fonts.googleapis.com/earlyaccess/jejugothic.css');
+
 /* 여기어때잘난체 */
 @font-face {
     font-family: 'YeogiOttaeJalnan';
@@ -15,14 +32,6 @@
     font-display: swap;
 }
 
-/* 나눔고딕 */
-/* src/index.css or src/styles/global.css */
-@import url("https://fonts.googleapis.com/earlyaccess/nanumgothic.css");
-
-
-/* 나눔명조 */
-@import url('//fonts.googleapis.com/earlyaccess/nanummyeongjo.css');
-
 /* 케리스케두 라인 */
 @font-face {
     font-family: 'KerisKeduLine';
@@ -38,12 +47,6 @@
     font-weight: normal;
     font-display: swap;
 }
-
-/* 검은고딕 */
-@import url('https://fonts.googleapis.com/css?family=Black+Han+Sans:400');
-
-/* 갈무리 */
-@import url('https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css');
 
 /* 함초롬바탕 */
 @font-face {
@@ -83,9 +86,6 @@
     font-weight: normal;
     font-display: swap;
 }
-
-/* 제주고딕 */
-@import url('//fonts.googleapis.com/earlyaccess/jejugothic.css');
 
 /* 무적해병 */
 @font-face {

@@ -11,6 +11,8 @@ import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import { pdfExporter } from "quill-to-pdf";
 import { saveAs } from "file-saver";
+import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
+import html2pdf from "html2pdf.js";
 
 // 컴포넌트 호출
 import Header from '../components/Header';
@@ -102,6 +104,7 @@ export default function Center() {
     reference: null,
   });
   const draftText = (location.state as any)?.draftText as string | null;
+  const [exportHtml, setExportHtml] = useState<string>("");
 
   // Draft text 적용
   useEffect(() => {
@@ -517,15 +520,120 @@ export default function Center() {
     const quill = quillRef.current;
     if (!quill) return;
 
-    // quill의 raw content (Delta)
-    const delta = quill.getContents();
+    const html = quill.root.innerHTML;
 
-    // PDF 생성 (Blob 반환)
-    const blob = await pdfExporter.generatePdf(delta);
+    // 1) 캡처 대상 DOM
+    const wrapper = document.createElement("div");
+    wrapper.id = "pdf-wrapper";
+    wrapper.className = "ql-snow";
 
-    // 다운로드
-    saveAs(blob as Blob, "document.pdf");
+    // ✅ 숨김은 opacity만 (visibility 쓰면 clone에서 제외될 수 있음)
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "-10000px"; // 화면 밖으로 보내기(레이아웃은 유지)
+    wrapper.style.top = "0";
+    wrapper.style.width = "794px";
+    wrapper.style.background = "#fff";
+    wrapper.style.pointerEvents = "none";
+    wrapper.style.zIndex = "9999";
+    wrapper.style.display = "block";
+    wrapper.style.height = "auto";
+    wrapper.style.overflow = "visible";
+
+    const editor = document.createElement("div");
+    editor.className = "ql-editor";
+    editor.innerHTML = html;
+
+    // ✅ 원본 DOM에서도 높이 자동 강제
+    editor.style.setProperty("display", "block", "important");
+    editor.style.setProperty("height", "auto", "important");
+    editor.style.setProperty("min-height", "1px", "important");
+    editor.style.setProperty("overflow", "visible", "important");
+
+    editor.style.padding = `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`;
+    editor.style.fontSize = `${fontSize}px`;
+
+    wrapper.appendChild(editor);
+    document.body.appendChild(wrapper);
+
+    // 레이아웃 확정
+    void wrapper.offsetHeight;
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+    // 폰트 로드 대기
+    // @ts-ignore
+    if (document.fonts?.ready) await (document.fonts as any).ready;
+
+    // (진단용)
+    console.log("wrapper h:", wrapper.getBoundingClientRect().height);
+    console.log("editor h:", editor.getBoundingClientRect().height);
+
+    try {
+      const worker = html2pdf()
+        .from(wrapper)
+        .set({
+          margin: 10,
+          filename: "document.pdf",
+          pagebreak: { mode: ["css", "legacy"] },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            scrollY: 0,
+            windowWidth: 794,
+
+            // ✅✅✅ 핵심: clone 문서에서 강제 스타일 주입
+            onclone: (clonedDoc: Document) => {
+              // 1) clone 문서에 강제 CSS 삽입
+              const style = clonedDoc.createElement("style");
+              style.textContent = `
+                /* html2pdf clone 환경에서 0-height 방지용 강제 패치 */
+                html, body { height: auto !important; overflow: visible !important; }
+                .ql-container, .ql-snow, .ql-editor { height: auto !important; overflow: visible !important; }
+                .ql-editor { min-height: 1px !important; display: block !important; }
+                /* 혹시 flex/absolute로 높이 깨는 케이스 방지 */
+                #pdf-wrapper { position: static !important; display: block !important; }
+              `;
+              clonedDoc.head.appendChild(style);
+
+              // 2) wrapper 찾아서 "보이게" + 레이아웃 강제
+              const w = clonedDoc.getElementById("pdf-wrapper") as HTMLElement | null;
+              if (!w) return;
+
+              w.style.left = "0";
+              w.style.top = "0";
+              w.style.position = "static";
+              w.style.opacity = "1";
+              w.style.visibility = "visible";
+              w.style.display = "block";
+              w.style.height = "auto";
+              w.style.overflow = "visible";
+              w.style.background = "#fff";
+
+              const e = w.querySelector(".ql-editor") as HTMLElement | null;
+              if (e) {
+                e.style.setProperty("display", "block", "important");
+                e.style.setProperty("height", "auto", "important");
+                e.style.setProperty("min-height", "1px", "important");
+                e.style.setProperty("overflow", "visible", "important");
+              }
+            },
+          },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        } as any)
+        .toPdf();
+
+      const blob = (await worker.output("blob")) as Blob;
+      saveAs(blob, "document.pdf");
+    } finally {
+      document.body.removeChild(wrapper);
+    }
   };
+
+
+
+
+
+
 
   // 주어진 범위 내에서 단일 폰트인지 확인하는 유틸리티 함수
   const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
@@ -582,10 +690,31 @@ export default function Center() {
     { key: 'BlackHanSans', label: '검은고딕', cssFamily: "'Black Han Sans', sans-serif" },
   ] as const;
 
-
+  // 현재 선택된 폰트 라벨
   const currentFontLabel = 
     FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.label ?? "Font";
-  
+
+  // Delta를 HTML로 변환하는 유틸리티 함수
+  const deltaToHtml = (delta: any) => {
+    const ops = delta?.ops ?? [];
+    const converter = new QuillDeltaToHtmlConverter(ops, {
+      // 기본값으로 두고, 결과 보고 옵션 추가하면 됨
+      // (너 font.css가 ql-font-XXX 클래스 매핑을 갖고 있어서
+      //  class 기반 출력이 나오면 가장 좋음)
+    });
+    return converter.convert();
+  };
+
+  // HTML 내보내기 함수
+  const exportHtmlTest = () => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    const delta = quill.getContents();
+    const html = deltaToHtml(delta);
+
+    setExportHtml(html);
+  };
   // Render
   return (
     <div className="center-container">
@@ -734,8 +863,16 @@ export default function Center() {
           )}
         </div>
         <img src={settings} alt="sidebar icon" className="sidebar-icon-10" onClick={() => setShowMarginSettings(!showMarginSettings)} style={{ cursor: 'pointer' }} />
-        <img src={save} alt="sidebar icon" className="sidebar-icon-9" onClick={exportPdf} style={{ cursor: 'pointer' }} />
+        <img
+          src={save}
+          alt="sidebar icon"
+          className="sidebar-icon-9"
+          onClick={exportPdf}   // ✅ 여기만 exportPdf -> exportHtmlTest
+          style={{ cursor: 'pointer' }}
+        />
       </div>
+
+
       {showMarginSettings && (
         <div className="margin-settings-overlay" onClick={() => setShowMarginSettings(false)}>
           <div className="margin-settings-modal" onClick={(e) => e.stopPropagation()}>
