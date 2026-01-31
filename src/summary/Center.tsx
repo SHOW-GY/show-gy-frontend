@@ -730,6 +730,203 @@ export default function Center() {
     return <Search />;
   };
 
+<<<<<<< Updated upstream
+=======
+  // Center 컴포넌트 내부에 추가
+  const exportPdf = async () => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    const html = quill.root.innerHTML;
+
+    // 1) 캡처 대상 DOM
+    const wrapper = document.createElement("div");
+    wrapper.id = "pdf-wrapper";
+    wrapper.className = "ql-snow";
+
+    // ✅ 숨김은 opacity만 (visibility 쓰면 clone에서 제외될 수 있음)
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "-10000px"; // 화면 밖으로 보내기(레이아웃은 유지)
+    wrapper.style.top = "0";
+    wrapper.style.width = "794px";
+    wrapper.style.background = "#fff";
+    wrapper.style.pointerEvents = "none";
+    wrapper.style.zIndex = "9999";
+    wrapper.style.display = "block";
+    wrapper.style.height = "auto";
+    wrapper.style.overflow = "visible";
+
+    const editor = document.createElement("div");
+    editor.className = "ql-editor";
+    editor.innerHTML = html;
+
+    // ✅ 원본 DOM에서도 높이 자동 강제
+    editor.style.setProperty("display", "block", "important");
+    editor.style.setProperty("height", "auto", "important");
+    editor.style.setProperty("min-height", "1px", "important");
+    editor.style.setProperty("overflow", "visible", "important");
+
+    editor.style.padding = `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`;
+    editor.style.fontSize = `${fontSize}px`;
+
+    wrapper.appendChild(editor);
+    document.body.appendChild(wrapper);
+
+    // 레이아웃 확정
+    void wrapper.offsetHeight;
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+    // 폰트 로드 대기
+    // @ts-ignore
+    if (document.fonts?.ready) await (document.fonts as any).ready;
+
+    // (진단용)
+    console.log("wrapper h:", wrapper.getBoundingClientRect().height);
+    console.log("editor h:", editor.getBoundingClientRect().height);
+
+    try {
+      const worker = html2pdf()
+        .from(wrapper)
+        .set({
+          margin: 10,
+          filename: "document.pdf",
+          pagebreak: { mode: ["css", "legacy"] },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            scrollY: 0,
+            windowWidth: 794,
+
+            // ✅✅✅ 핵심: clone 문서에서 강제 스타일 주입
+            onclone: (clonedDoc: Document) => {
+              // 1) clone 문서에 강제 CSS 삽입
+              const style = clonedDoc.createElement("style");
+              style.textContent = `
+                /* html2pdf clone 환경에서 0-height 방지용 강제 패치 */
+                html, body { height: auto !important; overflow: visible !important; }
+                .ql-container, .ql-snow, .ql-editor { height: auto !important; overflow: visible !important; }
+                .ql-editor { min-height: 1px !important; display: block !important; }
+                /* 혹시 flex/absolute로 높이 깨는 케이스 방지 */
+                #pdf-wrapper { position: static !important; display: block !important; }
+              `;
+              clonedDoc.head.appendChild(style);
+
+              // 2) wrapper 찾아서 "보이게" + 레이아웃 강제
+              const w = clonedDoc.getElementById("pdf-wrapper") as HTMLElement | null;
+              if (!w) return;
+
+              w.style.left = "0";
+              w.style.top = "0";
+              w.style.position = "static";
+              w.style.opacity = "1";
+              w.style.visibility = "visible";
+              w.style.display = "block";
+              w.style.height = "auto";
+              w.style.overflow = "visible";
+              w.style.background = "#fff";
+
+              const e = w.querySelector(".ql-editor") as HTMLElement | null;
+              if (e) {
+                e.style.setProperty("display", "block", "important");
+                e.style.setProperty("height", "auto", "important");
+                e.style.setProperty("min-height", "1px", "important");
+                e.style.setProperty("overflow", "visible", "important");
+              }
+            },
+          },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        } as any)
+        .toPdf();
+
+      const blob = (await worker.output("blob")) as Blob;
+      saveAs(blob, "document.pdf");
+    } finally {
+      document.body.removeChild(wrapper);
+    }
+  };
+
+  // 주어진 범위 내에서 단일 폰트인지 확인하는 유틸리티 함수
+  const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
+    const contents = quill.getContents(index, length);
+    const fonts = new Set<string>();
+
+    for (const op of contents.ops || []) {
+      if (typeof op.insert !== "string") continue;
+
+      const f = (op.attributes as any)?.font ?? "__DEFAULT__";
+      fonts.add(f);
+
+      if (fonts.size > 1) return null;
+    }
+
+    const only = [...fonts][0];
+    if (!only || only === "__DEFAULT__") return null;
+    return only;
+  };
+
+  // CSS 텍스트에서 font-family 추출 유틸리티 함수
+  const parseFontFamiliesFromCssText = (cssText: string) => {
+    // @font-face 블록에서 font-family:'...' 만 뽑는다
+    const families = new Set<string>();
+    const re = /@font-face\s*{[^}]*font-family\s*:\s*['"]([^'"]+)['"][^}]*}/gms;
+
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(cssText)) !== null) {
+      families.add(m[1]);
+    }
+    return Array.from(families);
+  };
+
+  // Font 목록
+  const FONT_LIST = [
+    { key: 'sans-serif', label: 'Sans Serif', cssFamily: 'sans-serif' },
+    { key: 'serif', label: 'Serif', cssFamily: 'serif' },
+    { key: 'monospace', label: 'Monospace', cssFamily: 'monospace' },
+
+    { key: 'YeogiOttaeJalnan', label: '잘난체', cssFamily: "'YeogiOttaeJalnan'" },
+    { key: 'OngleipParkDahyeon', label: '박다현체', cssFamily: "'OngleipParkDahyeon'" },
+    { key: 'KerisKeduLine', label: '케리스케두', cssFamily: "'KerisKeduLine'" },
+    { key: 'Yeongwol', label: '영월', cssFamily: "'Yeongwol'" },
+    { key: 'Hamchorom', label: '함초롬바탕', cssFamily: "'Hamchorom'" },
+    { key: 'Simple', label: '단조', cssFamily: "'Simple'" },
+    { key: 'DaeguDongseongRo', label: '대구동성로', cssFamily: "'DaeguDongseongRo'" },
+    { key: 'GiantsInline', label: '롯데자이언츠', cssFamily: "'GiantsInline'" },
+    { key: 'Mujeokhaebeong', label: '무적해병', cssFamily: "'Mujeokhaebeong'" },
+    { key: 'Cafe24Decobox', label: '카페24데코', cssFamily: "'Cafe24Decobox'" },
+
+    { key: 'NanumGothic', label: '나눔고딕', cssFamily: "'Nanum Gothic', sans-serif" },
+    { key: 'NanumMyeongjo', label: '나눔명조', cssFamily: "'Nanum Myeongjo', serif" },
+    { key: 'JejuGothic', label: '제주고딕', cssFamily: "'Jeju Gothic', sans-serif" },
+    { key: 'BlackHanSans', label: '검은고딕', cssFamily: "'Black Han Sans', sans-serif" },
+  ] as const;
+
+  // 현재 선택된 폰트 라벨
+  const currentFontLabel = 
+    FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.label ?? "Font";
+
+  // Delta를 HTML로 변환하는 유틸리티 함수
+  const deltaToHtml = (delta: any) => {
+    const ops = delta?.ops ?? [];
+    const converter = new QuillDeltaToHtmlConverter(ops, {
+      // 기본값으로 두고, 결과 보고 옵션 추가하면 됨
+      // (너 font.css가 ql-font-XXX 클래스 매핑을 갖고 있어서
+      //  class 기반 출력이 나오면 가장 좋음)
+    });
+    return converter.convert();
+  };
+
+  // HTML 내보내기 함수
+  const exportHtmlTest = () => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    const delta = quill.getContents();
+    const html = deltaToHtml(delta);
+
+    setExportHtml(html);
+  };
+>>>>>>> Stashed changes
   // Render
   return (
     <div className="center-container">
