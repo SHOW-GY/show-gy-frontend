@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { marked } from "marked";
 import Quill from 'quill';
-import QuillMarkdown from 'quilljs-markdown';
 import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import Header from '../components/Header';

@@ -408,3 +408,141 @@
   background: rgba(139, 92, 246, 0.1);
   border-color: rgba(139, 92, 246, 0.5);
 }
+
+/* Recent Carousel Styles */
+.recent-carousel-wrapper {
+  padding: 40px 20px;
+  max-width: 1400px;
+  left : calc(50% - 450px);
+  position : absolute;
+  margin: 0 auto;
+  overflow: hidden; /* 최상위 컨테이너에서도 overflow 차단 */
+}
+
+.recent-carousel-container {
+  position: relative;
+  overflow: hidden; /* 캐러셀 영역 밖으로 나간 슬라이드 숨김 */
+}
+
+.embla {
+  overflow: hidden; /* Embla 래퍼에서 overflow 차단 */
+}
+
+.embla__viewport {
+  overflow: hidden; /* 뷰포트 밖 슬라이드가 보이지 않도록 핵심 설정 */
+  width: 100%;
+}
+
+.embla__container {
+  display: flex;
+  gap: 20px;
+  will-change: transform; /* 슬라이드 이동 시 렌더링 최적화 */
+}
+
+.embla__slide {
+  flex: 0 0 595px; /* A4 너비로 고정, 늘어나거나 줄어들지 않음 */
+  min-width: 0;
+}
+
+.recent-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+  width: 595px; /* 슬라이드 너비와 동일하게 명시적 지정 */
+  height: 842px;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* 내부 absolute 요소(별, 메뉴)를 위한 기준점만 제공 */
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+.recent-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recent-card-star {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 24px;
+  height: 24px;
+}
+
+.recent-card-menu {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 24px;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.recent-card-content {
+  margin-top: 50px;
+  flex: 1;
+}
+
+.recent-card-name {
+  font-weight: bold;
+  font-size: 18px;
+  color: #111827;
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-card-date {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.recent-card-location {
+  font-size: 13px;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.carousel-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.carousel-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.carousel-button:not(:disabled):hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.carousel-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-button-prev {
+  left: -22px; /* 캐러셀 왼쪽 끝에 배치 */
+}
+
+.carousel-button-next {
+  right: -22px; /* 캐러셀 오른쪽 끝에 배치 */
+}

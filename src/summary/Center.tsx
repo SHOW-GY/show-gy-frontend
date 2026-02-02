@@ -573,7 +573,12 @@ export default function Center() {
         .set({
           margin: 10,
           filename: "document.pdf",
-          pagebreak: { mode: ["css", "legacy"] },
+
+          pagebreak: {
+            mode: ["avoid-all", "css", "legacy"],
+            avoid: ["p", "li", "pre", "blockquote", "table", "img", "h1", "h2", "h3", "hr"],
+          },
+
           html2canvas: {
             scale: 2,
             useCORS: true,
@@ -581,46 +586,78 @@ export default function Center() {
             scrollY: 0,
             windowWidth: 794,
 
-            // ✅✅✅ 핵심: clone 문서에서 강제 스타일 주입
             onclone: (clonedDoc: Document) => {
-              // 1) clone 문서에 강제 CSS 삽입
               const style = clonedDoc.createElement("style");
               style.textContent = `
-                /* html2pdf clone 환경에서 0-height 방지용 강제 패치 */
                 html, body { height: auto !important; overflow: visible !important; }
                 .ql-container, .ql-snow, .ql-editor { height: auto !important; overflow: visible !important; }
                 .ql-editor { min-height: 1px !important; display: block !important; }
-                /* 혹시 flex/absolute로 높이 깨는 케이스 방지 */
+
+                .ql-editor p,
+                .ql-editor li,
+                .ql-editor blockquote,
+                .ql-editor pre,
+                .ql-editor table,
+                .ql-editor img,
+                .ql-editor h1,
+                .ql-editor h2,
+                .ql-editor h3 {
+                  break-inside: avoid !important;
+                  page-break-inside: avoid !important;
+                }
+
+                .ql-editor h1, .ql-editor h2, .ql-editor h3 {
+                  break-after: avoid !important;
+                  page-break-after: avoid !important;
+                }
+
                 #pdf-wrapper { position: static !important; display: block !important; }
+
+                .ql-editor ol,
+                .ql-editor ul {
+                  padding-left: 1.6em !important;
+                  margin: 0.4em 0 !important;
+                }
+
+                /* Quill은 기본 list-style을 꺼놓고 counter로 번호를 그리는데,
+                  PDF에서는 native marker를 쓰도록 강제 */
+                .ql-editor ol > li {
+                  list-style-type: decimal !important;
+                }
+                .ql-editor ul > li {
+                  list-style-type: disc !important;
+                }
+
+                /* Quill이 그리는 가짜 마커 제거 */
+                .ql-editor li::before {
+                  content: none !important;
+                }
+                .ql-editor li > .ql-ui {
+                  display: none !important;
+                }
+
+                /* 혹시 list-style이 none으로 잡혀있으면 무조건 되살림 */
+                .ql-editor ol, .ql-editor ul,
+                .ql-editor li {
+                  list-style: initial !important;
+                }
               `;
               clonedDoc.head.appendChild(style);
 
-              // 2) wrapper 찾아서 "보이게" + 레이아웃 강제
               const w = clonedDoc.getElementById("pdf-wrapper") as HTMLElement | null;
               if (!w) return;
-
-              w.style.left = "0";
-              w.style.top = "0";
               w.style.position = "static";
-              w.style.opacity = "1";
-              w.style.visibility = "visible";
               w.style.display = "block";
               w.style.height = "auto";
               w.style.overflow = "visible";
               w.style.background = "#fff";
-
-              const e = w.querySelector(".ql-editor") as HTMLElement | null;
-              if (e) {
-                e.style.setProperty("display", "block", "important");
-                e.style.setProperty("height", "auto", "important");
-                e.style.setProperty("min-height", "1px", "important");
-                e.style.setProperty("overflow", "visible", "important");
-              }
             },
           },
+
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         } as any)
         .toPdf();
+
 
       const blob = (await worker.output("blob")) as Blob;
       saveAs(blob, "document.pdf");

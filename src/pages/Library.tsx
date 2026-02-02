@@ -83,8 +83,8 @@ export default function Library() {
                 />
               </div>
 
-              {/* 새폴더 버튼 */}
-              <button className="new-folder-btn">+ 새폴더</button>
+              {/* 새폴더 버튼
+              <button className="new-folder-btn">+ 새폴더</button> */}
 
               {/* 파일 테이블 */}
               <div className="files-table">

@@ -12,6 +12,8 @@
   "dependencies": {
     "@types/quill": "^2.0.14",
     "axios": "^1.13.2",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",
     "html2pdf.js": "^0.14.0",
     "marked": "^17.0.1",
