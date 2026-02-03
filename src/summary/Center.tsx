@@ -104,10 +104,19 @@ export default function Center() {
     reference: null,
   });
   const draftText = (location.state as any)?.draftText as string | null;
+  const uploadData = (location.state as any)?.uploadData as
+    | { title?: string; text?: string; summary?: string }
+    | null;
+  const uploadErrorMessage = (location.state as any)?.uploadErrorMessage as string | null;
+  const [uploadedContent, setUploadedContent] = useState<
+    { title?: string; text?: string; summary?: string } | null
+  >(null);
   const [exportHtml, setExportHtml] = useState<string>("");
+  const [documentText, setDocumentText] = useState<string>("");
 
   // Draft text 적용
   useEffect(() => {
+    if (uploadData || uploadErrorMessage) return;
     if (!draftText) return;
     const quill = quillRef.current;
     if (!quill) return;
@@ -128,6 +137,7 @@ export default function Center() {
   // Typing effect initialization
   useEffect(() => {
     if (hasTypingStartedRef.current) return;
+    if (uploadData || uploadErrorMessage) return;
     
     const stateDraft = (location.state as any)?.draftText;
     const draft = stateDraft || localStorage.getItem('draft_document');
@@ -193,6 +203,11 @@ export default function Center() {
       modules: { 
         toolbar: false,
         imageResize: {},
+        history: {
+          delay: 1000,
+          maxStack: 200,
+          userOnly: true,
+        },
       },
       formats: [
         "size", "font", "bold", "italic", "underline", "color", "align",
@@ -238,6 +253,12 @@ export default function Center() {
     // 문서 변경 저장
     quill.on("text-change", () => {
       if (suppressRef.current) return;
+      // documentText 업데이트
+      const html = quill.root.innerHTML;
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      const text = (div.textContent || div.innerText || "").trim();
+      setDocumentText(text);
     });
 
     return () => {
@@ -469,6 +490,16 @@ export default function Center() {
     };
   }, [activeTab]);
 
+  const normalizeTitle = (raw?: string | null) => {
+    if (!raw) return "";
+    return raw.replace(/\.pdf$/i, "").trim();
+  };
+
+  const buildMarkdownWithTitle = (title?: string, body?: string) => {
+    const heading = title ? `# ${title}\n\n` : "";
+    return `${heading}${body ?? ""}`.trimEnd();
+  };
+
   // 정렬 적용 함수
   const applyAlign = (value: "left" | "center" | "right") => {
     const quill = lastFocusedQuillRef.current ?? quillRef.current;
@@ -498,17 +529,40 @@ export default function Center() {
     quill.focus();
   };
 
+  // 업로드 결과 적용 (본문/요약/오류)
+  useEffect(() => {
+    if (!uploadData && !uploadErrorMessage) return;
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    if (uploadErrorMessage) {
+      setUploadedContent(null);
+      applyMarkdown(uploadErrorMessage);
+      return;
+    }
+
+    const title = normalizeTitle(uploadData?.title);
+    const text = uploadData?.text || uploadData?.summary || "";
+    setUploadedContent({
+      title,
+      text: uploadData?.text ?? "",
+      summary: uploadData?.summary ?? "",
+    });
+    applyMarkdown(buildMarkdownWithTitle(title, text));
+  }, [uploadData, uploadErrorMessage]);
+
   // Panel content renderer
+  const extractTopicFromHtml = (html: string) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const heading = div.querySelector("h1, h2, h3");
+    return (heading?.textContent || "").trim();
+  };
+
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
-      const quill = quillRef.current;
-      const html = quill?.root?.innerHTML ?? "";
-
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      const documentText = (div.textContent || div.innerText || "").trim();
-
-      return <Chatbot documentText={documentText} />;
+      const topicId = extractTopicFromHtml(quillRef.current?.root?.innerHTML || "");
+      return <Chatbot documentText={documentText} topicId={topicId} />;
     }
 
     if (activeTab === 'feedback') return <Feedback />;
@@ -745,6 +799,22 @@ export default function Center() {
     const html = deltaToHtml(delta);
 
     setExportHtml(html);
+  };
+
+  const handleShowSummary = () => {
+    if (!uploadedContent?.summary) return;
+    const md = buildMarkdownWithTitle(uploadedContent.title, uploadedContent.summary);
+    applyMarkdown(md);
+  };
+
+  const handleUndo = () => {
+    const quill = lastFocusedQuillRef.current ?? quillRef.current;
+    quill?.history?.undo();
+  };
+
+  const handleRedo = () => {
+    const quill = lastFocusedQuillRef.current ?? quillRef.current;
+    quill?.history?.redo();
   };
 
   // Render
@@ -1001,6 +1071,32 @@ export default function Center() {
         </div>
         {renderPanelContent()}
       </div>
+      <div className="center-undo-controls">
+        <button
+          type="button"
+          className="center-undo-btn"
+          onClick={handleUndo}
+          aria-label="실행 취소"
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          className="center-undo-btn"
+          onClick={handleRedo}
+          aria-label="다시 실행"
+        >
+          →
+        </button>
+      </div>
+      <button
+        type="button"
+        className="center-summary-btn"
+        onClick={handleShowSummary}
+        disabled={!uploadedContent?.summary}
+      >
+        요약
+      </button>
       <Header activeMenu="summary" />
     </div>
   );

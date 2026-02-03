@@ -63,6 +63,7 @@ export default function Summary() {
     try {
       const hasText = searchQuery.trim().length > 0;
       const hasFile = !!uploadedFile;
+      let uploadData: { title?: string; text?: string; summary?: string } | null = null;
 
       if (!hasText && !hasFile) {
         setErrorMessage('문서를 업로드 또는 작성해주세요');
@@ -102,6 +103,14 @@ export default function Summary() {
           creator_id: creatorId,
         });
         console.log('문서 업로드 결과:', res);
+
+        const payload = (res as any)?.data ?? res;
+        const extracted = payload?.extracted_data ?? payload?.data?.extracted_data;
+        uploadData = {
+          title: payload?.title ?? payload?.data?.title ?? uploadedFile?.name,
+          text: extracted?.text ?? '',
+          summary: extracted?.summary ?? '',
+        };
       }
       
       // 요약 페이지로 이동
@@ -109,10 +118,21 @@ export default function Summary() {
         localStorage.setItem('draft_document', searchQuery);
       }
       
-      navigate('/summary/center', { state: { draftText: hasText ? searchQuery : null } });
+      navigate('/summary/center', {
+        state: {
+          draftText: hasText ? searchQuery : null,
+          uploadData,
+        },
+      });
     } catch (err) {
       console.error('문서 업로드 실패:', err);
-      alert('문서 업로드에 실패했습니다. 다시 시도해주세요.');
+      const hasText = searchQuery.trim().length > 0;
+      navigate('/summary/center', {
+        state: {
+          draftText: hasText ? searchQuery : null,
+          uploadErrorMessage: '업로드에 실패하였습니다',
+        },
+      });
     } finally {
       setIsUploading(false);
     }

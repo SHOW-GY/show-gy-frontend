@@ -540,9 +540,9 @@
 }
 
 .carousel-button-prev {
-  left: -22px; /* 캐러셀 왼쪽 끝에 배치 */
+  left: 0px; /* 캐러셀 왼쪽 끝에 배치 */
 }
 
 .carousel-button-next {
-  right: -22px; /* 캐러셀 오른쪽 끝에 배치 */
+  right: 230px; /* 캐러셀 오른쪽 끝에 배치 */
 }
