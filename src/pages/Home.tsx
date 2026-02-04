@@ -13,7 +13,7 @@ import garbage from '../assets/icons/Garbage.png';
 import collection from '../assets/image/collection.png';
 
 import erica from '../assets/image/erica.jpg';
-import lotteinovate from '../assets/image/Lotteinnovate.png';
+import lotte from '../assets/image/Lotteinovate.jpeg';
 
 export default function Home() {
   const [index, setIndex] = useState(0);
@@ -22,86 +22,82 @@ export default function Home() {
   const total = 4;
   const [stepPx, setStepPx] = useState(0);
   const [offsetPx, setOffsetPx] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const lastRef = useRef<{ step: number; offset: number } | null>(null);
+
 
   // ✅ useLayoutEffect: 카드/뷰포트 사이즈 측정
   useLayoutEffect(() => {
     const measure = () => {
       const viewport = viewportRef.current;
       const track = trackRef.current;
-      if (!viewport || !track) {
-        console.warn('❌ viewport or track is null');
-        return;
-      }
+      if (!viewport || !track) return;
 
-      const firstCard = track.querySelector<HTMLDivElement>('.service-card-bg');
-      if (!firstCard) {
-        console.warn('❌ firstCard not found');
-        return;
-      }
+      const firstCard = track.querySelector<HTMLDivElement>(".service-card-bg");
+      if (!firstCard) return;
 
-      // ✅ 카드 실제 너비 측정
       const cardW = firstCard.getBoundingClientRect().width;
       const styles = window.getComputedStyle(track);
-      const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
       const viewportW = viewport.getBoundingClientRect().width;
-      
-      // ✅ step: 카드 너비 + gap
-      const step = cardW + gap;
-      
-      // ✅ offset: viewport 중앙에 카드가 오도록 계산
-      //   (viewport는 903 + 378*2 = 1659px로, 양옆 미리보기가 378px씩)
-      const offset = (viewportW - cardW) / 2;
 
-      console.log('[measure]', { viewportW, cardW, gap, step, offset });
+      if (!cardW || !viewportW) return;
 
-      // 안전장치: cardW가 0이면 fallback
-      if (cardW === 0) {
-        console.warn('⚠️ cardW is 0! Using fallback');
-        const fallbackCardW = 903;
-        const fallbackViewportW = 1659;
-        const fallbackGap = 24;
-        setStepPx(fallbackCardW + fallbackGap);
-        setOffsetPx((fallbackViewportW - fallbackCardW) / 2);
-        return;
-      }
+      // ✅ 소수점 흔들림 줄이기 (핵심)
+      const step = Math.round((cardW + gap) * 1000) / 1000;
+      const offset = Math.round(((viewportW - cardW) / 2) * 1000) / 1000;
+
+      // ✅ 값이 진짜 바뀔 때만 setState (핵심)
+      const last = lastRef.current;
+      if (last && last.step === step && last.offset === offset) return;
+      lastRef.current = { step, offset };
 
       setStepPx(step);
       setOffsetPx(offset);
     };
 
+    // ✅ resize 폭주 방지: rAF로 1프레임에 1번만 측정
+    const onResize = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        measure();
+      });
+    };
+
     measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
+
 
   // ✅ useEffect: index 변경 시 transform 적용
   useEffect(() => {
     const track = trackRef.current;
     if (!track) {
-      console.warn('⚠️ track ref is null in useEffect');
       return;
     }
 
     if (stepPx === 0 || offsetPx === 0) {
-      console.log('⚠️ stepPx or offsetPx is 0, waiting for measure...');
       return;
     }
 
     const x = -(index * stepPx) + offsetPx;
-    console.log(`[useEffect] index=${index}, stepPx=${stepPx}, offsetPx=${offsetPx}, x=${x}px`);
     track.style.transform = `translateX(${x}px)`;
   }, [index, stepPx, offsetPx]);
 
   // ✅ 무한 루프
   const prev = () => {
     const newIndex = (index - 1 + total) % total;
-    console.log(`[prev] ${index} → ${newIndex}`);
     setIndex(newIndex);
   };
 
   const next = () => {
     const newIndex = (index + 1) % total;
-    console.log(`[next] ${index} → ${newIndex}`);
     setIndex(newIndex);
   };
 
@@ -246,8 +242,26 @@ export default function Home() {
           <div className="about-us-underline"></div>
         </div>
 
-        <div className="erica-member">
-          <div className="erica-member-img"><img src={erica} alt="Erica Member" /></div>
+        <div className="erica-member-background">
+          <div className="erica-member-info">
+            학교 : 한양대학교 에리카<br/>
+            소속 : 소프트웨어융합대학<br/>
+            주소 : 경기도 안산시 상록구 한양대학로 55<br/>
+            CONTACT : showgy0706@gmail.com
+          </div>
+          <div className="erica-member-bg"></div>
+          <img src={erica} alt="Erica Member" className="erica-member-img" />
+        </div>
+
+        <div className="lotte-member-background">
+          <div className="lotte-member-info">
+            학교 : 한양대학교 에리카<br/>
+            소속 : 소프트웨어융합대학<br/>
+            주소 : 경기도 안산시 상록구 한양대학로 55<br/>
+            CONTACT : showgy0706@gmail.com
+          </div>
+          <div className="lotte-member-bg"></div>
+          <img src={lotte} alt="Lotte Member" className="lotte-member-img" />
         </div>
       </div>
 
