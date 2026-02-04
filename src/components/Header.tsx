@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import '../styles/design.css';
+import logo from '../assets/image/logo.png';
 
 interface HeaderProps {
   activeMenu?: 'home' | 'summary' | 'library' | 'login' | 'mypage';
@@ -41,7 +42,10 @@ export default function Header({ activeMenu = 'home' }: HeaderProps) {
 
   return (
     <div className="header">
-        <div className="brand">SHOW-GY</div>
+        <div className="brand">
+          <img src={logo} alt="SHOW-GY Logo" className="brand-logo" />
+          <span className="brand-text">SHOW-GY</span>
+        </div>
 
       <div className="menu">
         <div style={{ position: 'relative' }}>

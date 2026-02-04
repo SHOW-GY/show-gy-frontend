@@ -59,7 +59,7 @@ export default function Mypage() {
   }
 
   return (
-    <div className="home-container">
+    <div className="summary-container">
       <Header activeMenu="mypage" />
       <div className="mypage-left-panel">
         <div className="mypage-avatar">
@@ -82,23 +82,6 @@ export default function Mypage() {
       </div>
 
       <div className="mypage-right-panel">
-        <div className="folder-grid">
-          <div className="folder-card">
-            <div className="folder-icon" />
-            <div className="folder-title">기본 폴더</div>
-            <div className="folder-action" />
-          </div>
-          <div className="folder-card">
-            <div className="folder-icon" />
-            <div className="folder-title">폴더 이름</div>
-            <div className="folder-action" />
-          </div>
-          <div className="folder-card">
-            <div className="folder-icon" />
-            <div className="folder-title">폴더 이름</div>
-            <div className="folder-action" />
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,123 @@
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
+
 import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/animations.css';
+import folder from '../assets/icons/folder.png';
+import pen from '../assets/icons/pen.png';
+import desktop from '../assets/image/desktop.png';
+import folder_to_desktop from '../assets/image/folder_to_desktop.png';
+import balloon from '../assets/icons/balloon.png';
+import robot from '../assets/image/robot.png';
+import garbage from '../assets/icons/Garbage.png';
+import collection from '../assets/image/collection.png';
+
+import erica from '../assets/image/erica.jpg';
+import lotteinovate from '../assets/image/Lotteinnovate.png';
 
 export default function Home() {
+  const [index, setIndex] = useState(0);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const total = 4;
+  const [stepPx, setStepPx] = useState(0);
+  const [offsetPx, setOffsetPx] = useState(0);
+
+  // ✅ useLayoutEffect: 카드/뷰포트 사이즈 측정
+  useLayoutEffect(() => {
+    const measure = () => {
+      const viewport = viewportRef.current;
+      const track = trackRef.current;
+      if (!viewport || !track) {
+        console.warn('❌ viewport or track is null');
+        return;
+      }
+
+      const firstCard = track.querySelector<HTMLDivElement>('.service-card-bg');
+      if (!firstCard) {
+        console.warn('❌ firstCard not found');
+        return;
+      }
+
+      // ✅ 카드 실제 너비 측정
+      const cardW = firstCard.getBoundingClientRect().width;
+      const styles = window.getComputedStyle(track);
+      const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      const viewportW = viewport.getBoundingClientRect().width;
+      
+      // ✅ step: 카드 너비 + gap
+      const step = cardW + gap;
+      
+      // ✅ offset: viewport 중앙에 카드가 오도록 계산
+      //   (viewport는 903 + 378*2 = 1659px로, 양옆 미리보기가 378px씩)
+      const offset = (viewportW - cardW) / 2;
+
+      console.log('[measure]', { viewportW, cardW, gap, step, offset });
+
+      // 안전장치: cardW가 0이면 fallback
+      if (cardW === 0) {
+        console.warn('⚠️ cardW is 0! Using fallback');
+        const fallbackCardW = 903;
+        const fallbackViewportW = 1659;
+        const fallbackGap = 24;
+        setStepPx(fallbackCardW + fallbackGap);
+        setOffsetPx((fallbackViewportW - fallbackCardW) / 2);
+        return;
+      }
+
+      setStepPx(step);
+      setOffsetPx(offset);
+    };
+
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  // ✅ useEffect: index 변경 시 transform 적용
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) {
+      console.warn('⚠️ track ref is null in useEffect');
+      return;
+    }
+
+    if (stepPx === 0 || offsetPx === 0) {
+      console.log('⚠️ stepPx or offsetPx is 0, waiting for measure...');
+      return;
+    }
+
+    const x = -(index * stepPx) + offsetPx;
+    console.log(`[useEffect] index=${index}, stepPx=${stepPx}, offsetPx=${offsetPx}, x=${x}px`);
+    track.style.transform = `translateX(${x}px)`;
+  }, [index, stepPx, offsetPx]);
+
+  // ✅ 무한 루프
+  const prev = () => {
+    const newIndex = (index - 1 + total) % total;
+    console.log(`[prev] ${index} → ${newIndex}`);
+    setIndex(newIndex);
+  };
+
+  const next = () => {
+    const newIndex = (index + 1) % total;
+    console.log(`[next] ${index} → ${newIndex}`);
+    setIndex(newIndex);
+  };
+
+  const getPosClass = (i:number) => {
+    let diff = i - index;
+    diff = ((diff % total) + total) % total;
+    if (diff > total / 2) diff -= total;
+
+    if (diff === 0) return 'pos-center';
+    if (diff === -1) return 'pos-left';
+    if (diff === 1) return 'pos-right';
+    if (diff === -2) return 'pos-left2';
+    if (diff === 2) return 'pos-right2';
+    return 'pos-hidden';
+  }
+
   return (
     <div className="home-container">
       <div className="noise-large"></div>
@@ -18,6 +133,123 @@ export default function Home() {
       </div>
 
       <div className="university-info animate-slide-up delay-400">한양대학교 ERICA x 롯데이노베이트</div>
+
+      {/* Service Section */}
+      <div style={{ position: 'absolute', top: '650px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, width: '100%', height: 'auto' }}>
+
+        <div className="how-to-use-container" style={{ marginTop: '300px' }}>
+          <div className="how-to-use-title">HOW TO USE</div>
+          <div className="how-to-use-underline"></div>
+        </div>
+        <div className="service-title animate-slide-up">SHOW-GY에서 제공하는 서비스</div>
+
+        <div className="service-card-container">
+          <div className="carousel-viewport" ref={viewportRef}>
+            <div className="Home-carousel" ref={trackRef}>
+              {/* 1st Card */}
+              <div className={`service-card-bg ${getPosClass(0)}`}>
+                <div className="service-card-main-text">
+                  어떤 문서든,<br/>원하는 방식으로
+                </div>
+                <div className="service-card-gradient"></div>
+                <div className="service-features-box">
+                  <div className="service-feature-icon"><img src={folder} alt="Folder Icon" /></div>
+                  <div className="service-feature-item service-feature-item-1">
+                    파일 업로드 요약<br/>PDF, DOCX 등 파일 업로드
+                  </div>
+                  <div className="service-pen-icon"><img src={pen} alt="Pen Icon" /></div>
+                  <div className="service-feature-item service-feature-item-2">
+                    직접 핵심 요약<br/>텍스트 입력 즉시 요약
+                  </div>
+                </div>
+                <div className="service-description">
+                  AI가 문서의 핵심을 자동으로 요약합니다.
+                </div>
+                <div className="service-desktop-img"><img src={desktop} alt="Desktop Icon" /></div>
+              </div>
+
+              {/* 2nd Card */}
+              <div className={`service-card-bg ${getPosClass(1)}`}>
+                <div className="service-card-main-text">
+                  AI 스마트 요약
+                </div>
+                <div className="service-card-gradient"></div>
+                <div className="service-features-box">
+                  <div className="service-feature-icon"><img src={pen} alt="Pen Icon" /></div>
+                  <div className="service-feature-item service-feature-item-1">
+                    핵심 문장 추출<br/>불필요한 내용 제거
+                  </div>
+                  <div className="service-pen-icon"><img src={pen} alt="Pen Icon" /></div>
+                  <div className="service-feature-item service-feature-item-2">
+                    문단 구조 유지<br/>텍스트 맥락 유지 요약
+                  </div>
+                </div>
+                <div className="service-desktop-img"><img src={folder_to_desktop} alt="Folder to Desktop Icon" /></div>
+              </div>
+
+              {/* 3rd Card */}
+              <div className={`service-card-bg ${getPosClass(2)}`}>
+                <div className="service-card-main-text">
+                  요약을 대화로 완성
+                </div>
+                <div className="service-card-gradient"></div>
+                <div className="service-balloon-box">
+                  <div className="service-feature-icon"><img src={balloon} alt="Balloon Icon" /></div>
+                  <div className="service-feature-item service-feature-item-1">
+                    챗봇에게 요청해 요약 수정<br/>더 쉽게/더 짧게/결론 중심
+                  </div>
+                </div>
+                <div className="service-desktop-img"><img src={robot} alt="Robot Icon" /></div>
+              </div>
+
+              {/* 4th Card */}
+              <div className={`service-card-bg ${getPosClass(3)}`}>
+                <div className="service-card-main-text">
+                  요약한 문서,<br/> 자동으로 정리
+                </div>
+                <div className="service-card-gradient"></div>
+                <div className="service-features-box">
+                  <div className="service-feature-icon"><img src={balloon} alt="Balloon Icon" /></div>
+                  <div className="service-feature-item service-feature-item-1">
+                    문서 보관함<br/>내 드라이브/최근/중요 문서
+                  </div>
+                  <div className="service-pen-icon"><img src={garbage} alt="Garbage Icon" /></div>
+                  <div className="service-feature-item service-feature-item-2">
+                    휴지통
+                  </div>
+                </div>
+                <div className="service-desktop-img"><img src={collection} alt="Collection Icon" /></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Carousel Controls */}
+      <div 
+        style={{ 
+          position: 'absolute', 
+          top: '1250px',
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          zIndex: 100,
+          display: 'flex',
+          gap: '20px'
+        }}
+      >
+        <div className="prev-button" onClick={prev}>이전</div>
+        <div className="next-button" onClick={next}>다음</div>
+        
+        <div className="about-us">
+          <div className="about-us-title">ABOUT US</div>
+          <div className="about-us-underline"></div>
+        </div>
+
+        <div className="erica-member">
+          <div className="erica-member-img"><img src={erica} alt="Erica Member" /></div>
+        </div>
+      </div>
 
       <Header activeMenu="home" />
     </div>

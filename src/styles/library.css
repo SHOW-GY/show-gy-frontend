@@ -13,7 +13,7 @@
 
 .library-layout {
   display: flex;
-  height: 100vh;
+  height : 1000px;
   position: relative;
   z-index: 1;
 }
@@ -76,7 +76,7 @@
 .library-search {
   display: flex;
   align-items: center;
-  width: 1000px;
+  width: 500px;
   height: 60px;
   padding: 0 53px;
   background: rgba(139, 92, 246, 0.05);
@@ -84,7 +84,7 @@
   border-radius: 50px;
   gap: 20px;
   position: absolute;
-  left: calc(50% + 40px);
+  left: calc(50% - 250px);
   transform: translateX(-50%);
   top: 20px;
 }
@@ -96,12 +96,17 @@
   justify-content: center;
 }
 
+.search-icon img {
+  width: 40px;
+  height: 40px;
+}
+
 .search-input {
   flex: 1;
   background: none;
   border: none;
   color: white;
-  font-size: 28px;
+  font-size: 20px;
   font-family: 'Inter', sans-serif;
   outline: none;
 }
@@ -188,8 +193,8 @@
   left: calc(50% + 45px);
   transform: translateX(-50%);
   width: 1100px;
-  height: calc(100vh - 244px);
-  top: 200px;
+  height: calc(100vh - 144px);
+  top: 100px;
 }
 
 .table-header {

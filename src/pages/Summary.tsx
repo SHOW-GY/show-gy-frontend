@@ -150,7 +150,7 @@ export default function Summary() {
   };
 
   return (
-    <div className="home-container">
+    <div className="summary-container">
       <div className="noise-large"></div>
       <div className="noise-small"></div>
 

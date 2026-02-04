@@ -2,23 +2,22 @@ import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/library.css';
 import { useState } from 'react';
-import starIcon from '../assets/icons/star.png';
 import Recent from '../library/Recent';
-import Important from '../library/Important';
 import Trash from '../library/Trash';
+import glasses from '../assets/icons/Glasses.png';
 
 interface FileItem {
   id: number;
   name: string;
   date: string;
-  location: string;
+  Leader: string;
 }
 
 export default function Library() {
   const [activeMenu, setActiveMenu] = useState('my-drive');
   const [files, setFiles] = useState<FileItem[]>([
-    { id: 1, name: 'Computer_vision.pdf', date: '2025-10-25', location: '기본 폴더' },
-    { id: 2, name: 'Machine_Learning_final.pdf', date: '2025-10-04', location: '기본 폴더' },
+    { id: 1, name: 'SHOW-GY', date: '2025-10-25', Leader: '김용민' },
+    { id: 2, name: '컴퓨터비전', date: '2025-10-04', Leader: '박성철' },
   ]);
 
   const folders = [
@@ -40,19 +39,13 @@ export default function Library() {
               className={`nav-item ${activeMenu === 'my-drive' ? 'active' : ''}`}
               onClick={() => setActiveMenu('my-drive')}
             >
-              내 드라이브
+              나의 팀
             </button>
             <button 
               className={`nav-item ${activeMenu === 'recent' ? 'active' : ''}`}
               onClick={() => setActiveMenu('recent')}
             >
               최근 문서함
-            </button>
-            <button 
-              className={`nav-item ${activeMenu === 'important' ? 'active' : ''}`}
-              onClick={() => setActiveMenu('important')}
-            >
-              중요 문서함
             </button>
             <button 
               className={`nav-item ${activeMenu === 'trash' ? 'active' : ''}`}
@@ -67,15 +60,13 @@ export default function Library() {
         <main className="library-main">
           {activeMenu === 'recent' ? (
             <Recent />
-          ) : activeMenu === 'important' ? (
-            <Important />
           ) : activeMenu === 'trash' ? (
             <Trash />
           ) : (
             <>
               {/* 검색바 */}
               <div className="library-search">
-                <span className="search-icon">🔍</span>
+                <span className="search-icon"><img src={glasses} alt="Glasses Icon" /></span>
                 <input 
                   type="text" 
                   placeholder="검색어를 입력해주세요"
@@ -89,19 +80,18 @@ export default function Library() {
               {/* 파일 테이블 */}
               <div className="files-table">
                 <div className="table-header">
-                  <div className="column-header">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;이름</div>
+                  <div className="column-header">팀명</div>
                   <div className="column-header">수정 날짜</div>
-                  <div className="column-header">위치</div>
+                  <div className="column-header">팀장</div>
                 </div>
                 <div className="table-body">
                   {files.map((file) => (
                     <div key={file.id} className="table-row">
                       <div className="table-cell name-cell">
-                        <img src={starIcon} alt="즐겨찾기" className="table-star" />
                         {file.name}
                       </div>
                       <div className="table-cell">{file.date}</div>
-                      <div className="table-cell">{file.location}</div>
+                      <div className="table-cell">{file.Leader}</div>
                       <div className="table-menu">⋮</div>
                     </div>
                   ))}
