@@ -22,6 +22,7 @@ import Search from '../helper/Search';
 import '../styles/design.css';
 import '../styles/animations.css';
 import "../assets/font/font.css";
+import '../styles/summary.css';
 
 // 아이콘 호출
 import plus from '../assets/icons/plus.png';

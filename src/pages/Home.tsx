@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 
-import Header from '../components/Header';
+import Layout from '../components/Layout';
 import '../styles/design.css';
 import '../styles/animations.css';
+import '../styles/home.css';
+
 import folder from '../assets/icons/folder.png';
 import pen from '../assets/icons/pen.png';
 import desktop from '../assets/image/desktop.png';
@@ -16,6 +19,7 @@ import erica from '../assets/image/erica.jpg';
 import lotte from '../assets/image/Lotteinovate.jpeg';
 
 export default function Home() {
+  const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -24,7 +28,6 @@ export default function Home() {
   const [offsetPx, setOffsetPx] = useState(0);
   const rafRef = useRef<number | null>(null);
   const lastRef = useRef<{ step: number; offset: number } | null>(null);
-
 
   // ✅ useLayoutEffect: 카드/뷰포트 사이즈 측정
   useLayoutEffect(() => {
@@ -115,32 +118,33 @@ export default function Home() {
   }
 
   return (
-    <div className="home-container">
-      <div className="noise-large"></div>
-      <div className="noise-small"></div>
+    <Layout activeMenu="home">
+      <div className="home-container">
+        <div className="noise-large"></div>
+        <div className="noise-small"></div>
 
-      <div className="blob-purple"></div>
-      <div className="blob-pink"></div>
-      <div className="blob-cyan"></div>
+        <div className="blob-purple"></div>
+        <div className="blob-pink"></div>
+        <div className="blob-cyan"></div>
 
-      <div className="hero-title">
-        <p className="hero-title-main animate-slide-up">긴 문서, 한눈에 핵심만</p>
-        <p className="hero-title-sub animate-slide-up delay-200">AI 기반 스마트 요약 시스템</p>
-      </div>
+        <div className="hero-title">
+          <p className="hero-title-main animate-slide-up">긴 문서, 한눈에 핵심만</p>
+          <p className="hero-title-sub animate-slide-up delay-200">AI 기반 스마트 요약 시스템</p>
+        </div>
 
-      <div className="university-info animate-slide-up delay-400">한양대학교 ERICA x 롯데이노베이트</div>
+        <div className="university-info animate-slide-up delay-400">한양대학교 ERICA x 롯데이노베이트</div>
 
-      {/* Service Section */}
-      <div style={{ position: 'absolute', top: '650px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, width: '100%', height: 'auto' }}>
+        {/* Service Section */}
+        <div style={{ position: 'absolute', top: '1000px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, width: '100%', height: 'auto' }}>
 
-        <div className="how-to-use-container" style={{ marginTop: '300px' }}>
+        <div className="how-to-use-container">
           <div className="how-to-use-title">HOW TO USE</div>
           <div className="how-to-use-underline"></div>
         </div>
         <div className="service-title animate-slide-up">SHOW-GY에서 제공하는 서비스</div>
 
         <div className="service-card-container">
-          <div className="carousel-viewport" ref={viewportRef}>
+            <div className="carousel-viewport" ref={viewportRef}>
             <div className="Home-carousel" ref={trackRef}>
               {/* 1st Card */}
               <div className={`service-card-bg ${getPosClass(0)}`}>
@@ -236,18 +240,35 @@ export default function Home() {
       >
         <div className="prev-button" onClick={prev}>이전</div>
         <div className="next-button" onClick={next}>다음</div>
+      </div>
         
+      {/* About Us */}
+      <div style={{ position: 'absolute', top: '1900px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, width: '100%' }}>
         <div className="about-us">
           <div className="about-us-title">ABOUT US</div>
           <div className="about-us-underline"></div>
         </div>
-
         <div className="erica-member-background">
           <div className="erica-member-info">
-            학교 : 한양대학교 에리카<br/>
-            소속 : 소프트웨어융합대학<br/>
-            주소 : 경기도 안산시 상록구 한양대학로 55<br/>
-            CONTACT : showgy0706@gmail.com
+            <div className="info-row">
+              <span className="label">School</span><span className="colon">:</span>
+              <span className="value">한양대학교 에리카</span>
+            </div>
+
+            <div className="info-row">
+              <span className="label">Group</span><span className="colon">:</span>
+              <span className="value">소프트웨어융합대학</span>
+            </div>
+
+            <div className="info-row">
+              <span className="label">Address</span><span className="colon">:</span>
+              <span className="value">경기도 안산시 상록구 한양대학로 55</span>
+            </div>
+
+            <div className="info-row">
+              <span className="label">Contact</span><span className="colon">:</span>
+              <span className="value">showgy0706@gmail.com</span>
+            </div>
           </div>
           <div className="erica-member-bg"></div>
           <img src={erica} alt="Erica Member" className="erica-member-img" />
@@ -255,17 +276,30 @@ export default function Home() {
 
         <div className="lotte-member-background">
           <div className="lotte-member-info">
-            학교 : 한양대학교 에리카<br/>
-            소속 : 소프트웨어융합대학<br/>
-            주소 : 경기도 안산시 상록구 한양대학로 55<br/>
-            CONTACT : showgy0706@gmail.com
+            <div className="info-row">
+              <span className="label">Company</span><span className="colon">:</span>
+              <span className="value">롯데이노베이트</span>
+            </div>
+
+            <div className="info-row">
+              <span className="label">Role</span><span className="colon">:</span>
+              <span className="value">산학 연계 협력 기업</span>
+            </div>
+
+            <div className="info-row">
+              <span className="label">Address</span><span className="colon">:</span>
+              <span className="value">서울특별시 금천구 가산디지털2로 179</span>
+            </div>
           </div>
           <div className="lotte-member-bg"></div>
           <img src={lotte} alt="Lotte Member" className="lotte-member-img" />
         </div>
-      </div>
 
-      <Header activeMenu="home" />
-    </div>
+        <div className="more-info-btn" onClick={() => navigate('/showgy')}>
+          <div className="more-info-btn-text">More Information</div>
+        </div>
+      </div>
+      </div>
+    </Layout>
   );
 }

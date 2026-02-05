@@ -7,6 +7,7 @@ import 'quill/dist/quill.snow.css';
 import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/animations.css';
+import '../styles/summary.css';
 import { uploadDocument } from '../apis/documentApi';
 import fileuploadIcon from '../assets/icons/fileupload.png';
 import searchIcon from '../assets/icons/search.png';

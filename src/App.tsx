@@ -7,6 +7,7 @@ import Summary from "./pages/Summary";
 import Library from "./pages/Library";
 import Center from "./summary/Center";
 import Mypage from "./pages/Mypage";
+import Showgy from "./pages/Showgy";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/library" element={<Library />} />
       <Route path="/summary/center" element={<Center />} />
       <Route path="/mypage" element={<Mypage />} />
+      <Route path="/showgy" element={<Showgy />} />
     </Routes>
   );
 }
