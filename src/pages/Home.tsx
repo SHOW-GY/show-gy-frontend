@@ -29,7 +29,7 @@ export default function Home() {
   const rafRef = useRef<number | null>(null);
   const lastRef = useRef<{ step: number; offset: number } | null>(null);
 
-  // ✅ useLayoutEffect: 카드/뷰포트 사이즈 측정
+  // useLayoutEffect: 카드/뷰포트 사이즈 측정
   useLayoutEffect(() => {
     const measure = () => {
       const viewport = viewportRef.current;
@@ -46,11 +46,11 @@ export default function Home() {
 
       if (!cardW || !viewportW) return;
 
-      // ✅ 소수점 흔들림 줄이기 (핵심)
+      // 소수점 흔들림 줄이기
       const step = Math.round((cardW + gap) * 1000) / 1000;
       const offset = Math.round(((viewportW - cardW) / 2) * 1000) / 1000;
 
-      // ✅ 값이 진짜 바뀔 때만 setState (핵심)
+      // 값이 진짜 바뀔 때만 setState
       const last = lastRef.current;
       if (last && last.step === step && last.offset === offset) return;
       lastRef.current = { step, offset };
@@ -59,7 +59,7 @@ export default function Home() {
       setOffsetPx(offset);
     };
 
-    // ✅ resize 폭주 방지: rAF로 1프레임에 1번만 측정
+    // resize 폭주 방지: rAF로 1프레임에 1번만 측정
     const onResize = () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
@@ -78,7 +78,7 @@ export default function Home() {
   }, []);
 
 
-  // ✅ useEffect: index 변경 시 transform 적용
+  // useEffect: index 변경 시 transform 적용
   useEffect(() => {
     const track = trackRef.current;
     if (!track) {
@@ -93,7 +93,7 @@ export default function Home() {
     track.style.transform = `translateX(${x}px)`;
   }, [index, stepPx, offsetPx]);
 
-  // ✅ 무한 루프
+  // 무한 루프
   const prev = () => {
     const newIndex = (index - 1 + total) % total;
     setIndex(newIndex);
@@ -120,13 +120,10 @@ export default function Home() {
   return (
     <Layout activeMenu="home">
       <div className="home-container">
-        <div className="noise-large"></div>
-        <div className="noise-small"></div>
-
+        {/* <div className="noise"></div> */}
         <div className="blob-purple"></div>
         <div className="blob-pink"></div>
         <div className="blob-cyan"></div>
-
         <div className="hero-title">
           <p className="hero-title-main animate-slide-up">긴 문서, 한눈에 핵심만</p>
           <p className="hero-title-sub animate-slide-up delay-200">AI 기반 스마트 요약 시스템</p>

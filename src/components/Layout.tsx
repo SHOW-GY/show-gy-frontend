@@ -2,7 +2,7 @@ import Header from "./Header";
 import Tail from "./Tail";
 
 interface LayoutProps {
-  activeMenu?: "home" | "summary" | "library" | "login" | "mypage";
+  activeMenu?: "home" | "summary" | "library" | "login" | "mypage" | "showgy";
   children: React.ReactNode;
 }
 

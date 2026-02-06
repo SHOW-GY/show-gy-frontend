@@ -85,7 +85,7 @@
 }
 
 .character-info {
-  width: 100%;
+  width: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -95,8 +95,8 @@
 
 .character-name {
   color: #F8FAFC;
-  font-size: 18px;
-  font-family: 'Nanum Gothic', system-ui, sans-serif;
+  font-size: 30px;
+  font-family: 'OngleipParkDahyeon', system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -116,7 +116,7 @@
 .detail-label {
   color: #E2E8F0;
   font-size: 14px;
-  font-family: 'Nanum Gothic', system-ui, sans-serif;
+  font-family: 'DepartureMono', system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.5;
 }

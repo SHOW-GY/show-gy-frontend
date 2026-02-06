@@ -30,8 +30,9 @@
   background: radial-gradient(ellipse 98.99% 98.99% at 30.00% 30.00%, #667EEA 0%, #764BA2 100%);
   box-shadow: 1px 1px 1px;
   border-radius: 60px;
-  filter: blur(0.50px);
+  /* filter: blur(0.50px); */
   z-index: 2;
+  will-change: transform;
 }
 
 .blob-pink {
@@ -44,8 +45,9 @@
   background: radial-gradient(ellipse 98.99% 98.99% at 30.00% 30.00%, #F093FB 0%, #F5576C 100%);
   box-shadow: 1px 1px 1px;
   border-radius: 30px;
-  filter: blur(0.50px);
+  /* filter: blur(0.50px); */
   z-index: 2;
+  will-change: transform;
 }
 
 .blob-cyan {
@@ -58,11 +60,12 @@
   background: radial-gradient(ellipse 98.99% 98.99% at 30.00% 30.00%, #4FACFE 0%, #00F2FE 100%);
   box-shadow: 1px 1px 1px;
   border-radius: 50px;
-  filter: blur(0.50px);
+  /* filter: blur(0.50px); */
   z-index: 2;
+  will-change: transform;
 }
 
-.noise-large {
+/* .noise-large {
   width: 100%;
   height: 100%;
   position: absolute;
@@ -84,7 +87,24 @@
   background: radial-gradient(ellipse 0.67% 0.67% at 20.00% 30.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.50% 0.50% at 60.00% 70.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.40% 0.40% at 50.00% 50.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.29% 0.29% at 80.00% 20.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.44% 0.44% at 10.00% 90.00%, white 0%, rgba(255, 255, 255, 0) 100%);
   pointer-events: none;
   z-index: 1;
-}
+} */
+
+/* .noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;     
+  opacity: 0.12;     
+  mix-blend-mode: overlay; 
+
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1.5px) 0 0 / 140px 140px,
+    radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1.5px) 40px 60px / 180px 180px;
+
+  transform: translateZ(0);
+  will-change: opacity;
+} */
+
 
 .hero-title {
   width: 942px;

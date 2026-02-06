@@ -14,7 +14,7 @@ export default function Showgy() {
     {
       id: 1,
       name: '임석재',
-      department: '소속 : Lotte Innovate',
+      department: 'Company : Lotte Innovate',
       role: 'Role : Team Mentor',
       image: sukjae
     },
@@ -22,48 +22,48 @@ export default function Showgy() {
       id: 2,
       name: '김용민',
       department: 'Major : Computer Science',
-      role: 'Role : Leader/Backend',
+      role: 'Role : Leader/Backend Developer',
       image: yongmin
     },
     {
       id: 3,
       name: '이채우',
       department: 'Major : Computer Science',
-      role: 'Role : Model Training',
+      role: 'Role : Model Training Developer',
       image: chaewoo
     },
     {
       id: 4,
       name: '박성철',
       department: 'Major : Mathematical Data Science',
-      role: 'Role : Frontend',
+      role: 'Role : Frontend Developer',
       image: sungchul
     },
     {
       id: 5,
       name: '황원준',
       department: 'Major : Mathematical Data Science',
-      role: 'Role : Backend',
+      role: 'Role : Backend Developer',
       image: wonjun
     },
     {
       id: 6,
       name: '이가은',
       department: 'Major : Artificial Intelligence',
-      role: 'Role : Model Training',
+      role: 'Role : Model Training Developer',
       image: gaeun
     },
     {
       id: 7,
       name: '김효진',
       department: 'Major : Mathematical Data Science',
-      role: 'Role : Frontend',
+      role: 'Role : Frontend Developer',
       image: hyojin
     },
   ];
 
   return (
-    <Layout activeMenu="login">
+    <Layout activeMenu="showgy">
       <div className="information-container">
         <div className="information-header">
           <h1 className="information-title">INFORMATION OF SHOW-GY</h1>

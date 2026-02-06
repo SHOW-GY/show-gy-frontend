@@ -4,7 +4,7 @@ import '../styles/design.css';
 import logo from '../assets/image/logo.png';
 
 interface HeaderProps {
-  activeMenu?: 'home' | 'summary' | 'library' | 'login' | 'mypage';
+  activeMenu?: 'home' | 'summary' | 'library' | 'login' | 'mypage' | 'showgy';
 }
 
 function Header({ activeMenu = 'home' }: HeaderProps) {
@@ -42,7 +42,7 @@ function Header({ activeMenu = 'home' }: HeaderProps) {
 
   return (
     <div className="header">
-      <div className="brand">
+      <div className="brand" onClick={() => navigate('/showgy')} style={{ cursor: 'pointer' }}>
         <img src={logo} alt="SHOW-GY Logo" className="brand-logo" />
         <span className="brand-text">SHOW-GY</span>
       </div>
