@@ -1,0 +1,129 @@
+/* ===== Team Make Modal (no mobile section) ===== */
+
+.modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.modal-content {
+  width: min(520px, 100%);
+  border-radius: 18px;
+
+  background: rgba(22, 33, 62, 0.72);
+  border: 2px solid rgba(139, 92, 246, 0.30);
+  box-shadow:
+    0 16px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+
+  padding: 22px 22px 18px 22px;
+  transform: translateY(-4px);
+}
+
+.modal-title {
+  margin: 0 0 14px 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #ffffff;
+}
+
+.modal-label {
+  display: block;
+  margin: 0 0 8px 0;
+
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.modal-input {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+
+  border: 2px solid rgba(139, 92, 246, 0.25);
+  background: rgba(15, 15, 35, 0.55);
+  color: #fff;
+
+  padding: 0 14px;
+  outline: none;
+
+  font-size: 14px;
+  font-family: inherit;
+
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+}
+
+.modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.modal-input:focus {
+  border-color: rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+  transform: translateY(-1px);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 16px;
+}
+
+.modal-close-btn,
+.modal-create-btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+
+  border: 2px solid rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.08);
+
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+
+  cursor: pointer;
+  transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.modal-close-btn:hover,
+.modal-create-btn:hover {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.45);
+  transform: translateY(-1px);
+}
+
+.modal-close-btn:active,
+.modal-create-btn:active {
+  transform: translateY(0px);
+}
+
+.modal-create-btn {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+}
+
+.modal-create-btn:hover {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.modal-create-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}

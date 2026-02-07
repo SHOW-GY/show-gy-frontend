@@ -17,7 +17,7 @@ interface RecentProjectRow {
 }
 
 const recentFiles: RecentFile[] = [
-	{ id: 1, name: '회의록 요약본', date: '2025-12-20', team: 'SHOW-GY' },
+	{ id: 1, name: '별 헤는 밤', date: '2025-12-20', team: 'SHOW-GY' },
 	{ id: 2, name: '과제 리서치 노트', date: '2025-12-18', team: '컴퓨터비전' },
 	{ id: 3, name: '프로젝트 계획서', date: '2025-12-15', team: 'SHOW-GY' },
 	{ id: 4, name: '데이터 분석 보고서', date: '2025-12-14', team: '컴퓨터비전' },
@@ -31,7 +31,7 @@ const recentFiles: RecentFile[] = [
 ];
 
 const recentProjects: RecentProjectRow[] = [
-	{ id: 1, projectName: '회의록 요약본', updatedAt: '2025-10-25', teamName: 'SHOW-GY', leader: '김용민' },
+	{ id: 1, projectName: '별 헤는 밤', updatedAt: '2025-10-25', teamName: 'SHOW-GY', leader: '김용민' },
 	{ id: 2, projectName: '과제 리서치 노트', updatedAt: '2025-10-04', teamName: '컴퓨터비전', leader: '박성철' },
 	{ id: 3, projectName: '프로젝트 계획서', updatedAt: '2025-09-29', teamName: 'SHOW-GY', leader: '김용민' },
 	{ id: 4, projectName: '데이터 분석 보고서', updatedAt: '2025-09-20', teamName: '컴퓨터비전', leader: '박성철' },

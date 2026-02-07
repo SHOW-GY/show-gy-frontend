@@ -32,7 +32,7 @@
 
 /* gall */
 .carousel-root #gall{
-    outline:1px solid red;
+    outline:1px solid rgb(0, 0, 0);
     position:relative;
     background: url("../assets/image/original.png") center/cover no-repeat;
     width:30vmin; aspect-ratio:5/3;
@@ -46,7 +46,7 @@
     position:absolute;
     width:100%; height:100%;
     background:rgba(255,255,255,.6);
-    border:2px solid salmon;
+    border:2px solid rgb(0, 0, 0);
     font-size:5vmin;
     backdrop-filter:blur(5px);
     user-select:none;
@@ -96,7 +96,7 @@
 .carousel-root #btns{
   position: absolute;
   left: 50%;
-  top: calc(10px + min(56.25vw, 520px) + 24px);
+  top: calc(10px + min(56.25vw, 520px) - 100px);
   transform: translateX(-50%);
   margin: 0;
 }
@@ -109,7 +109,7 @@
 .carousel-root .recent-table{
     position: absolute;
     left: 50%;
-    top: calc(10px + min(56.25vw, 520px) + 90px);
+    top: calc(10px + min(56.25vw, 520px) + 20px);
     transform: translateX(-50%);
     width: min(1100px, 92vw);
     background: rgba(139, 92, 246, 0.05);

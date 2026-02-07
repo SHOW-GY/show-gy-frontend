@@ -76,3 +76,19 @@ export interface VerifyEmailCodeResponse {
   message?: string;
   success?: boolean;
 }
+
+// Generate Team
+export interface GenerateTeamRequest{
+  team_name: string;
+}
+
+export interface GenerateTeamResponse {
+  status: string;
+  message: string;
+  data: {
+    team_name: string;
+    team_code: string;
+    user_id: string;
+    team_owner: boolean;
+  };
+}

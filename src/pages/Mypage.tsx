@@ -1,15 +1,52 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
+import Layout from '../components/Layout';
 import cameraIcon from '../assets/icons/camera.png';
 import { deleteUser } from '../apis/userApi';
 import { logout } from '../apis/authApi';
+import { generateTeam } from '../apis/cooperation';
 import '../styles/design.css';
 import '../styles/mypage.css';
 
+import Team_make from "../components/Team_make";
+
+type TeamCard = {
+  team_name: string;
+  team_code: string;
+  leader_id: string; // = user_id
+};
+
+
 export default function Mypage() {
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [teamCards, setTeamCards] = useState<TeamCard[]>([]);
   const navigate = useNavigate();
+
+  const handleCreateTeam = async (teamName: string) => {
+    try {
+      const result = await generateTeam({ team_name: teamName });
+
+      // 응답: result.data = { team_name, team_code, user_id, team_owner }
+      const newCard: TeamCard = {
+        team_name: result.data.team_name,
+        team_code: result.data.team_code,
+        leader_id: result.data.user_id,
+      };
+
+      // 중복 방지(팀코드 기준)
+      setTeamCards((prev) => {
+        if (prev.some((t) => t.team_code === newCard.team_code)) return prev;
+        return [newCard, ...prev];
+      });
+
+      alert(`${result.message}\n팀 코드: ${result.data.team_code}`);
+    } catch (error) {
+      console.error("팀 생성 실패:", error);
+      alert("팀 생성에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -21,7 +58,6 @@ export default function Mypage() {
         console.error('사용자 정보 파싱 실패:', e);
       }
     } else {
-      // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
       navigate('/login');
     }
   }, [navigate]);
@@ -54,35 +90,100 @@ export default function Mypage() {
     }
   };
 
-  if (!userInfo) {
-    return null;
-  }
+  if (!userInfo) return null;
 
   return (
-    <div className="summary-container">
-      <Header activeMenu="mypage" />
-      <div className="mypage-left-panel">
-        <div className="mypage-avatar">
-          <div className="mypage-avatar-camera">
-            <img src={cameraIcon} alt="camera" />
+    <Layout activeMenu="mypage">
+      <div className="summary-container">
+        <div className="mypage-left-panel">
+          <div className="mypage-avatar">
+            <div className="mypage-avatar-camera">
+              <img src={cameraIcon} alt="camera" />
+            </div>
+          </div>
+
+          <div className="mypage-nickname">{userInfo?.nickname || '닉네임'}</div>
+          <div className="mypage-label">이름</div>
+          <div className="mypage-subtext">
+            {userInfo?.first_name && userInfo?.last_name
+              ? `${userInfo.first_name} ${userInfo.last_name}`
+              : '이름 정보 없음'}
+          </div>
+
+          <div className="mypage-label">아이디</div>
+          <div className="mypage-subtext">{userInfo?.user_id || '아이디 정보 없음'}</div>
+
+          <div className="mypage-label">이메일</div>
+          <div className="mypage-subtext">{userInfo?.email || '이메일 정보 없음'}</div>
+
+          <button className="mypage-action-btn" onClick={() => alert('개인정보 수정은 추후 연결 예정입니다.')}>
+            개인정보 수정하기
+          </button>
+          <button className="mypage-action-btn" onClick={handleLogout}>로그아웃</button>
+          <button className="mypage-withdraw" onClick={handleDeleteUser}>회원탈퇴</button>
+        </div>
+
+        <div className="mypage-right-panel">
+          <div className="mypage-team-actions">
+            <div className="mypage-team-title">팀 관리</div>
+
+            <div className="mypage-team-buttons">
+              <button
+                className="mypage-team-btn create"
+                onClick={() => setTeamModalOpen(true)}
+              >
+                팀 생성
+              </button>
+
+              <button
+                className="mypage-team-btn join"
+                onClick={() => alert('팀 참가 기능은 추후 연결 예정입니다.')}
+              >
+                팀 참가
+              </button>
+            </div>
+
+            <Team_make
+              open={teamModalOpen}
+              onClose={() => setTeamModalOpen(false)}
+              onCreate={handleCreateTeam}
+            />
           </div>
         </div>
-        <div className="mypage-nickname">{userInfo?.nickname || '닉네임'}</div>
-        <div className="mypage-label">이름</div>
-        <div className="mypage-subtext">{userInfo?.first_name && userInfo?.last_name ? `${userInfo.first_name} ${userInfo.last_name}` : '이름 정보 없음'}</div>
-        <div className="mypage-label">아이디</div>
-        <div className="mypage-subtext">{userInfo?.user_id || '아이디 정보 없음'}</div>
-        <div className="mypage-label">이메일</div>
-        <div className="mypage-subtext">{userInfo?.email || '이메일 정보 없음'}</div>
 
-        <button className="mypage-action-btn" onClick={() => alert('개인정보 수정은 추후 연결 예정입니다.')}>개인정보 수정하기</button>
-        <button className="mypage-action-btn" onClick={handleLogout}>로그아웃</button>
+        <div className="mypage-team-list-box">
+          <div className="mypage-team-list-header">
+            <div className="mypage-team-list-title">내가 만든 팀</div>
+            <div className="mypage-team-list-sub">팀명 / 팀코드 / 리더ID</div>
+          </div>
 
-        <button className="mypage-withdraw" onClick={handleDeleteUser}>회원탈퇴</button>
+          {teamCards.length === 0 ? (
+            <div className="mypage-team-empty">
+              아직 생성된 팀이 없습니다. "팀 생성"을 눌러 만들어보세요.
+            </div>
+          ) : (
+            <div className="mypage-team-grid">
+              {teamCards.map((t) => (
+                <div key={t.team_code} className="mypage-team-card-simple">
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">팀명</span>
+                    <span className="mypage-team-value">{t.team_name}</span>
+                  </div>
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">팀코드</span>
+                    <span className="mypage-team-value code">{t.team_code}</span>
+                  </div>
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">리더ID</span>
+                    <span className="mypage-team-value">{t.leader_id}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
-
-      <div className="mypage-right-panel">
-      </div>
-    </div>
+    </Layout>
   );
 }
