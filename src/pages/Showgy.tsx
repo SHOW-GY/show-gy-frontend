@@ -1,5 +1,6 @@
 import Layout from '../components/Layout';
 import '../styles/information.css';
+import '../assets/font/font.css';
 
 import sukjae from '../assets/image/Suckjae.gif';
 import yongmin from '../assets/image/Yongmin.webp';

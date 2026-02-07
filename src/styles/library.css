@@ -1,23 +1,24 @@
 /* 햄버거 버튼: 기존 UI 톤에 맞춰 유리판 느낌 */
 .sidebar-toggle {
-  position: absolute;
-  top: 22px;
-  left: calc(50% - 630px);
-  transform: translateX(-50%);
-  z-index: 2000;
+  position: fixed;
+  top: 67px;
+  left: 16px;
+  z-index: 3000;
+
+  transform: none;
 
   width: 48px;
   height: 48px;
   border-radius: 14px;
   border: 2px solid rgba(139, 92, 246, 0.30);
   background: rgba(139, 92, 246, 0.05);
-  backdrop-filter: blur(10px);
 
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
+
 
 .library-container {
   position: relative;
@@ -34,41 +35,49 @@
 
 .library-layout {
   display: flex;
-  height : 1000px;
+  height : 100vh;
   position: relative;
   z-index: 1;
 }
 
-/* 사이드바: 기본은 open */
+:root {
+  width : 100%;
+  --sidebar-w: 200px;
+}
+
 .library-sidebar {
-  width: 200px;
+  width: var(--sidebar-w);
   padding: 72px 0 0 0;
   background: rgba(139, 92, 246, 0.05);
   border-right: 2px solid rgba(139, 92, 246, 0.3);
-  border-radius: 12px;
+
+  /* 핵심 */
+  position: fixed;
+  left: 0;
+  /* top: 45px; */
+  height: 100vh;
+
+  /* 기존 center 기준 제거 */
+  transform: none;
+
   overflow-y: auto;
-  position: absolute;
-  left: calc(50% - 630px);
-  transform: translateX(-50%);
-  top : 0px;
-  height: calc(100vh - 44px);
-  animation: sidebarSlideInLeft 0.6s ease-out forwards;
   transition: transform 0.35s ease, opacity 0.35s ease;
   will-change: transform;
 }
 
-/* 열림 상태 */
+
 .library-sidebar.open {
   opacity: 1;
-  transform: translateX(-50%);
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
-/* 닫힘 상태: 왼쪽으로 살짝 빼고 숨김 */
 .library-sidebar.closed {
   opacity: 0;
-  transform: translateX(calc(-50% - 240px));
+  transform: translateX(-100%);
   pointer-events: none;
 }
+
 
 .sidebar-nav {
   display: flex;
@@ -103,13 +112,22 @@
 
 .library-main {
   flex: 1;
-  height : 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 22px 0;
   overflow-y: auto;
   gap: 22px;
+
+  margin-left: var(--sidebar-w);
+  transition: margin-left 0.35s ease;
 }
+
+/* 사이드바 닫히면 메인도 원위치 */
+.library-sidebar.closed ~ .library-main {
+  margin-left: 0;
+}
+
 
 .library-search {
   display: flex;
@@ -450,142 +468,4 @@
 .empty-trash-btn:hover {
   background: rgba(139, 92, 246, 0.1);
   border-color: rgba(139, 92, 246, 0.5);
-}
-
-/* Recent Carousel Styles */
-.recent-carousel-wrapper {
-  padding: 40px 20px;
-  max-width: 1400px;
-  left : calc(50% - 450px);
-  position : absolute;
-  margin: 0 auto;
-  overflow: hidden; /* 최상위 컨테이너에서도 overflow 차단 */
-}
-
-.recent-carousel-container {
-  position: relative;
-  overflow: hidden; /* 캐러셀 영역 밖으로 나간 슬라이드 숨김 */
-}
-
-.embla {
-  overflow: hidden; /* Embla 래퍼에서 overflow 차단 */
-}
-
-.embla__viewport {
-  overflow: hidden; /* 뷰포트 밖 슬라이드가 보이지 않도록 핵심 설정 */
-  width: 100%;
-}
-
-.embla__container {
-  display: flex;
-  gap: 20px;
-  will-change: transform; /* 슬라이드 이동 시 렌더링 최적화 */
-}
-
-.embla__slide {
-  flex: 0 0 595px; /* A4 너비로 고정, 늘어나거나 줄어들지 않음 */
-  min-width: 0;
-}
-
-.recent-card {
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  padding: 20px;
-  width: 595px; /* 슬라이드 너비와 동일하게 명시적 지정 */
-  height: 842px;
-  display: flex;
-  flex-direction: column;
-  position: relative; /* 내부 absolute 요소(별, 메뉴)를 위한 기준점만 제공 */
-  cursor: pointer;
-  transition: box-shadow 0.3s ease;
-}
-
-.recent-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.recent-card-star {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  width: 24px;
-  height: 24px;
-}
-
-.recent-card-menu {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  font-size: 24px;
-  color: #9ca3af;
-  cursor: pointer;
-}
-
-.recent-card-content {
-  margin-top: 50px;
-  flex: 1;
-}
-
-.recent-card-name {
-  font-weight: bold;
-  font-size: 18px;
-  color: #111827;
-  margin-bottom: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recent-card-date {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 8px;
-}
-
-.recent-card-location {
-  font-size: 13px;
-  color: #9ca3af;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.carousel-button {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  z-index: 10;
-  transition: all 0.3s ease;
-}
-
-.carousel-button:not(:disabled) {
-  cursor: pointer;
-}
-
-.carousel-button:not(:disabled):hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.carousel-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.carousel-button-prev {
-  left: 0px; /* 캐러셀 왼쪽 끝에 배치 */
-}
-
-.carousel-button-next {
-  right: 230px; /* 캐러셀 오른쪽 끝에 배치 */
 }

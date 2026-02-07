@@ -680,14 +680,14 @@
   align-self: flex-start;
   background: rgba(139, 92, 246, 0.15);
   border: 1px solid rgba(139, 92, 246, 0.30);
-  backdrop-filter: blur(7.50px);
+  /* backdrop-filter: blur(7.50px); */
 }
 
 .user-message {
   align-self: flex-end;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
   border: 1px solid rgba(236, 72, 153, 0.30);
-  backdrop-filter: blur(7.50px);
+  /* backdrop-filter: blur(7.50px); */
 }
 
 .panel-chat-message p {

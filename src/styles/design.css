@@ -20,6 +20,7 @@ html, body {
 
 /* ------ Layout ------ */
 .layout {
+  width : 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -34,7 +35,7 @@ html, body {
   position: sticky;
   background: rgba(15, 15, 35, 0.85);
   border-bottom: 1px rgba(139, 92, 246, 0.30) solid;
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -59,6 +60,17 @@ html, body {
   font-weight: 600;
   text-transform: uppercase;
   line-height: 35.84px;
+  cursor: pointer;                 /* inline style 빼고 싶으면 이것만 */
+  transition: transform 0.2s ease;  /* 추가 */
+  transform-origin: center;         /* 선택 */
+}
+
+.brand:hover {
+  transform: scale(1.05);           /* 살짝만 */
+}
+
+.brand:active {
+  transform: scale(1.08);           /* 클릭 중엔 조금 더 */
 }
 
 .brand-logo {
