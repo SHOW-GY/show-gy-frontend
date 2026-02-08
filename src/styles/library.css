@@ -42,7 +42,7 @@
 
 :root {
   width : 100%;
-  --sidebar-w: 200px;
+  /* --sidebar-w: 200px; */
 }
 
 .library-sidebar {
@@ -60,9 +60,10 @@
   /* 기존 center 기준 제거 */
   transform: none;
 
-  overflow-y: auto;
+  /* overflow-y: auto; */
   transition: transform 0.35s ease, opacity 0.35s ease;
   will-change: transform;
+  z-index: 100;
 }
 
 
@@ -116,7 +117,7 @@
   display: flex;
   flex-direction: column;
   padding: 22px 0;
-  overflow-y: auto;
+  /* overflow-y: auto; */
   gap: 22px;
 
   margin-left: var(--sidebar-w);
@@ -273,7 +274,7 @@
 
 .table-body {
   max-height: 600px;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 .table-row {

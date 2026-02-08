@@ -28,17 +28,17 @@ export default function Sidebar({
       <aside className={`library-sidebar ${open ? "open" : "closed"}`}>
         <nav className="sidebar-nav">
           <button
-            className={`nav-item ${activeMenu === "my-drive" ? "active" : ""}`}
-            onClick={() => setActiveMenu("my-drive")}
-          >
-            나의 팀
-          </button>
-
-          <button
             className={`nav-item ${activeMenu === "recent" ? "active" : ""}`}
             onClick={() => setActiveMenu("recent")}
           >
             최근 문서함
+          </button>
+
+          <button
+            className={`nav-item ${activeMenu === "my-drive" ? "active" : ""}`}
+            onClick={() => setActiveMenu("my-drive")}
+          >
+            전체 문서함
           </button>
 
           <button

@@ -11,6 +11,19 @@
   padding-top: 120px; 
 }
 
+.carousel-title {
+    position: absolute;
+    left: 50%;
+    top: 40px;
+    transform: translateX(-50%);
+    font-size: 38px;
+    font-weight: 700;
+    font-family: 'DaeguDongseongRo', Verdana, sans-serif;
+    color: #ffffff;
+    text-align: center;
+    z-index: 10;
+}
+
 /* scene */
 .carousel-root #scene{
   position: absolute;
@@ -115,7 +128,7 @@
     background: rgba(139, 92, 246, 0.05);
     border: 2px solid rgba(139, 92, 246, 0.3);
     border-radius: 12px;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 .carousel-root .recent-table-header{
@@ -136,8 +149,8 @@
 }
 
 .carousel-root .recent-table-body{
-    max-height: 360px;
-    overflow-y: auto;
+    max-height: 100%;
+    /* overflow-y: auto; */
 }
 
 .carousel-root .recent-table-row{

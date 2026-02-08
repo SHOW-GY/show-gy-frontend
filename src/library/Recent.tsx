@@ -151,6 +151,10 @@ export default function Recent() {
 
 	return (
 		<div className="carousel-root">
+			{/* 문구 */}
+			<h1 className="carousel-title">최근 작업한 문서를 빠르게 탐색하세요</h1>
+
+			{/* 3D 캐러셀 */}
 			<div id="scene">
 				<div id="gall" ref={gallRef}>
 					{top10.map((file, idx) => (

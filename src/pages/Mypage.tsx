@@ -153,7 +153,7 @@ export default function Mypage() {
 
         <div className="mypage-team-list-box">
           <div className="mypage-team-list-header">
-            <div className="mypage-team-list-title">내가 만든 팀</div>
+            <div className="mypage-team-list-title">팀 커뮤니티</div>
             <div className="mypage-team-list-sub">팀명 / 팀코드 / 리더ID</div>
           </div>
 
