@@ -1,7 +1,7 @@
 /* 햄버거 버튼: 기존 UI 톤에 맞춰 유리판 느낌 */
 .sidebar-toggle {
-  position: fixed;
-  top: 67px;
+  position: relative;
+  top: 20px;
   left: 16px;
   z-index: 3000;
 
@@ -23,7 +23,7 @@
 .library-container {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: 120vh;
   background: radial-gradient(
     ellipse 70.71% 70.71% at 50% 50%,
     #1a1a2e 0%,
@@ -42,7 +42,7 @@
 
 :root {
   width : 100%;
-  /* --sidebar-w: 200px; */
+  --sidebar-w: 200px;
 }
 
 .library-sidebar {
@@ -52,10 +52,10 @@
   border-right: 2px solid rgba(139, 92, 246, 0.3);
 
   /* 핵심 */
-  position: fixed;
+  position: absolute;
   left: 0;
   /* top: 45px; */
-  height: 100vh;
+  height: 150vh;
 
   /* 기존 center 기준 제거 */
   transform: none;
@@ -250,13 +250,67 @@
   left: calc(50% + 45px);
   transform: translateX(-50%);
   width: 1100px;
-  height: calc(100vh - 144px);
+  height: 1000px;
   top: 100px;
+  box-sizing: border-box;
+}
+
+.files-table-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 28px;
+  background: rgba(139, 92, 246, 0.08);
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.35);
+}
+
+.files-table-col {
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.files-table-body {
+  max-height: 940px;
+  overflow-y: auto;
+}
+
+.files-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 28px;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.35);
+  align-items: center;
+  transition: background 0.2s ease;
+}
+
+.files-table-row:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.files-table-row:last-child {
+  border-bottom: none;
+}
+
+.files-table-cell {
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.files-table-project {
+  font-weight: 700;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 1fr) 40px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 200px;
   gap: 20px;
   padding: 15px 46px;
   border-bottom: 1.5px solid rgba(0, 0, 0, 0.4);
@@ -269,7 +323,7 @@
   font-weight: 700;
   font-family: 'Open Sans', sans-serif;
   text-transform: uppercase;
-  padding-right: 20px;
+  /* padding-right: 20px; */
 }
 
 .table-body {
@@ -437,7 +491,7 @@
   left: calc(50% + 45px);
   transform: translateX(-50%);
   width: 1100px;
-  top: 100px;
+  top: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;

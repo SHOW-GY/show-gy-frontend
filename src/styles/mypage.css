@@ -217,6 +217,7 @@
   border-radius: 16px;
   top : 250px;
   width : 900px;
+  height : 680px;
   left : calc(50% - 200px);
   position : absolute;
   background: rgba(139, 92, 246, 0.06);

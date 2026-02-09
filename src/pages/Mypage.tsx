@@ -159,7 +159,7 @@ export default function Mypage() {
 
           {teamCards.length === 0 ? (
             <div className="mypage-team-empty">
-              아직 생성된 팀이 없습니다. "팀 생성"을 눌러 만들어보세요.
+              아직 생성된 팀이 없습니다. "팀 생성/팀 참가" 을 눌러 만들어보세요.
             </div>
           ) : (
             <div className="mypage-team-grid">

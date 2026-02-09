@@ -203,12 +203,11 @@
 
 /* ----- Center (Summary Detail Page) ----- */
 .center-container {
-  min-height: 100vh;
   width: 100%;
-  position: relative;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  padding-bottom: 100px;
 }
 
 .center-sidebar {
@@ -552,7 +551,7 @@
 .center-undo-controls {
   position: fixed;
   left: 24px;
-  bottom: 24px;
+  bottom: 50px;
   display: flex;
   gap: 10px;
   z-index: 1200;
@@ -579,7 +578,7 @@
 .center-summary-btn {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  bottom: 50px;
   min-width: 96px;
   height: 44px;
   padding: 0 18px;

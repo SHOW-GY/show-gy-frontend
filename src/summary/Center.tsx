@@ -16,6 +16,7 @@ import html2pdf from "html2pdf.js";
 
 // 컴포넌트 호출
 import Header from '../components/Header';
+import Layout from '../components/Layout';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
 import Search from '../helper/Search';
@@ -95,7 +96,9 @@ export default function Center() {
   const [margins, setMargins] = useState({ top: 71, bottom: 71, left: 83, right: 83 });
   const lastFocusedQuillRef = useRef<Quill | null>(null);
   const documentContainerRef = useRef<HTMLDivElement | null>(null);
+  const centerContainerRef = useRef<HTMLDivElement | null>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 60, width: 79 });
+  const [containerHeight, setContainerHeight] = useState<number>(0);
   const timeoutRef = useRef<number | null>(null);
   const resizeRafRef = useRef<number | null>(null);
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -446,24 +449,48 @@ export default function Center() {
 
   // ResizeObserver to track document height changes when pages are added/removed
   useEffect(() => {
-    const container = documentContainerRef.current;
-    if (!container) return;
+    const quill = quillRef.current;
+    if (!quill) return;
 
-    const resizeObserver = new ResizeObserver(() => {
-      // Use requestAnimationFrame to batch multiple callbacks
+    const updateContainerHeight = () => {
+      const centerDoc = document.querySelector('.center-document');
+      if (!centerDoc) return;
+      
+      const docHeight = (centerDoc as HTMLElement).offsetHeight;
+      console.log('[Container Height Debug] offsetHeight:', docHeight);
+      
+      // 70px(기본 top) + 문서 높이 + 100px(padding-bottom) = 필요한 컨테이너 높이
+      const newHeight = Math.max(100 * 16, docHeight + 170); // 최소 100vh 보장
+      console.log('[Container Height Debug] newHeight:', newHeight);
+      setContainerHeight(newHeight);
+    };
+
+    // 초기 높이 설정
+    setTimeout(updateContainerHeight, 100);
+
+    // Quill text-change 이벤트에서 높이 업데이트
+    const handleTextChange = () => {
       if (resizeRafRef.current !== null) {
         cancelAnimationFrame(resizeRafRef.current);
       }
+      resizeRafRef.current = requestAnimationFrame(updateContainerHeight);
+    };
 
-      resizeRafRef.current = requestAnimationFrame(() => {
-        updatePositions();
-      });
-    });
+    quill.on('text-change', handleTextChange);
 
-    resizeObserver.observe(container);
+    // 창 리사이즈 시에도 높이 업데이트
+    const handleWindowResize = () => {
+      if (resizeRafRef.current !== null) {
+        cancelAnimationFrame(resizeRafRef.current);
+      }
+      resizeRafRef.current = requestAnimationFrame(updateContainerHeight);
+    };
+
+    window.addEventListener('resize', handleWindowResize, { passive: true });
 
     return () => {
-      resizeObserver.disconnect();
+      quill.off('text-change', handleTextChange);
+      window.removeEventListener('resize', handleWindowResize);
       if (resizeRafRef.current !== null) {
         cancelAnimationFrame(resizeRafRef.current);
       }
@@ -820,285 +847,290 @@ export default function Center() {
 
   // Render
   return (
-    <div className="center-container">
-      <div className="center-sidebar" style={{ top: `${sidebarTop}px` }}>
-        
-        <div className="sidebar-counter-container">
-          <img 
-            src={minus} 
-            alt="decrease" 
-            className="sidebar-icon-3" 
-            onClick={handleDecrease}
-          />
-          <div className="sidebar-counter">{fontSize}</div>
-          <img 
-            src={plus} 
-            alt="increase" 
-            className="sidebar-icon-2" 
-            onClick={handleIncrease}
-          />
-        </div>
-        <div className="sidebar-counter-line" />
-
-        {/* Font Selector */}
-        <div className="sidebar-selector-container">
-          <div 
-            className="sidebar-selector-button"
-            onClick={() => setShowFontPicker(!showFontPicker)}
-          >
-            {currentFontLabel}
-          </div>
-          {showFontPicker && (
-            <div className="sidebar-selector-dropdown">
-              {/* Font Selector */}
-              <div className="sidebar-selector-container">
-                <div
-                  className="sidebar-selector-button"
-                  onClick={() => setShowFontPicker(v => !v)}
-                  style={{
-                    fontFamily:
-                      FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.cssFamily ?? 'sans-serif',
-                  }}
-                >
-                  {currentFontLabel}
-                </div>
-
-                {showFontPicker && (
-                  <div className="sidebar-selector-dropdown">
-                    {FONT_LIST.map(f => (
-                      <div
-                        key={f.key}
-                        className={`sidebar-selector-item ${selectedFont === f.key ? 'selected' : ''}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleFont(f.key);
-                        }}
-                        style={{ fontFamily: f.cssFamily }}  // ✅ 미리보기
-                      >
-                        {f.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-            </div>
-          )}
-        </div>
-
-        {/* Size Selector */}
-        <div className="sidebar-selector-container">
-          <div 
-            className="sidebar-selector-button"
-            onClick={() => setShowSizePicker(!showSizePicker)}
-          >
-            Size
-          </div>
-          {showSizePicker && (
-            <div className="sidebar-selector-dropdown">
-              {['small', 'normal', 'large', 'huge'].map(size => (
-                <div
-                  key={size}
-                  className="sidebar-selector-item"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSize(size);
-                  }}
-                >
-                  {size.charAt(0).toUpperCase() + size.slice(1)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <img src={B} alt="sidebar icon" className={`sidebar-icon-4 ${isBoldActive ? 'active' : ''}`} onClick={handleBold} style={isBoldActive ? { filter: 'brightness(1.5) saturate(1.5)' } : {}} />
-        <img src={underline} alt="sidebar icon" className={`sidebar-icon-5 ${isUnderlineActive ? 'active' : ''}`} onClick={handleUnderline} style={isUnderlineActive ? { filter: 'brightness(1.5) saturate(1.5)' } : {}} />
-        <img src={gradient} alt="sidebar icon" className={`sidebar-icon-6 ${isItalicActive ? 'active' : ''}`} onClick={handleItalic} style={isItalicActive ? { filter: 'brightness(1.5) saturate(1.5)' } : {}} />
-        <div className="color-picker-anchor">
-          <img src={A} alt="sidebar icon" className="sidebar-icon-7" onClick={() => setShowColorPicker(!showColorPicker)} style={{ cursor: 'pointer' }} />
-          {showColorPicker && (
-            <div className="color-picker-dropdown">
-              {['#000000', '#FFFFFF', '#FF0000', '#FF6B6B', '#FFA500', '#FFD700', '#FFFF00', '#00FF00', '#00CED1', '#0000FF', '#4169E1', '#8B00FF', '#FF1493', '#FF69B4', '#A52A2A', '#808080', '#C0C0C0', '#FFB6C1', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#D5F4E6', '#FFF9E6', '#FFE6E6', '#E6F3FF', '#F0E6FF', '#FFE6F0', '#E6FFE6', '#E6FFFF'].map(color => (
-                <div
-                  key={color}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleColor(color);
-                  }}
-                  className="color-swatch"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="line-spacing-container">
-          <img src={T} alt="sidebar icon" className="sidebar-icon-8" onClick={() => setShowLineSpacingPicker(!showLineSpacingPicker)} style={{ cursor: 'pointer' }} />
-          {showLineSpacingPicker && (
-            <div className="line-spacing-dropdown">
-              {['100%', '120%', '140%', '160%', '180%', '200%'].map(spacing => (
-                <div
-                  key={spacing}
-                  className="line-spacing-item"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleLineSpacing(spacing);
-                  }}
-                >
-                  {spacing}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        <div className="sidebar-sort-container">
-          <img src={sort} alt="sort" className="sidebar-icon-sort" />
-          <img src={triangle} alt="triangle" className="sidebar-icon-triangle" onClick={() => setAlignOpen((v) => !v)} />
-
-          {alignOpen && (
-            <div className="align-dropdown">
-              <button type = "button" onClick = {() => applyAlign('left')}>왼쪽 정렬</button>
-              <button type = "button" onClick = {() => applyAlign('center')}>가운데 정렬</button>
-              <button type = "button" onClick = {() => applyAlign('right')}>오른쪽 정렬</button>
-            </div>
-          )}
-        </div>
-        <img src={settings} alt="sidebar icon" className="sidebar-icon-10" onClick={() => setShowMarginSettings(!showMarginSettings)} style={{ cursor: 'pointer' }} />
-        <img
-          src={save}
-          alt="sidebar icon"
-          className="sidebar-icon-9"
-          onClick={exportPdf}   // ✅ 여기만 exportPdf -> exportHtmlTest
-          style={{ cursor: 'pointer' }}
-        />
-      </div>
-
-
-      {showMarginSettings && (
-        <div className="margin-settings-overlay" onClick={() => setShowMarginSettings(false)}>
-          <div className="margin-settings-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>페이지 여백</h3>
-            <div className="margin-inputs">
-              <div className="margin-input-group">
-                <label>위쪽</label>
-                <input
-                  type="number"
-                  value={margins.top}
-                  onChange={(e) => handleMarginChange('top', Number(e.target.value))}
-                  min="0"
-                />
-                <span>mm</span>
-              </div>
-              <div className="margin-input-group">
-                <label>아래쪽</label>
-                <input
-                  type="number"
-                  value={margins.bottom}
-                  onChange={(e) => handleMarginChange('bottom', Number(e.target.value))}
-                  min="0"
-                />
-                <span>mm</span>
-              </div>
-              <div className="margin-input-group">
-                <label>왼쪽</label>
-                <input
-                  type="number"
-                  value={margins.left}
-                  onChange={(e) => handleMarginChange('left', Number(e.target.value))}
-                  min="0"
-                />
-                <span>mm</span>
-              </div>
-              <div className="margin-input-group">
-                <label>오른쪽</label>
-                <input
-                  type="number"
-                  value={margins.right}
-                  onChange={(e) => handleMarginChange('right', Number(e.target.value))}
-                  min="0"
-                />
-                <span>mm</span>
-              </div>
-            </div>
-            <div className="margin-buttons">
-              <button onClick={() => setShowMarginSettings(false)} className="margin-apply-btn">적용</button>
-              <button onClick={() => setShowMarginSettings(false)} className="margin-cancel-btn">취소</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div ref={documentContainerRef}>
-        <div
-          className="center-document"
-          style={{
-            top: "70px",
-            padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`,
-          }}
-        >
-          <div ref={editorRef} className="document-input" />
-        </div>
-      </div>
-
-      <div className="center-panel" style={{ top: `${panelTop}px` }}>
-        <div className="panel-tabs" ref={tabsContainerRef}>
-          <div
-            className={`panel-tab ${activeTab === 'chat' ? 'active' : ''}`}
-            ref={el => (tabRefs.current.chat = el)}
-            onClick={() => setActiveTab('chat')}
-          >
-            챗봇
-          </div>
-          <div
-            className={`panel-tab ${activeTab === 'feedback' ? 'active' : ''}`}
-            ref={el => (tabRefs.current.feedback = el)}
-            onClick={() => setActiveTab('feedback')}
-          >
-            피드백
-          </div>
-          <div
-            className={`panel-tab ${activeTab === 'reference' ? 'active' : ''}`}
-            ref={el => (tabRefs.current.reference = el)}
-            onClick={() => setActiveTab('reference')}
-          >
-            참고자료
-          </div>
-          <div
-            className="panel-tab-underline"
-            style={{ left: underlineStyle.left, width: underlineStyle.width }}
-          />
-        </div>
-        {renderPanelContent()}
-      </div>
-      <div className="center-undo-controls">
-        <button
-          type="button"
-          className="center-undo-btn"
-          onClick={handleUndo}
-          aria-label="실행 취소"
-        >
-          ←
-        </button>
-        <button
-          type="button"
-          className="center-undo-btn"
-          onClick={handleRedo}
-          aria-label="다시 실행"
-        >
-          →
-        </button>
-      </div>
-      <button
-        type="button"
-        className="center-summary-btn"
-        onClick={handleShowSummary}
-        disabled={!uploadedContent?.summary}
+    <Layout activeMenu="summary">
+      <div 
+        className="center-container" 
+        ref={centerContainerRef}
+        style={{ minHeight: containerHeight > 0 ? `${containerHeight}px` : '100vh' }}
       >
-        요약
-      </button>
-      <Header activeMenu="summary" />
-    </div>
+        <div className="center-sidebar" style={{ top: `${sidebarTop}px` }}>
+          
+          <div className="sidebar-counter-container">
+            <img 
+              src={minus} 
+              alt="decrease" 
+              className="sidebar-icon-3" 
+              onClick={handleDecrease}
+            />
+            <div className="sidebar-counter">{fontSize}</div>
+            <img 
+              src={plus} 
+              alt="increase" 
+              className="sidebar-icon-2" 
+              onClick={handleIncrease}
+            />
+          </div>
+          <div className="sidebar-counter-line" />
+
+          {/* Font Selector */}
+          <div className="sidebar-selector-container">
+            <div 
+              className="sidebar-selector-button"
+              onClick={() => setShowFontPicker(!showFontPicker)}
+            >
+              {currentFontLabel}
+            </div>
+            {showFontPicker && (
+              <div className="sidebar-selector-dropdown">
+                {/* Font Selector */}
+                <div className="sidebar-selector-container">
+                  <div
+                    className="sidebar-selector-button"
+                    onClick={() => setShowFontPicker(v => !v)}
+                    style={{
+                      fontFamily:
+                        FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.cssFamily ?? 'sans-serif',
+                    }}
+                  >
+                    {currentFontLabel}
+                  </div>
+
+                  {showFontPicker && (
+                    <div className="sidebar-selector-dropdown">
+                      {FONT_LIST.map(f => (
+                        <div
+                          key={f.key}
+                          className={`sidebar-selector-item ${selectedFont === f.key ? 'selected' : ''}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleFont(f.key);
+                          }}
+                          style={{ fontFamily: f.cssFamily }}  // ✅ 미리보기
+                        >
+                          {f.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )}
+          </div>
+
+          {/* Size Selector */}
+          <div className="sidebar-selector-container">
+            <div 
+              className="sidebar-selector-button"
+              onClick={() => setShowSizePicker(!showSizePicker)}
+            >
+              Size
+            </div>
+            {showSizePicker && (
+              <div className="sidebar-selector-dropdown">
+                {['small', 'normal', 'large', 'huge'].map(size => (
+                  <div
+                    key={size}
+                    className="sidebar-selector-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSize(size);
+                    }}
+                  >
+                    {size.charAt(0).toUpperCase() + size.slice(1)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <img src={B} alt="sidebar icon" className={`sidebar-icon-4 ${isBoldActive ? 'active' : ''}`} onClick={handleBold} style={isBoldActive ? { filter: 'brightness(1.5) saturate(1.5)' } : {}} />
+          <img src={underline} alt="sidebar icon" className={`sidebar-icon-5 ${isUnderlineActive ? 'active' : ''}`} onClick={handleUnderline} style={isUnderlineActive ? { filter: 'brightness(1.5) saturate(1.5)' } : {}} />
+          <img src={gradient} alt="sidebar icon" className={`sidebar-icon-6 ${isItalicActive ? 'active' : ''}`} onClick={handleItalic} style={isItalicActive ? { filter: 'brightness(1.5) saturate(1.5)' } : {}} />
+          <div className="color-picker-anchor">
+            <img src={A} alt="sidebar icon" className="sidebar-icon-7" onClick={() => setShowColorPicker(!showColorPicker)} style={{ cursor: 'pointer' }} />
+            {showColorPicker && (
+              <div className="color-picker-dropdown">
+                {['#000000', '#FFFFFF', '#FF0000', '#FF6B6B', '#FFA500', '#FFD700', '#FFFF00', '#00FF00', '#00CED1', '#0000FF', '#4169E1', '#8B00FF', '#FF1493', '#FF69B4', '#A52A2A', '#808080', '#C0C0C0', '#FFB6C1', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#D5F4E6', '#FFF9E6', '#FFE6E6', '#E6F3FF', '#F0E6FF', '#FFE6F0', '#E6FFE6', '#E6FFFF'].map(color => (
+                  <div
+                    key={color}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleColor(color);
+                    }}
+                    className="color-swatch"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="line-spacing-container">
+            <img src={T} alt="sidebar icon" className="sidebar-icon-8" onClick={() => setShowLineSpacingPicker(!showLineSpacingPicker)} style={{ cursor: 'pointer' }} />
+            {showLineSpacingPicker && (
+              <div className="line-spacing-dropdown">
+                {['100%', '120%', '140%', '160%', '180%', '200%'].map(spacing => (
+                  <div
+                    key={spacing}
+                    className="line-spacing-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleLineSpacing(spacing);
+                    }}
+                  >
+                    {spacing}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="sidebar-sort-container">
+            <img src={sort} alt="sort" className="sidebar-icon-sort" />
+            <img src={triangle} alt="triangle" className="sidebar-icon-triangle" onClick={() => setAlignOpen((v) => !v)} />
+
+            {alignOpen && (
+              <div className="align-dropdown">
+                <button type = "button" onClick = {() => applyAlign('left')}>왼쪽 정렬</button>
+                <button type = "button" onClick = {() => applyAlign('center')}>가운데 정렬</button>
+                <button type = "button" onClick = {() => applyAlign('right')}>오른쪽 정렬</button>
+              </div>
+            )}
+          </div>
+          <img src={settings} alt="sidebar icon" className="sidebar-icon-10" onClick={() => setShowMarginSettings(!showMarginSettings)} style={{ cursor: 'pointer' }} />
+          <img
+            src={save}
+            alt="sidebar icon"
+            className="sidebar-icon-9"
+            onClick={exportPdf}   // ✅ 여기만 exportPdf -> exportHtmlTest
+            style={{ cursor: 'pointer' }}
+          />
+        </div>
+
+
+        {showMarginSettings && (
+          <div className="margin-settings-overlay" onClick={() => setShowMarginSettings(false)}>
+            <div className="margin-settings-modal" onClick={(e) => e.stopPropagation()}>
+              <h3>페이지 여백</h3>
+              <div className="margin-inputs">
+                <div className="margin-input-group">
+                  <label>위쪽</label>
+                  <input
+                    type="number"
+                    value={margins.top}
+                    onChange={(e) => handleMarginChange('top', Number(e.target.value))}
+                    min="0"
+                  />
+                  <span>mm</span>
+                </div>
+                <div className="margin-input-group">
+                  <label>아래쪽</label>
+                  <input
+                    type="number"
+                    value={margins.bottom}
+                    onChange={(e) => handleMarginChange('bottom', Number(e.target.value))}
+                    min="0"
+                  />
+                  <span>mm</span>
+                </div>
+                <div className="margin-input-group">
+                  <label>왼쪽</label>
+                  <input
+                    type="number"
+                    value={margins.left}
+                    onChange={(e) => handleMarginChange('left', Number(e.target.value))}
+                    min="0"
+                  />
+                  <span>mm</span>
+                </div>
+                <div className="margin-input-group">
+                  <label>오른쪽</label>
+                  <input
+                    type="number"
+                    value={margins.right}
+                    onChange={(e) => handleMarginChange('right', Number(e.target.value))}
+                    min="0"
+                  />
+                  <span>mm</span>
+                </div>
+              </div>
+              <div className="margin-buttons">
+                <button onClick={() => setShowMarginSettings(false)} className="margin-apply-btn">적용</button>
+                <button onClick={() => setShowMarginSettings(false)} className="margin-cancel-btn">취소</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={documentContainerRef}>
+          <div
+            className="center-document"
+            style={{
+              top: "70px",
+              padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`,
+            }}
+          >
+            <div ref={editorRef} className="document-input" />
+          </div>
+        </div>
+
+        <div className="center-panel" style={{ top: `${panelTop}px` }}>
+          <div className="panel-tabs" ref={tabsContainerRef}>
+            <div
+              className={`panel-tab ${activeTab === 'chat' ? 'active' : ''}`}
+              ref={el => (tabRefs.current.chat = el)}
+              onClick={() => setActiveTab('chat')}
+            >
+              챗봇
+            </div>
+            <div
+              className={`panel-tab ${activeTab === 'feedback' ? 'active' : ''}`}
+              ref={el => (tabRefs.current.feedback = el)}
+              onClick={() => setActiveTab('feedback')}
+            >
+              피드백
+            </div>
+            <div
+              className={`panel-tab ${activeTab === 'reference' ? 'active' : ''}`}
+              ref={el => (tabRefs.current.reference = el)}
+              onClick={() => setActiveTab('reference')}
+            >
+              참고자료
+            </div>
+            <div
+              className="panel-tab-underline"
+              style={{ left: underlineStyle.left, width: underlineStyle.width }}
+            />
+          </div>
+          {renderPanelContent()}
+        </div>
+        <div className="center-undo-controls">
+          <button
+            type="button"
+            className="center-undo-btn"
+            onClick={handleUndo}
+            aria-label="실행 취소"
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            className="center-undo-btn"
+            onClick={handleRedo}
+            aria-label="다시 실행"
+          >
+            →
+          </button>
+        </div>
+        <button
+          type="button"
+          className="center-summary-btn"
+          onClick={handleShowSummary}
+          disabled={!uploadedContent?.summary}
+        >
+          요약
+        </button>
+      </div>
+    </Layout>
   );
 }

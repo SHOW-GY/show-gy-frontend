@@ -378,7 +378,7 @@
   height: 500px;
   left : 50%;
   transform: translateX(-50%);
-  /* overflow: clip; */
+  overflow: clip;
   position: absolute;
   margin: 0 auto;
 }
@@ -683,4 +683,3 @@
   letter-spacing: 1px;
   word-wrap: break-word;
 }
-

@@ -1,18 +1,19 @@
-import React from 'react';
 import glasses from '../assets/icons/Glasses.png';
+import { useState } from 'react';
 
 interface FileItem {
 	id: number;
 	name: string;
 	date: string;
-	Leader: string;
+	teamName: string;
+	teamLeader: string;
 }
 
-interface AlldocumentProps {
-	files: FileItem[];
-}
-
-export default function Alldocument({ files }: AlldocumentProps) {
+export default function Alldocument() {
+	const [files] = useState<FileItem[]>([
+		{ id: 1, name: 'OCR 기반 스마트 요약 시스템', date: '2025-10-25', teamName: 'SHOW-GY', teamLeader: '김용민' },
+		{ id: 2, name: 'YOLO기반 이상치 탐지', date: '2025-10-04', teamName: '컴퓨터비전', teamLeader: '박성철' },
+	]);
 	return (
 		<>
 			{/* 상단 바 */}
@@ -24,22 +25,22 @@ export default function Alldocument({ files }: AlldocumentProps) {
 					className="search-input"
 				/>
 			</div>
+
 			{/* 파일 테이블 */}
 			<div className="files-table">
-				<div className="table-header">
-					<div className="column-header">팀명</div>
-					<div className="column-header">수정 날짜</div>
-					<div className="column-header">팀장</div>
+				<div className="files-table-header">
+					<div className="files-table-col">프로젝트명</div>
+					<div className="files-table-col">수정 날짜</div>
+					<div className="files-table-col">팀명</div>
+					<div className="files-table-col">팀장</div>
 				</div>
-				<div className="table-body">
+				<div className="files-table-body">
 					{files.map((file) => (
-						<div key={file.id} className="table-row">
-							<div className="table-cell name-cell">
-								{file.name}
-							</div>
-							<div className="table-cell">{file.date}</div>
-							<div className="table-cell">{file.Leader}</div>
-							<div className="table-menu">⋮</div>
+						<div key={file.id} className="files-table-row">
+							<div className="files-table-cell files-table-project">{file.name}</div>
+							<div className="files-table-cell">{file.date}</div>
+								<div className="files-table-cell">{file.teamName}</div>
+								<div className="files-table-cell">{file.teamLeader}</div>
 						</div>
 					))}
 				</div>

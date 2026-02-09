@@ -4,13 +4,14 @@ import { marked } from "marked";
 import Quill from 'quill';
 import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
-import Header from '../components/Header';
 import '../styles/design.css';
 import '../styles/animations.css';
 import '../styles/summary.css';
 import { uploadDocument } from '../apis/documentApi';
 import fileuploadIcon from '../assets/icons/fileupload.png';
 import searchIcon from '../assets/icons/search.png';
+
+import Layout from '../components/Layout';
 
 export default function Summary() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,68 +152,69 @@ export default function Summary() {
   };
 
   return (
-    <div className="summary-container">
-      <div className="noise-large"></div>
-      <div className="noise-small"></div>
+    <Layout activeMenu="summary">
+      <div className="summary-container">
+        <div className="noise-large"></div>
+        <div className="noise-small"></div>
 
-      <div className="blob-purple"></div>
-      <div className="blob-pink"></div>
-      <div className="blob-cyan"></div>
+        <div className="blob-purple"></div>
+        <div className="blob-pink"></div>
+        <div className="blob-cyan"></div>
 
-      <div className="hero-title">
-        <p className="hero-title-main animate-reveal-left">안녕하세요, {userNickname}님</p>
-        <p className="hero-title-sub animate-reveal-left">원하는 문서를 업로드 또는 작성해주세요.</p>
-      </div>
+        <div className="hero-title">
+          <p className="hero-title-main animate-reveal-left">안녕하세요, {userNickname}님</p>
+          <p className="hero-title-sub animate-reveal-left">원하는 문서를 업로드 또는 작성해주세요.</p>
+        </div>
 
-      <div className="summary-input-area">
-        {uploadedFile && (
-          <div className="uploaded-file-preview">
-            <div className="file-icon">PDF</div>
-            <span className="file-name">{uploadedFile.name}</span>
-            <button className="file-remove-btn" onClick={handleFileRemove}>×</button>
-          </div>
-        )}
-        <div className="summary-input-shell">
-          <textarea
-            className="summary-text-input"
-            placeholder="문서 내용을 입력하세요."
-            aria-label="문서 내용을 입력하세요"
-            value={searchQuery}
-            onChange={handleInputChange}
-            rows={1}
-            style={{ resize: 'none' }}
-          />
-          {errorMessage && (
-            <div className="summary-error-msg" aria-live="polite" style={{ color: '#ff6b6b', marginTop: 8 }}>
-              {errorMessage}
+        <div className="summary-input-area">
+          {uploadedFile && (
+            <div className="uploaded-file-preview">
+              <div className="file-icon">PDF</div>
+              <span className="file-name">{uploadedFile.name}</span>
+              <button className="file-remove-btn" onClick={handleFileRemove}>×</button>
             </div>
           )}
-          <div className="summary-upload-group">
-            <input 
-              type="file" 
-              id="summary-file-input" 
-              className="summary-file-input" 
-              aria-label="파일 업로드"
-              onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.txt"
+          <div className="summary-input-shell">
+            <textarea
+              className="summary-text-input"
+              placeholder="문서 내용을 입력하세요."
+              aria-label="문서 내용을 입력하세요"
+              value={searchQuery}
+              onChange={handleInputChange}
+              rows={1}
+              style={{ resize: 'none' }}
             />
-            <label htmlFor="summary-file-input" className="summary-upload-hit">
-              <img src={fileuploadIcon} alt="파일 업로드" className="summary-upload-icon" />
-            </label>
-            <button
-              onClick={handleSearch}
-              className="summary-search-btn"
-              aria-label="검색"
-            >
-              <img src={searchIcon} alt="검색" className="summary-search-icon" />
-            </button>
+            {errorMessage && (
+              <div className="summary-error-msg" aria-live="polite" style={{ color: '#ff6b6b', marginTop: 8 }}>
+                {errorMessage}
+              </div>
+            )}
+            <div className="summary-upload-group">
+              <input 
+                type="file" 
+                id="summary-file-input" 
+                className="summary-file-input" 
+                aria-label="파일 업로드"
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx,.txt"
+              />
+              <label htmlFor="summary-file-input" className="summary-upload-hit">
+                <img src={fileuploadIcon} alt="파일 업로드" className="summary-upload-icon" />
+              </label>
+              <button
+                onClick={handleSearch}
+                className="summary-search-btn"
+                aria-label="검색"
+              >
+                <img src={searchIcon} alt="검색" className="summary-search-icon" />
+              </button>
+            </div>
           </div>
         </div>
+
+        <div className="summary-university-info">한양대학교 ERICA x 롯데이노베이트</div>
+
       </div>
-
-      <div className="summary-university-info">한양대학교 ERICA x 롯데이노베이트</div>
-
-      <Header activeMenu="summary" />
-    </div>
+    </Layout>
   );
 }
