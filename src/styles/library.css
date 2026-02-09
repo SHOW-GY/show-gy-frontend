@@ -23,19 +23,19 @@
 .library-container {
   position: relative;
   width: 100%;
-  min-height: 120vh;
-  background: radial-gradient(
+  min-height: 150vh;
+  /* background: radial-gradient(
     ellipse 70.71% 70.71% at 50% 50%,
     #1a1a2e 0%,
     #16213e 40%,
     #0f0f23 100%
-  );
+  ); */
   overflow: hidden;
 }
 
 .library-layout {
   display: flex;
-  height : 100vh;
+  height : 100%;
   position: relative;
   z-index: 1;
 }

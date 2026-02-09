@@ -3,6 +3,8 @@ import fileupload from '../assets/icons/fileupload.png';
 import search from '../assets/icons/search.png';
 import { sendChatbotMessage } from '../apis/chatbotApi';
 
+import showgy from '../assets/image/showgy.png';
+
 interface ChatbotProps {
   documentText?: string;
   topicId?: string;
@@ -23,7 +25,7 @@ interface ChatMessage {
 export default function Chatbot({ documentText, topicId }: ChatbotProps) {
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'bot', content: 'SHOW-GY 챗봇입니다.\n무엇을 도와드릴까요?' }
+    { role: 'bot', content: 'SHOW-BOT 입니다.\n무엇을 도와드릴까요?' }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [responseData, setResponseData] = useState<any>(null);
@@ -281,9 +283,20 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
     <>
       <div className="panel-chat-container" ref={chatContainerRef}>
         {messages.map((msg, index) => (
-          <div key={index} className={`panel-chat-message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`}>
-            <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-            {msg.negatives && msg.negatives.length > 0 && (
+          <div
+            key={index}
+            className={`panel-chat-row ${msg.role === 'user' ? 'row-user' : 'row-bot'}`}
+          >
+            {msg.role === 'bot' && (
+              <img
+                src={showgy}
+                alt="SHOW-GY"
+                className="panel-chat-avatar"
+              />
+            )}
+            <div className={`panel-chat-message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`}>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+              {msg.negatives && msg.negatives.length > 0 && (
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {msg.negatives.map((neg, idx) => (
                   <div
@@ -342,7 +355,7 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
                 ))}
               </div>
             )}
-            {msg.selections && msg.selections.length > 0 && (
+              {msg.selections && msg.selections.length > 0 && (
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {msg.selections.map((sel) => (
                   <button
@@ -365,12 +378,16 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
                   </button>
                 ))}
               </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
         {isLoading && (
-          <div className="panel-chat-message bot-message">
-            <p>...</p>
+          <div className="panel-chat-row row-bot">
+            <img src={showgy} alt="SHOW-GY" className="panel-chat-avatar" />
+            <div className="panel-chat-message bot-message">
+              <p>...</p>
+            </div>
           </div>
         )}
       </div>

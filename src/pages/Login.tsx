@@ -1,9 +1,10 @@
-import Header from '../components/Header';
+import Header from '../components/Layout';
 import '../styles/design.css';
 import '../styles/login.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../apis';
+import Layout from '../components/Layout';
 
 export default function Login() {
   const [userId, setUserId] = useState('');
@@ -48,8 +49,7 @@ export default function Login() {
   };
 
   return (
-    <div className="home-container">
-      <Header activeMenu="login" />
+    <Layout activeMenu="login">
       <div className="login-container">
         <div className="login-header">
           <h1 className="login-title">로그인</h1>
@@ -90,6 +90,6 @@ export default function Login() {
           </span>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }

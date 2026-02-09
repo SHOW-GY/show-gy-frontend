@@ -10,12 +10,15 @@ import '../styles/summary.css';
 import { uploadDocument } from '../apis/documentApi';
 import fileuploadIcon from '../assets/icons/fileupload.png';
 import searchIcon from '../assets/icons/search.png';
+import showgy from '../assets/image/showgy.png';
 
 import Layout from '../components/Layout';
 
 export default function Summary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userNickname, setUserNickname] = useState<string>('사용자');
+  const [teamOptions, setTeamOptions] = useState<Array<{ team_code: string; team_name: string }>>([]);
+  const [selectedTeam, setSelectedTeam] = useState<string>('personal');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -31,6 +34,23 @@ export default function Summary() {
         setUserNickname(user.nickname || user.name || '사용자');
       } catch (e) {
         console.error('사용자 정보 파싱 실패:', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const storedTeam = localStorage.getItem('team_id');
+    if (storedTeam) setSelectedTeam(storedTeam);
+
+    const storedTeams = localStorage.getItem('team_list');
+    if (storedTeams) {
+      try {
+        const parsed = JSON.parse(storedTeams);
+        if (Array.isArray(parsed)) {
+          setTeamOptions(parsed);
+        }
+      } catch (e) {
+        console.error('팀 목록 파싱 실패:', e);
       }
     }
   }, []);
@@ -58,6 +78,16 @@ export default function Summary() {
     e.target.style.height = 'auto';
     const maxHeight = 135;
     e.target.style.height = `${Math.min(e.target.scrollHeight, maxHeight)}px`;
+  };
+
+  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedTeam(value);
+    if (value === 'personal') {
+      localStorage.removeItem('team_id');
+    } else {
+      localStorage.setItem('team_id', value);
+    }
   };
 
   // 검색/업로드 핸들러
@@ -160,6 +190,28 @@ export default function Summary() {
         <div className="blob-purple"></div>
         <div className="blob-pink"></div>
         <div className="blob-cyan"></div>
+
+        <div className="summary-team-selector">
+          <div className="summary-team-prompt">
+            <img src={showgy} alt="showgy" className="summary-team-avatar" />
+            <div className="summary-team-bubble">당신의 팀을 선택해주세요</div>
+          </div>
+          <div className="summary-team-select-wrap">
+            <select
+              className="summary-team-select"
+              value={selectedTeam}
+              onChange={handleTeamChange}
+              aria-label="팀 선택"
+            >
+              <option value="personal">개인용</option>
+              {teamOptions.map((team) => (
+                <option key={team.team_code} value={team.team_code}>
+                  {team.team_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <div className="hero-title">
           <p className="hero-title-main animate-reveal-left">안녕하세요, {userNickname}님</p>

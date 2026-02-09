@@ -9,7 +9,7 @@
 .mypage-left-panel {
   width: 492px;
   left: calc(50% - 470px);
-  top: 50px;
+  top: 20px;
   transform: translateX(-50%);
   background: rgba(139, 92, 246, 0.05);
   border-radius: 12px;
@@ -106,7 +106,7 @@
 /* Right panel */
 .mypage-right-panel {
   left : calc(50% - 200px);
-  top: 50px;
+  top: 20px;
   width : 900px;
   flex: 1;
   background: rgba(139, 92, 246, 0.05);
@@ -215,7 +215,7 @@
   /* margin-top: 18px; */
   padding: 18px;
   border-radius: 16px;
-  top : 250px;
+  top : 200px;
   width : 900px;
   height : 680px;
   left : calc(50% - 200px);
@@ -226,7 +226,7 @@
     0 12px 40px rgba(0,0,0,0.35),
     0 0 0 1px rgba(255,255,255,0.04) inset;
 
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); */
 }
 
 .mypage-team-list-header{
@@ -307,4 +307,60 @@
   border-radius: 999px;
   border: 1px solid rgba(245, 158, 11, 0.35);
   background: rgba(245, 158, 11, 0.10);
+}
+
+.mypage-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  list-style: none;
+  padding: 0;
+  color: #E2E8F0;
+}
+
+.mypage-page,
+.mypage-prev,
+.mypage-next {
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.10);
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.mypage-page-link,
+.mypage-prev a,
+.mypage-next a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  color: #E2E8F0;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.mypage-page:hover,
+.mypage-prev:hover,
+.mypage-next:hover {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.45);
+  box-shadow: 0 10px 26px rgba(236, 72, 153, 0.22);
+  transform: translateY(-1px);
+}
+
+.mypage-pagination .active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(236, 72, 153, 0.35));
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
+}
+
+.mypage-pagination .disabled {
+  opacity: 0.4;
+  pointer-events: none;
 }

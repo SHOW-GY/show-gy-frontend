@@ -3,7 +3,7 @@
   width: 100%;
   min-height: 3000px;
   position: relative;
-  background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%);
+  /* background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%); */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -12,9 +12,9 @@
 
 .summary-container {
   width: 100%;
-  min-height: 100vh;
+  min-height: 120vh;
   position: relative;
-  background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%);
+  /* background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%); */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -65,46 +65,21 @@
   will-change: transform;
 }
 
-/* .noise-large {
-  width: 100%;
-  height: 100%;
+.show-gy {
+  left: calc(50% - 80px);
+  top : 30px;
   position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0.80;
-  background: radial-gradient(ellipse 0.03% 0.04% at 10.00% 20.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.03% 0.04% at 30.00% 40.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.05% 0.08% at 50.00% 60.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.03% 0.04% at 70.00% 80.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.03% 0.04% at 90.00% 10.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.05% 0.08% at 15.00% 85.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.03% 0.04% at 45.00% 15.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.03% 0.04% at 65.00% 35.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.03% 0.04% at 85.00% 55.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.05% 0.08% at 25.00% 75.00%, white 0%, rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-  z-index: 1;
+  z-index: 2;
+  will-change: transform;
 }
 
-.noise-small {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: -4px;
-  opacity: 0.40;
-  background: radial-gradient(ellipse 0.67% 0.67% at 20.00% 30.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.50% 0.50% at 60.00% 70.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.40% 0.40% at 50.00% 50.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.29% 0.29% at 80.00% 20.00%, white 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(ellipse 0.44% 0.44% at 10.00% 90.00%, white 0%, rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-  z-index: 1;
-} */
+.show-gy img {
+  width: 70%;
+  height: 70%;
 
-/* .noise {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 4;     
-  opacity: 0.12;     
-  mix-blend-mode: overlay; 
-
-  background:
-    radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1.5px) 0 0 / 140px 140px,
-    radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1.5px) 40px 60px / 180px 180px;
-
-  transform: translateZ(0);
-  will-change: opacity;
-} */
-
+  object-fit: contain;
+  display: block;
+}
 
 .hero-title {
   width: 942px;
@@ -167,6 +142,49 @@
   line-height: 35.84px;
   letter-spacing: 3px;
   z-index: 5;
+}
+
+.scroll-indicator {
+  position: absolute;
+  left: 50%;
+  top: 700px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #E5E7EB;
+  font-family: 'Nanum Gothic', system-ui, sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  opacity: 0.85;
+  z-index: 5;
+  user-select: none;
+  pointer-events: none;
+}
+
+.scroll-arrow {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(229, 231, 235, 0.9);
+  border-bottom: 2px solid rgba(229, 231, 235, 0.9);
+  transform: rotate(45deg);
+  animation: scroll-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce {
+  0% {
+    transform: translateY(0) rotate(45deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(6px) rotate(45deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) rotate(45deg);
+    opacity: 0.6;
+  }
 }
 
 /* ----- Service Section ----- */
@@ -682,4 +700,9 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   word-wrap: break-word;
+}
+
+.scroll-text {
+  top : -100px;
+  font-size: 14px;
 }

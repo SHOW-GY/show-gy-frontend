@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
+import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import cameraIcon from '../assets/icons/camera.png';
 import { deleteUser } from '../apis/userApi';
 import { logout } from '../apis/authApi';
-import { generateTeam } from '../apis/cooperation';
+import { generateTeam, participateTeam } from '../apis/cooperation';
 import '../styles/design.css';
 import '../styles/mypage.css';
 
 import Team_make from "../components/Team_make";
+import Team_join from "../components/Team_join";
 
 type TeamCard = {
   team_name: string;
@@ -18,10 +20,16 @@ type TeamCard = {
 
 
 export default function Mypage() {
+  const PAGE_SIZE = 8;
   const [userInfo, setUserInfo] = useState<any>(null);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [teamJoinOpen, setTeamJoinOpen] = useState(false);
   const [teamCards, setTeamCards] = useState<TeamCard[]>([]);
+  const [page, setPage] = useState(0);
   const navigate = useNavigate();
+
+  const pageCount = Math.ceil(teamCards.length / PAGE_SIZE);
+  const currentTeams = teamCards.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const handleCreateTeam = async (teamName: string) => {
     try {
@@ -47,6 +55,28 @@ export default function Mypage() {
     }
   };
 
+  const handleJoinTeam = async (teamCode: string) => {
+    try {
+      const result = await participateTeam({ team_code: teamCode });
+
+      const newCard: TeamCard = {
+        team_name: result.data.team_name,
+        team_code: teamCode,
+        leader_id: result.data.user_id,
+      };
+
+      setTeamCards((prev) => {
+        if (prev.some((t) => t.team_code === newCard.team_code)) return prev;
+        return [newCard, ...prev];
+      });
+
+      alert(`${result.message}\n참가한 팀: ${result.data.team_name}`);
+    } catch (error) {
+      console.error("팀 참가 실패:", error);
+      alert("팀 참가에 실패했습니다. 팀 코드를 확인해주세요.");
+    }
+  };
+
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -61,6 +91,16 @@ export default function Mypage() {
       navigate('/login');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (page > pageCount - 1) {
+      setPage(Math.max(0, pageCount - 1));
+    }
+  }, [page, pageCount]);
+
+  const handlePageChange = ({ selected }: { selected: number }) => {
+    setPage(selected);
+  };
 
   const handleLogout = async () => {
     try {
@@ -137,7 +177,7 @@ export default function Mypage() {
 
               <button
                 className="mypage-team-btn join"
-                onClick={() => alert('팀 참가 기능은 추후 연결 예정입니다.')}
+                onClick={() => setTeamJoinOpen(true)}
               >
                 팀 참가
               </button>
@@ -147,6 +187,12 @@ export default function Mypage() {
               open={teamModalOpen}
               onClose={() => setTeamModalOpen(false)}
               onCreate={handleCreateTeam}
+            />
+
+            <Team_join
+              open={teamJoinOpen}
+              onClose={() => setTeamJoinOpen(false)}
+              onJoin={handleJoinTeam}
             />
           </div>
         </div>
@@ -163,7 +209,7 @@ export default function Mypage() {
             </div>
           ) : (
             <div className="mypage-team-grid">
-              {teamCards.map((t) => (
+              {currentTeams.map((t) => (
                 <div key={t.team_code} className="mypage-team-card-simple">
                   <div className="mypage-team-row">
                     <span className="mypage-team-label">팀명</span>
@@ -180,6 +226,26 @@ export default function Mypage() {
                 </div>
               ))}
             </div>
+          )}
+
+          {pageCount > 1 && (
+            <ReactPaginate
+              previousLabel="<"
+              nextLabel=">"
+              breakLabel="..."
+              marginPagesDisplayed={1}
+              pageRangeDisplayed={3}
+              pageCount={pageCount}
+              onPageChange={handlePageChange}
+              forcePage={page}
+              containerClassName="mypage-pagination"
+              pageClassName="mypage-page"
+              pageLinkClassName="mypage-page-link"
+              activeClassName="active"
+              previousClassName="mypage-prev"
+              nextClassName="mypage-next"
+              disabledClassName="disabled"
+            />
           )}
         </div>
 

@@ -92,3 +92,17 @@ export interface GenerateTeamResponse {
     team_owner: boolean;
   };
 }
+
+export interface TeamparticipationRequest{
+  team_code: string;
+}
+
+export interface TeamparticipationResponse{
+  status: string;
+  message: string;
+  data: {
+    team_name: string;
+    user_id: string;
+    team_owner: boolean;
+  };
+}

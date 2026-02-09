@@ -17,6 +17,7 @@ import collection from '../assets/image/collection.png';
 
 import erica from '../assets/image/erica.jpg';
 import lotte from '../assets/image/Lotteinovate.jpeg';
+import showgy_stand from '../assets/image/showgy_stand.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -124,12 +125,18 @@ export default function Home() {
         <div className="blob-purple"></div>
         <div className="blob-pink"></div>
         <div className="blob-cyan"></div>
+        <div className="show-gy animate-slide-up"><img src={showgy_stand} alt="Show-Gy stand" /></div>
         <div className="hero-title">
           <p className="hero-title-main animate-slide-up">긴 문서, 한눈에 핵심만</p>
           <p className="hero-title-sub animate-slide-up delay-200">AI 기반 스마트 요약 시스템</p>
         </div>
 
         <div className="university-info animate-slide-up delay-400">한양대학교 ERICA x 롯데이노베이트</div>
+
+        <div className="scroll-indicator" aria-hidden="true">
+          <span className="scroll-text">Scroll</span>
+          <span className="scroll-arrow" />
+        </div>
 
         {/* Service Section */}
         <div style={{ position: 'absolute', top: '1000px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, width: '100%', height: 'auto' }}>
