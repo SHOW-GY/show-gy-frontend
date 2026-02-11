@@ -25,13 +25,17 @@ html, body {
   flex-direction: column;
 }
 
+main {
+  flex: 1;
+}
+
 /* ------ Header ------ */
 .header {
   width: 100%;
-  height: 45px;
+  height: 56px;
   top: 0;
   left: 0;
-  /* position: sticky; */
+  position: sticky;
   background: rgba(15, 15, 35, 0.85);
   border-bottom: 1px rgba(139, 92, 246, 0.30) solid;
   /* backdrop-filter: blur(10px); */
@@ -42,14 +46,26 @@ html, body {
   z-index: 100;
 }
 
+.header-inner {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 0 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .brand {
-  width: 200px;
+  width: auto;
   height: 30px;
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
+  white-space: nowrap; /* 줄바꿈 방지 */
   background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -87,17 +103,19 @@ html, body {
 }
 
 .menu {
-  width: 446px;
+  width: auto;
   height: 27px;
   position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 28px;
+  flex-wrap: nowrap;
 }
 
 .menu-home {
   color: #F8FAFC;
-  font-size: 15px;
+  font-size: clamp(12px, 1.2vw, 14px);
   font-family: 'Nanum Gothic', system-ui, sans-serif;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
@@ -109,9 +127,9 @@ html, body {
 }
 
 .menu-underline {
-  width: 40.97px;
+  width: 70%;
   height: 3px;
-  left: calc(50% - 20.5px);
+  left: 15%;
   top: 25px;
   position: absolute;
   background: linear-gradient(90deg, #F59E0B 0%, #EC4899 100%);
@@ -121,7 +139,7 @@ html, body {
 
 .menu-summary {
   color: #F8FAFC;
-  font-size: 14px;
+  font-size: clamp(12px, 1.2vw, 14px);
   font-family: 'Nanum Gothic', system-ui, sans-serif;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
@@ -134,7 +152,7 @@ html, body {
 
 .menu-library {
   color: #F8FAFC;
-  font-size: 14px;
+  font-size: clamp(12px, 1.2vw, 14px);
   font-family: 'Nanum Gothic', system-ui, sans-serif;
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
@@ -148,92 +166,169 @@ html, body {
 .menu-login {
   color: #F8FAFC;
   font-family: 'Nanum Gothic', system-ui, sans-serif;
-  font-size: 14px;
-  left : 200px;
+  font-size: clamp(12px, 1.2vw, 14px);
   text-shadow: 0px 0px 10px rgba(139, 92, 246, 1.00);
   cursor: pointer;
   transition: transform 0.2s;
+  position: static;
 }
 
 .menu-login:hover {
   transform: scale(1.1);
 }
 
-/* ------ Tail ------ */
+@media (max-width: 768px) {
+  .header-inner {
+    padding: 0 12px;
+  }
+
+  .menu {
+    gap: 14px;
+  }
+
+  .brand-text {
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-text {
+    display: none; /* ✅ 초소형에서는 로고만 */
+  }
+
+  .menu {
+    gap: 10px;
+  }
+}
+
+.menu-toggle {
+  display: none;
+  border: 1px solid rgba(139, 92, 246, 0.30);
+  background: rgba(139, 92, 246, 0.08);
+  color: #F8FAFC;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .menu { display: none; }
+  .menu-toggle { display: inline-flex; align-items:center; justify-content:center; }
+}
+
+/* 드롭다운 */
+.mobile-menu {
+  position: absolute;
+  top: 56px;           /* header 높이 맞춰 */
+  right: 12px;
+  width: 180px;
+
+  background: rgba(15, 15, 35, 0.92);
+  border: 1px solid rgba(139, 92, 246, 0.30);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.mobile-menu > div {
+  padding: 12px 14px;
+  color: #F8FAFC;
+  cursor: pointer;
+}
+
+.mobile-menu > div:hover {
+  background: rgba(139, 92, 246, 0.12);
+}
+
+
+  /* ------ Tail ------ */
+/* ------ Tail (Footer) ------ */
 .tail {
   width: 100%;
-  height: 45px;
-  position: relative;
-  left: 0;
   background: rgba(15, 15, 35, 0.95);
   border-top: 1px rgba(139, 92, 246, 0.30) solid;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+
+  padding: 14px 0;   /* ✅ 높이 고정 제거 */
 }
 
+/* ✅ 가운데 정렬 + 최대폭 컨테이너 */
 .tail-content {
-  width: 1386px;
-  height: 40px;
-  position: relative;
-  left : 0;
-  transform: none;
+  width: min(1200px, 100%);
+  padding: 0 16px;
+
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
+/* 로고 영역 */
 .tail-logo {
-  width: 225.97px;
-  height: 24px;
-  position: relative;
-  left : calc(50% - 300px);
   display: flex;
   align-items: center;
-  transform: none;
+  gap: 8px;
+
+  white-space: nowrap;
 }
 
 .tail-logo-icon {
   height: 24px;
-  width: 50px;
+  width: 32px;          /* ✅ 50 -> 32로 줄여도 충분 */
   flex-shrink: 0;
-  margin-right: 8px;
-  display:flex;
+  display: flex;
   align-items: center;
 }
 
 .tail-logo-icon img {
   height: 100%;
   width: 100%;
-  display : block;
-  object-fit : contain;
+  display: block;
+  object-fit: contain;
 }
+
 .tail-logo-text {
   background: linear-gradient(90deg, #F59E0B 0%, #8B5CF6 50%, #EC4899 100%);
   font-size: 15px;
   font-family: 'MoveSans', system-ui, sans-serif;
   font-weight: 600;
   text-transform: uppercase;
-  line-height: 40px;
   letter-spacing: 2px;
-  word-wrap: break-word;
+
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* 정보 영역 */
 .tail-info {
-  height: 40px;
-  left : calc(50% - 300px);
-  position : relative;
-  display: flex;
-  justify-content: flex-start;
-  flex-direction: column;
   color: #E2E8F0;
-  font-size: 10px;
+  font-size: 11px;
   font-family: 'Space Grotesk', system-ui, sans-serif;
   font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 1px;
-  word-wrap: break-word;
+  line-height: 1.4;
+  letter-spacing: 0.6px;
+
+  text-align: right;     /* 데스크탑에서 오른쪽 정렬 */
+}
+
+/* ✅ 모바일: 세로로 쌓고 가운데 정렬 */
+@media (max-width: 600px) {
+  .tail-content {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .tail-info {
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.5;
+  }
 }
