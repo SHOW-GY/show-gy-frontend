@@ -14,6 +14,13 @@
   padding-top: 120px; 
 }
 
+@media (max-width: 480px){
+  .carousel-root{
+    padding-top: 92px; /* 120 -> 92 */
+  }
+}
+
+
 .carousel-title {
     position: static;
     left: 50%;
@@ -44,7 +51,6 @@
   align-items:center;
 
   width: 100%;
-  height: min(56.25vw, 520px);
   perspective: 100vmax;
   overflow-x: hidden;
 }
@@ -131,6 +137,13 @@
   gap: 10px;
   justify-content: center;
 }
+
+@media (max-width: 768px){
+  .carousel-root #btns{
+    display: none;
+  }
+}
+
 
 .carousel-root .btn{
     font-family:inherit;

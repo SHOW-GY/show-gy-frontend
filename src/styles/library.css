@@ -3,7 +3,7 @@
   position: relative;
   top: 20px;
   left: 16px;
-  z-index: 3000;
+  z-index: 100;
 
   transform: none;
 
@@ -22,9 +22,9 @@
 @media (max-width: 768px){
   .sidebar-toggle{
     position: fixed;
-    top: 72px;     /* 헤더 밑 */
+    top: 67px;     /* 헤더 밑 */
     left: 16px;
-    z-index: 3000;
+    z-index: 2601;
   }
 }
 
@@ -40,6 +40,7 @@
   display: flex;
   height : 100%;
   position: relative;
+  align-items: stretch;
   z-index: 1;
 }
 
@@ -55,10 +56,10 @@
   border-right: 2px solid rgba(139, 92, 246, 0.3);
 
   /* 핵심 */
-  position: absolute;
+  position: relative;
+  top: 0px;
   left: 0;
-  /* top: 45px; */
-  height: 150vh;
+  height: calc(100vh - 56px);
 
   /* 기존 center 기준 제거 */
   transform: none;
@@ -66,7 +67,8 @@
   /* overflow-y: auto; */
   transition: transform 0.35s ease, opacity 0.35s ease;
   will-change: transform;
-  z-index: 100;
+  z-index: 900;
+  overflow-y: auto;
 }
 
 @media (max-width: 768px){
@@ -76,7 +78,7 @@
     left: 0;
     height: calc(100vh - 56px);
     width: min(260px, 82vw);
-    z-index: 2000;
+    z-index: 1200;
   }
 }
 

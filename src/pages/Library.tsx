@@ -1,7 +1,7 @@
 import Sidebar from '../components/Sidebar';
 import '../styles/design.css';
 import '../styles/library.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Alldocument from '../library/Alldocument';
 import Recent from '../library/Recent';
 import Trash from '../library/Trash';
@@ -10,8 +10,13 @@ import Layout from '../components/Layout';
 
 export default function Library() {
   const [activeMenu, setActiveMenu] = useState('recent');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
 
+  useEffect(() => {
+    const onResize = () => setSidebarOpen(window.innerWidth > 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   return (
     <Layout activeMenu="library">
       <div className="library-container">

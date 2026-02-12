@@ -15,6 +15,17 @@ html, body {
   min-height: 100%;
   background: radial-gradient(ellipse 113.14% 113.14% at 20.00% 80.00%, rgba(120, 119, 198, 0.30) 0%, rgba(120, 119, 198, 0) 50%), radial-gradient(ellipse 113.14% 113.14% at 80.00% 20.00%, rgba(255, 119, 198, 0.30) 0%, rgba(255, 119, 198, 0) 50%), radial-gradient(ellipse 84.85% 84.85% at 40.00% 40.00%, rgba(255, 206, 84, 0.20) 0%, rgba(255, 206, 84, 0) 50%), radial-gradient(ellipse 127.28% 98.99% at 90.00% 70.00%, rgba(139, 92, 246, 0.30) 0%, rgba(139, 92, 246, 0) 40%), linear-gradient(180deg, #0A0E27 0%, #1A1A2E 20%, #16213E 50%, #0F0F23 100%);
   background-attachment: fixed;
+  overflow-x: hidden;
+  -ms-overflow-style: none;   /* IE/Edge legacy */
+  scrollbar-width: thin;      /* Firefox */
+  scrollbar-color: rgba(139, 92, 246, 0.55) rgba(15, 15, 35, 0.0);
+  scrollbar-gutter: stable;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 10px;
+  height: 0;
 }
 
 /* ------ Layout ------ */
@@ -331,4 +342,37 @@ main {
     font-size: 10px;
     line-height: 1.5;
   }
+}
+
+/* ===== Global Scrollbar Custom ===== */
+html {
+  scrollbar-width: thin;                       /* Firefox */
+  scrollbar-color: rgba(139,92,246,0.5) transparent;
+}
+
+body::-webkit-scrollbar {
+  width: 8px;
+  display: none;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: rgba(15, 15, 35, 0.0);
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.45);
+  border-radius: 999px;
+  border: 2px solid rgba(15, 15, 35, 0.85);
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: rgba(236, 72, 153, 0.55);
+}
+
+html::-webkit-scrollbar-corner,
+body::-webkit-scrollbar-corner {
+  background: transparent;
 }
