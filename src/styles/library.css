@@ -19,18 +19,21 @@
   cursor: pointer;
 }
 
+@media (max-width: 768px){
+  .sidebar-toggle{
+    position: fixed;
+    top: 72px;     /* 헤더 밑 */
+    left: 16px;
+    z-index: 3000;
+  }
+}
+
 
 .library-container {
   position: relative;
   width: 100%;
-  min-height: 150vh;
-  /* background: radial-gradient(
-    ellipse 70.71% 70.71% at 50% 50%,
-    #1a1a2e 0%,
-    #16213e 40%,
-    #0f0f23 100%
-  ); */
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .library-layout {
@@ -65,6 +68,18 @@
   will-change: transform;
   z-index: 100;
 }
+
+@media (max-width: 768px){
+  .library-sidebar{
+    position: fixed;
+    top: 56px;          /* 헤더 높이 */
+    left: 0;
+    height: calc(100vh - 56px);
+    width: min(260px, 82vw);
+    z-index: 2000;
+  }
+}
+
 
 
 .library-sidebar.open {
@@ -122,6 +137,12 @@
 
   margin-left: var(--sidebar-w);
   transition: margin-left 0.35s ease;
+}
+
+@media (max-width: 768px){
+  .library-main{
+    margin-left: 0;
+  }
 }
 
 /* 사이드바 닫히면 메인도 원위치 */
