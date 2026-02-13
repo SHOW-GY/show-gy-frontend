@@ -22,15 +22,6 @@
   overflow-x: clip;
 }
 
-.summary-container {
-  width: 100%;
-  min-height: 100vh;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-
 .blob-purple {
   width: 120px;
   height: 120px;
