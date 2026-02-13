@@ -3,14 +3,38 @@ import { useState, useEffect } from 'react';
 import '../styles/design.css';
 import logo from '../assets/image/logo.png';
 
+type LibraryMenu = "recent" | "my-drive" | "trash";
+
 interface HeaderProps {
   activeMenu?: 'home' | 'summary' | 'library' | 'login' | 'mypage' | 'showgy';
+  onSelectLibraryMenu?: (menu: LibraryMenu) => void;
+  activeLibraryMenu?: LibraryMenu;
 }
 
-function Header({ activeMenu = 'home' }: HeaderProps) {
+function Header({
+  activeMenu = 'home',
+  onSelectLibraryMenu,
+  activeLibraryMenu,
+}: HeaderProps) {
   const navigate = useNavigate();
   const [userNickname, setUserNickname] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleLibraryMenuSelect = (menu: LibraryMenu) => {
+    onSelectLibraryMenu?.(menu);
+    navigate('/library');
+    setMobileOpen(false);
+  };
+
+  const handleMobileLibraryEntry = () => {
+    if (userNickname) {
+      onSelectLibraryMenu?.('recent');
+      navigate('/library');
+    } else {
+      navigate('/login');
+    }
+    setMobileOpen(false);
+  };
 
   useEffect(() => {
     // localStorage에서 사용자 정보 가져오기
@@ -116,10 +140,40 @@ function Header({ activeMenu = 'home' }: HeaderProps) {
       
       {mobileOpen && (
         <div className="mobile-menu">
-          <div onClick={() => { navigate('/'); setMobileOpen(false); }}>HOME</div>
-          <div onClick={() => { userNickname ? navigate('/summary') : navigate('/login'); setMobileOpen(false); }}>문서요약</div>
-          <div onClick={() => { userNickname ? navigate('/library') : navigate('/login'); setMobileOpen(false); }}>문서보관함</div>
-          <div onClick={() => { navigate(userNickname ? '/mypage' : '/login'); setMobileOpen(false); }}>
+          <div className="mobile-menu-item" onClick={() => { navigate('/'); setMobileOpen(false); }}>HOME</div>
+          <div
+            className="mobile-menu-item"
+            onClick={() => { userNickname ? navigate('/summary') : navigate('/login'); setMobileOpen(false); }}
+          >
+            문서요약
+          </div>
+          <div className="mobile-menu-item" onClick={handleMobileLibraryEntry}>문서보관함</div>
+          {activeMenu === 'library' && (
+            <>
+              <div
+                className={`mobile-menu-item library-submenu-item ${activeLibraryMenu === 'recent' ? 'active' : ''}`}
+                onClick={() => handleLibraryMenuSelect('recent')}
+              >
+                최근 문서함
+              </div>
+              <div
+                className={`mobile-menu-item library-submenu-item ${activeLibraryMenu === 'my-drive' ? 'active' : ''}`}
+                onClick={() => handleLibraryMenuSelect('my-drive')}
+              >
+                전체 문서함
+              </div>
+              <div
+                className={`mobile-menu-item library-submenu-item ${activeLibraryMenu === 'trash' ? 'active' : ''}`}
+                onClick={() => handleLibraryMenuSelect('trash')}
+              >
+                휴지통
+              </div>
+            </>
+          )}
+          <div
+            className="mobile-menu-item"
+            onClick={() => { navigate(userNickname ? '/mypage' : '/login'); setMobileOpen(false); }}
+          >
             {userNickname ? `${userNickname}님` : '로그인'}
           </div>
         </div>

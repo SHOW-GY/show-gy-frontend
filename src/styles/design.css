@@ -253,6 +253,17 @@ main {
   background: rgba(139, 92, 246, 0.12);
 }
 
+.mobile-menu .library-submenu-item {
+  padding-left: 26px;
+  font-size: 13px;
+  color: #E2E8F0;
+}
+
+.mobile-menu .library-submenu-item.active {
+  background: rgba(139, 92, 246, 0.18);
+  color: #F8FAFC;
+}
+
 
   /* ------ Tail ------ */
 /* ------ Tail (Footer) ------ */

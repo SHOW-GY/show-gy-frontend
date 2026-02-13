@@ -1,9 +1,11 @@
 import { Sling as Hamburger } from "hamburger-react";
 import { Dispatch, SetStateAction } from "react";
 
+type LibraryMenu = "recent" | "my-drive" | "trash";
+
 interface SidebarProps {
-  activeMenu: string;
-  setActiveMenu: (menu: string) => void;
+  activeMenu: LibraryMenu;
+  setActiveMenu: (menu: LibraryMenu) => void;
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
 }
