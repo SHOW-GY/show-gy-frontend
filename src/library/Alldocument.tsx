@@ -15,7 +15,7 @@ export default function Alldocument() {
 		{ id: 2, name: 'YOLO기반 이상치 탐지', date: '2025-10-04', teamName: '컴퓨터비전', teamLeader: '박성철' },
 	]);
 	return (
-		<>
+		<div className="alldoc">
 			{/* 상단 바 */}
 			<div className="library-search">
 				<span className="search-icon"><img src={glasses} alt="Glasses Icon" /></span>
@@ -45,6 +45,6 @@ export default function Alldocument() {
 					))}
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }

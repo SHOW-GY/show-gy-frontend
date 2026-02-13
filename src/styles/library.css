@@ -166,34 +166,11 @@
   }
 }
 
-
-
-.library-search {
-  display: flex;
-  align-items: center;
-  width: 500px;
-  height: 60px;
-  padding: 0 53px;
-  background: rgba(139, 92, 246, 0.05);
-  border: 2px solid rgba(139, 92, 246, 0.3);
-  border-radius: 50px;
-  gap: 20px;
-  position: absolute;
-  left: calc(50% - 250px);
-  transform: translateX(-50%);
-  top: 20px;
-}
-
 .search-icon {
   font-size: 25px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.search-icon img {
-  width: 40px;
-  height: 40px;
 }
 
 .search-input {
@@ -279,71 +256,8 @@
   color: #d89aa5;
 }
 
-.files-table {
-  background: rgba(139, 92, 246, 0.05);
-  border: 2px solid rgba(139, 92, 246, 0.3);
-  border-radius: 12px;
-  overflow: hidden;
-  position: absolute;
-  left: calc(50% + 45px);
-  transform: translateX(-50%);
-  width: 1100px;
-  height: 1000px;
-  top: 100px;
-  box-sizing: border-box;
-}
-
-.files-table-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  padding: 14px 28px;
-  background: rgba(139, 92, 246, 0.08);
-  border-bottom: 1.5px solid rgba(0, 0, 0, 0.35);
-}
-
-.files-table-col {
-  color: #e2e8f0;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.files-table-body {
-  max-height: 940px;
-  overflow-y: auto;
-}
-
-.files-table-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  padding: 14px 28px;
-  border-bottom: 1.5px solid rgba(0, 0, 0, 0.35);
-  align-items: center;
-  transition: background 0.2s ease;
-}
-
-.files-table-row:hover {
-  background: rgba(139, 92, 246, 0.08);
-}
-
 .files-table-row:last-child {
   border-bottom: none;
-}
-
-.files-table-cell {
-  color: #e2e8f0;
-  font-size: 15px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.files-table-project {
-  font-weight: 700;
 }
 
 .table-header {
@@ -569,4 +483,339 @@
 .empty-trash-btn:hover {
   background: rgba(139, 92, 246, 0.1);
   border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* ===== Alldocument responsive layout ===== */
+.alldoc{
+  width: 100%;
+  max-width: 1100px;
+  margin: 20px auto 0;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* 검색바: absolute 금지 */
+.alldoc .library-search {
+  position: relative;     /* 또는 static */
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 560px;
+  height: 60px;
+  margin: 0 auto 18px;
+  padding: 0 22px;
+  background: rgba(139, 92, 246, 0.05);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 50px;
+  gap: 14px;
+  box-sizing: border-box;
+
+  left: auto;             /* 혹시 이전 스타일 덮어쓰기 */
+  top: auto;
+  transform: none;
+}
+
+.alldoc .search-icon img {
+  width: 28px;
+  height: 28px;
+}
+
+.alldoc .search-input{
+  font-size: 18px;
+}
+
+/* 테이블: absolute 금지 */
+.alldoc .files-table {
+  background: rgba(139, 92, 246, 0.05);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+
+  position: relative;   /* 또는 static */
+  width: 100%;
+  height: auto;
+  min-height: 320px;
+
+  left: auto;
+  top: auto;
+  transform: none;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.alldoc .files-table-body {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.alldoc .files-table-header,
+.alldoc .files-table-row{
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr;
+  gap: 12px;
+  padding: 14px 18px;
+  align-items: center;
+}
+
+.alldoc .files-table-col{
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.6px;
+}
+
+.alldoc .files-table-cell {
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alldoc .files-table-project {
+  font-weight: 700;
+}
+
+/* ===== Mobile: 2컬럼(프로젝트명/수정날짜)만 ===== */
+@media (max-width: 768px){
+  .alldoc{
+    max-width: 100%;
+    margin-top: 14px;
+    padding: 0 14px;
+  }
+
+  .alldoc .library-search{
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 18px;
+    max-width: 100%;
+  }
+
+  .alldoc .search-input{
+    font-size: 16px;
+  }
+
+  .alldoc .files-table-header,
+  .alldoc .files-table-row{
+    grid-template-columns: 1fr 110px;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .alldoc .files-table-header .files-table-col:nth-child(3),
+  .alldoc .files-table-header .files-table-col:nth-child(4),
+  .alldoc .files-table-row .files-table-cell:nth-child(3),
+  .alldoc .files-table-row .files-table-cell:nth-child(4){
+    display: none;
+  }
+
+  .alldoc .files-table-cell{
+    font-size: 13px;
+  }
+}
+
+
+.library-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 560px;
+  height: 60px;
+  margin: 0 auto 18px;
+  padding: 0 22px;
+  background: rgba(139, 92, 246, 0.05);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 50px;
+  box-sizing: border-box;
+  gap: 14px;
+  position: absolute;
+  left: auto;
+  transform: none;
+  top: auto;
+}
+
+.search-icon img {
+  width: 28px;
+  height: 28px;
+}
+
+.files-table {
+  background: rgba(139, 92, 246, 0.05);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  left: auto;
+  transform: none;
+  width: 100%;
+  height: auto;
+  min-height: 320px;
+  top: auto;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.files-table-body {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.files-table-header,
+.files-table-row{
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr;
+  gap: 12px;
+  padding: 14px 18px;
+  align-items: center;
+}
+
+.files-table-row:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.files-table-col{
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.6px;
+}
+
+.files-table-cell {
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.files-table-project {
+  font-weight: 700;
+}
+
+/* ===== Mobile: 컬럼 줄이고, 팀명/팀장 숨기기 ===== */
+@media (max-width: 768px){
+  .alldoc{
+    max-width: 100%;
+    margin-top: 14px;
+    padding: 0 14px;
+  }
+
+  .library-search{
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 18px;
+    max-width: 100%;
+  }
+
+  .search-input{
+    font-size: 16px;
+  }
+
+  /* 모바일은 2컬럼(프로젝트명/수정날짜)만 */
+  .files-table-header,
+  .files-table-row{
+    grid-template-columns: 1fr 110px;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  /* header 3,4번째 숨김 */
+  .files-table-header .files-table-col:nth-child(3),
+  .files-table-header .files-table-col:nth-child(4){
+    display: none;
+  }
+
+  /* row 3,4번째 숨김 */
+  .files-table-row .files-table-cell:nth-child(3),
+  .files-table-row .files-table-cell:nth-child(4){
+    display: none;
+  }
+
+  .files-table-cell{
+    font-size: 13px;
+  }
+}
+
+/* ===== Trash responsive layout ===== */
+.trash-page{
+  width: 100%;
+  max-width: 1100px;
+  margin: 20px auto 0;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* 기존 trash-header가 absolute면 무조건 덮어써야 함 */
+.trash-page .trash-header{
+  position: relative;     /* absolute 금지 */
+  left: auto;
+  top: auto;
+  transform: none;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin: 0 auto 18px;
+}
+
+.trash-page .trash-title{
+  margin: 0;
+  color: #BE7C85;
+  font-size: 48px;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+}
+
+/* 버튼은 기존 empty-trash-btn 재사용 */
+
+/* 테이블은 Alldoc에서 만든 .files-table 반응형 규칙이 있으면 그대로 먹음
+   (없거나 충돌하면 아래처럼 trash-page 범위로 한 번 더 안정화 가능) */
+.trash-page .files-table{
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: 100%;
+  height: auto;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px){
+  .trash-page{
+    max-width: 100%;
+    margin-top: 14px;
+    padding: 0 14px;
+  }
+
+  .trash-page .trash-header{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .trash-page .trash-title{
+    font-size: 32px;
+  }
+
+  .trash-page .empty-trash-btn{
+    width: 100%;
+    text-align: center;
+  }
+
+  /* 모바일은 2컬럼만(프로젝트명/수정날짜) */
+  .trash-page .files-table-header,
+  .trash-page .files-table-row{
+    grid-template-columns: 1fr 110px;
+  }
+
+  .trash-page .files-table-header .files-table-col:nth-child(3),
+  .trash-page .files-table-header .files-table-col:nth-child(4),
+  .trash-page .files-table-row .files-table-cell:nth-child(3),
+  .trash-page .files-table-row .files-table-cell:nth-child(4){
+    display: none;
+  }
 }

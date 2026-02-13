@@ -13,7 +13,7 @@ export default function Trash() {
 	const [trashFiles] = useState<TrashFile[]>([]);
 
 	return (
-		<div>
+		<section className="trash-page">
 			<div className="trash-header">
 				<h1 className="library-title">휴지통</h1>
 				<button className="empty-trash-btn">휴지통 비우기</button>
@@ -37,6 +37,6 @@ export default function Trash() {
 					))}
 				</div>
 			</div>
-		</div>
+		</section>
 	);
 }

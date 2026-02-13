@@ -1,14 +1,43 @@
 /* ----- Summary ----- */
+.summary-container{
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 110px 0 120px; /* 헤더 고려해서 위 여백 */
+  gap: 22px;
+
+  box-sizing: border-box;
+}
+
 .summary-team-selector {
-  position: absolute;
-  left: 50%;
-  top: 140px;
-  transform: translateX(-50%);
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+
+  margin: 0 auto;
+  width: 100%;
+  max-width: 520px;
+  padding: 0 16px; 
+  box-sizing: border-box;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   z-index: 6;
+}
+
+.hero-title{
+  width: 100%;
+  max-width: 860px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .summary-team-prompt {
@@ -89,11 +118,15 @@
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
 .summary-university-info {
-  width: 632.29px;
+  width: 100%;
+  max-width: 720px;
+  margin: 28px auto 0;
+  padding: 0 16px;
+  box-sizing: border-box; 
   height: 35.84px;
-  position: absolute;
-  left: calc(50% - 316.145px);
-  top: 700px;
+  position: relative;
+  left: auto;
+  top: auto;
   opacity: 0.90;
   text-align: center;
   display: flex;
@@ -114,10 +147,14 @@
 
 .summary-input-area {
   display: block;
-  position: absolute;
-  width: 942px;
-  left: calc(50% - 471px);
-  top: 500px;
+  position: relative;
+  width: 100%;
+  max-width: 942px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+  left: auto;
+  top: auto;
   z-index: 10;
 }
 
@@ -184,21 +221,23 @@
 
 .summary-input-shell {
   position: relative;
-  width: 942px;
+  width: 100%;
   background: #FFF7F7;
   border-radius: 50px;
   border: 1px #0D0101 solid;
   box-sizing: border-box;
   z-index: 5;
   display: flex;
-  flex-direction: column-reverse;
-  padding: 16px 24px;
-  gap: 8px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px 18px;
 }
 
 .summary-text-input {
+  flex: 1;
   width: 100%;
-  padding: 8px 0;
+  padding: 6px 0;
   border: none;
   outline: none;
   background: transparent;
@@ -209,14 +248,18 @@
   font-family: inherit;
   line-height: 1.5;
   overflow-y: auto;
+  min-height: 28px;
+  max-height: 135px;
 }
 
 .summary-upload-group {
+  flex: 0 0 auto;
   position: relative;
   width: 110px;
-  height: 45px;
+  height: 44px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .summary-file-input {
@@ -1209,4 +1252,76 @@
 .ql-editor img {
   max-width: 100%;
   height: auto;
+}
+
+/* ✅ 제목 문구는 '글자 단위'로 끊지 말고, '공백(어절)' 기준으로만 끊기 */
+.hero-title,
+.hero-title-main,
+.hero-title-sub {
+  word-break: keep-all;       /* 핵심 */
+  overflow-wrap: normal;      /* anywhere/break-word 무력화 */
+  line-break: strict;         /* 한글 줄바꿈 더 안정적으로 */
+  white-space: normal;
+}
+
+/* ✅ 2줄로 예쁘게 "밸런스" 있게 떨어지게 (지원되는 브라우저에서만 적용됨) */
+.hero-title {
+  text-wrap: balance;
+}
+
+
+/* ----- Mobile Responsive Styles ----- */
+
+@media (max-width: 768px){
+  .summary-container{
+    padding: 84px 0 96px; /* 모바일은 헤더 높이/스크롤 고려해서 살짝 줄임 */
+    gap: 16px;
+  }
+
+  .summary-team-select-wrap{ width: 100%; max-width: 320px; }
+
+  .hero-title {
+    max-width: 28ch;   /* 글자 기준 폭: 2줄로 떨어지기 쉬움 */
+  }
+
+  .hero-title-main{ 
+    font-size: 28px;
+    line-height: 1.25;
+   }
+  .hero-title-sub{ 
+    font-size: 16px;
+    line-height: 1.45;
+   }
+
+  .summary-input-shell{
+    border-radius: 26px;
+    padding: 14px 14px;
+    gap: 10px;
+  }
+
+  .summary-text-input{
+    font-size: 16px;
+    min-height: 26px;
+  }
+
+  /* 하단 문구가 모바일에서 잘리는 이유 = letter-spacing + 고정 line-height/height */
+  .summary-university-info{
+    margin-top: 12px;
+    height: auto;
+    line-height: 1.4;
+
+    font-size: 14px;
+    letter-spacing: 1.2px; /* ✅ 모바일에서 줄여야 안잘림 */
+  }
+
+  /* 업로드 프리뷰가 위로 튀어나가며 겹치면 모바일에서만 아래로 내림 */
+  .uploaded-file-preview{
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-bottom: 10px;
+    max-width: 100%;
+  }
+
+  .file-name{ max-width: 200px; }
 }

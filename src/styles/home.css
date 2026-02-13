@@ -24,7 +24,7 @@
 
 .summary-container {
   width: 100%;
-  min-height: 120vh;
+  min-height: 100vh;
   position: relative;
   display: flex;
   justify-content: center;
