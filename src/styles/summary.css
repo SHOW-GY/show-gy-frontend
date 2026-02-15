@@ -680,63 +680,6 @@
   animation: sidebarRiseUp 0.7s ease-out forwards;
 }
 
-.center-undo-controls {
-  position: fixed;
-  left: 24px;
-  bottom: 50px;
-  display: flex;
-  gap: 10px;
-  z-index: 1200;
-}
-
-.center-undo-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  color: #111827;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.center-undo-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
-}
-
-.center-summary-btn {
-  position: fixed;
-  right: 24px;
-  bottom: 50px;
-  min-width: 96px;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(90deg, #8B5CF6 0%, #EC4899 100%);
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-  z-index: 1200;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-}
-
-.center-summary-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
-}
-
-.center-summary-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .panel-tabs {
   position: relative;
   display: flex;
@@ -1267,6 +1210,122 @@
 /* ✅ 2줄로 예쁘게 "밸런스" 있게 떨어지게 (지원되는 브라우저에서만 적용됨) */
 .hero-title {
   text-wrap: balance;
+}
+
+/* Floating toolbar positioning */
+.floating-toolbar{
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 14px;
+  border-radius: 14px;
+
+  background: rgba(15, 15, 18, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* 버튼 기본 */
+.floating-toolbar .ft-btn,
+.floating-toolbar .ft-item{
+  color: rgba(255,255,255,0.92);
+  background: transparent;
+  border: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* hover/active */
+.floating-toolbar .ft-btn:hover,
+.floating-toolbar .ft-item:hover{
+  background: rgba(255,255,255,0.08);
+}
+
+.floating-toolbar .ft-btn.active{
+  background: rgba(255,255,255,0.14);
+}
+
+.ft-divider{
+  width:1px;
+  height:18px;
+  background: rgba(255,255,255,0.18);
+  margin: 0 4px;
+}
+
+/* 각 popover는 relative로 */
+.floating-toolbar .ft-popover{
+  position: relative;
+}
+
+/* 드롭다운은 위로 뜨게(하단툴바니까) */
+.floating-toolbar .ft-dropdown{
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: rgba(20,20,24,0.96);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  z-index: 10000;
+}
+
+.ft-dropdown--font{
+  min-width: 220px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.ft-item{
+  width:100%;
+  background: transparent;
+  border:0;
+  color:#fff;
+  text-align:left;
+  cursor:pointer;
+
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.ft-item:hover{
+  background: rgba(255,255,255,0.10);
+}
+
+.ft-item.selected{
+  background: rgba(255,255,255,0.14);
+}
+
+.ft-color-grid{
+  display:grid;
+  grid-template-columns: repeat(8, 16px);
+  gap: 8px;
+  padding: 4px;
+}
+
+.ft-color{
+  width:16px;
+  height:16px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  cursor:pointer;
+  background: transparent;
+  padding:0;
+}
+
+.ft-color:hover{
+  transform: scale(1.06);
 }
 
 
