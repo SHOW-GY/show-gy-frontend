@@ -2,6 +2,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import { Group, Panel, Separator } from "react-resizable-panels";
+// (추가) 아이콘을 left pane에서 직접 쓰려면
+import saveIcon from "../assets/icons/save.png";
+import settingsIcon from "../assets/icons/settings.png";
+
+
 // Quill 라이브러리 호출
 import Quill from 'quill';
 import * as ImageResize from "quill-image-resize-module-plus";
@@ -17,7 +23,6 @@ import Layout from '../components/Layout';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
 import Search from '../helper/Search';
-import EditSidebar from "../components/Edit_sidebar";
 import '../styles/design.css';
 import '../styles/animations.css';
 import "../assets/font/font.css";
@@ -248,20 +253,34 @@ export default function Center() {
 
       // ✅ 좌표 계산 로직 교체 (scroll/rect 더하는거 전부 제거)
       const bounds = quill.getBounds(range.index, range.length);
-      let top = bounds.bottom + 10;
-      let left = bounds.left + bounds.width / 2;
 
-      const TOOLBAR_H = 56;
-      const docEl = documentContainerRef.current;
-      if (docEl) {
-        const docRect = docEl.getBoundingClientRect(); // viewport 기준
-        const absTop = docRect.top + top;              // viewport 기준 toolbar top
-        if (absTop + TOOLBAR_H > window.innerHeight) {
-          top = bounds.top - TOOLBAR_H - 10;
-        }
-      }
+      // ✅ 툴바를 배치할 기준 엘리먼트들
+      const docEl = documentContainerRef.current;     // doc-pane-inner 상위(스크롤 포함)일 수도 있음
+      const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
+      const editorEl = editorRef.current;
 
-      setFloatingPos({ top, left });
+      if (!anchorEl || !editorEl) return;
+
+      // ✅ 각 요소의 viewport 기준 rect
+      const anchorRect = anchorEl.getBoundingClientRect();
+      const editorRect = editorEl.getBoundingClientRect();
+
+      // ✅ bounds는 "quill editor(=editorEl 내부)" 기준 좌표라서
+      //    center-document(=anchorEl) 기준으로 변환해줘야 함
+      const editorOffsetTop = editorRect.top - anchorRect.top;
+      const editorOffsetLeft = editorRect.left - anchorRect.left;
+
+      // ✅ 항상 '선택 영역 바로 아래'로
+      const GAP = 10;
+      const top = editorOffsetTop + bounds.bottom + GAP;
+      const left = editorOffsetLeft + bounds.left + bounds.width / 2;
+
+      const toolbarW = 560; // CSS max-width와 맞춤(대충)
+      let clampedLeft = left;
+      clampedLeft = Math.max(toolbarW / 2 + 12, clampedLeft);
+      clampedLeft = Math.min(anchorEl.clientWidth - toolbarW / 2 - 12, clampedLeft);
+
+      setFloatingPos({ top, left: clampedLeft });
       setShowFloating(true);
     });
 
@@ -287,6 +306,15 @@ export default function Center() {
     if (!q) return;
     q.root.style.fontSize = `${fontSize}px`;
   }, [fontSize]);
+
+  useEffect(() => {
+    if (!showMarginSettings) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowMarginSettings(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showMarginSettings]);
 
   // Scroll position handlers
   useEffect(() => {
@@ -370,6 +398,15 @@ export default function Center() {
     };
 
     recalcUnderline();
+
+    const container = tabsContainerRef.current;
+    if (!container) return;
+
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(recalcUnderline);
+    });
+    ro.observe(container);
+
     window.addEventListener('resize', recalcUnderline, { passive: true });
     return () => {
       window.removeEventListener('resize', recalcUnderline);
@@ -688,380 +725,417 @@ export default function Center() {
   // Render
   return (
     <Layout activeMenu="summary">
-      <div
-        className="center-container"
-        ref={centerContainerRef}
-        style={{ minHeight: containerHeight > 0 ? `${containerHeight}px` : '100vh' }}
-      >
-        <button
-          type="button"
-          className="edit-sidebar-hamburger"
-          onClick={() => setIsSidebarOpen((v) => !v)}
-          aria-label="편집 사이드바 열기"
-        >
-          ☰
-        </button>
+      <div className="center-split-root">
+        <Group orientation="horizontal" className="center-split-group">
 
-        <EditSidebar
-          open={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          onExportPdf={exportPdf}
-          onToggleMargin={() => setShowMarginSettings((v) => !v)}
-        />
+          {/* 1) LEFT: 저장/설정 + 여백 조절 */}
+          <Panel defaultSize={18} minSize={14} maxSize={50} className="pane pane-left">
+            <div className="left-pane">
+              <button className="left-pane-btn" onClick={exportPdf} title="저장(PDF)">
+                <img src={saveIcon} alt="save" />
+              </button>
 
-        {showMarginSettings && (
-          <div className="margin-settings-overlay" onClick={() => setShowMarginSettings(false)}>
-            <div className="margin-settings-modal" onClick={(e) => e.stopPropagation()}>
-              <h3>페이지 여백</h3>
-              <div className="margin-inputs">
-                <div className="margin-input-group">
-                  <label>위쪽</label>
-                  <input
-                    type="number"
-                    value={margins.top}
-                    onChange={(e) => handleMarginChange('top', Number(e.target.value))}
-                    min="0"
-                  />
-                  <span>mm</span>
-                </div>
-                <div className="margin-input-group">
-                  <label>아래쪽</label>
-                  <input
-                    type="number"
-                    value={margins.bottom}
-                    onChange={(e) => handleMarginChange('bottom', Number(e.target.value))}
-                    min="0"
-                  />
-                  <span>mm</span>
-                </div>
-                <div className="margin-input-group">
-                  <label>왼쪽</label>
-                  <input
-                    type="number"
-                    value={margins.left}
-                    onChange={(e) => handleMarginChange('left', Number(e.target.value))}
-                    min="0"
-                  />
-                  <span>mm</span>
-                </div>
-                <div className="margin-input-group">
-                  <label>오른쪽</label>
-                  <input
-                    type="number"
-                    value={margins.right}
-                    onChange={(e) => handleMarginChange('right', Number(e.target.value))}
-                    min="0"
-                  />
-                  <span>mm</span>
-                </div>
-              </div>
-              <div className="margin-buttons">
-                <button onClick={() => setShowMarginSettings(false)} className="margin-apply-btn">적용</button>
-                <button onClick={() => setShowMarginSettings(false)} className="margin-cancel-btn">취소</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={documentContainerRef}>
-          <div
-            className="center-document"
-            style={{
-              top: "70px",
-              padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`,
-            }}
-          >
-            <div ref={editorRef} className="document-input" />
-
-            {/* ✅ (가장 중요) floating-toolbar는 반드시 center-document 내부에서 렌더 */}
-            {showFloating && (
-              <div
-                ref={floatingRef}
-                className="floating-toolbar"
-                style={{
-                  top: `${floatingPos.top}px`,
-                  left: `${floatingPos.left}px`,
-                }}
-                onMouseDown={(e) => e.preventDefault()}
+              <button
+                className="left-pane-btn"
+                onClick={() => setShowMarginSettings(true)}
+                title="페이지 여백"
               >
-                {/* Bold */}
-                <button
-                  type="button"
-                  className={`ft-btn ${isBoldActive ? "active" : ""}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    applyFormatToSavedRange("bold", !isBoldActive);
-                    setIsBoldActive((v) => !v);
+                <img src={settingsIcon} alt="settings" />
+              </button>
+            </div>
+          </Panel>
+
+          <Separator className="resize-handle" />
+
+          {/* 2) CENTER: 문서 */}
+          <Panel defaultSize={55} minSize={35} className="pane pane-center">
+            <div className="doc-pane">
+              <div ref={documentContainerRef} className="doc-pane-inner">
+                <div
+                  className="center-document"
+                  style={{
+                    padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`,
                   }}
                 >
-                  B
-                </button>
+                  <div ref={editorRef} className="document-input" />
 
-                {/* Underline */}
-                <button
-                  type="button"
-                  className={`ft-btn ${isUnderlineActive ? "active" : ""}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    applyFormatToSavedRange("underline", !isUnderlineActive);
-                    setIsUnderlineActive((v) => !v);
-                  }}
-                >
-                  U
-                </button>
+      {/* ✅ (가장 중요) floating-toolbar는 반드시 center-document 내부에서 렌더 */}
+                  {showFloating && (
+                    <div
+                      ref={floatingRef}
+                      className="floating-toolbar"
+                      style={{
+                        top: `${floatingPos.top}px`,
+                        left: `${floatingPos.left}px`,
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {/* Bold */}
+                      <button
+                        type="button"
+                        className={`ft-btn ${isBoldActive ? "active" : ""}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          applyFormatToSavedRange("bold", !isBoldActive);
+                          setIsBoldActive((v) => !v);
+                        }}
+                      >
+                        B
+                      </button>
 
-                {/* Italic */}
-                <button
-                  type="button"
-                  className={`ft-btn ${isItalicActive ? "active" : ""}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    applyFormatToSavedRange("italic", !isItalicActive);
-                    setIsItalicActive((v) => !v);
-                  }}
-                >
-                  I
-                </button>
+                      {/* Underline */}
+                      <button
+                        type="button"
+                        className={`ft-btn ${isUnderlineActive ? "active" : ""}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          applyFormatToSavedRange("underline", !isUnderlineActive);
+                          setIsUnderlineActive((v) => !v);
+                        }}
+                      >
+                        U
+                      </button>
 
-                <div className="ft-divider" />
+                      {/* Italic */}
+                      <button
+                        type="button"
+                        className={`ft-btn ${isItalicActive ? "active" : ""}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          applyFormatToSavedRange("italic", !isItalicActive);
+                          setIsItalicActive((v) => !v);
+                        }}
+                      >
+                        I
+                      </button>
 
-                {/* Color */}
-                <div className="ft-popover">
-                  <button
-                    type="button"
-                    className={`ft-btn ${ftMenu === "color" ? "open" : ""}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setFtMenu((m) => (m === "color" ? null : "color"));
-                    }}
-                  >
-                    Color
-                  </button>
+                      <div className="ft-divider" />
 
-                  {ftMenu === "color" && (
-                    <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
-                      <div className="ft-color-grid">
-                        {[
-                          "#000000", "#FFFFFF", "#FF0000", "#FF6B6B", "#FFA500", "#FFD700",
-                          "#FFFF00", "#00FF00", "#00CED1", "#0000FF", "#4169E1", "#8B00FF",
-                          "#FF1493", "#FF69B4", "#A52A2A", "#808080", "#C0C0C0", "#FFB6C1",
-                          "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B88B", "#D5F4E6",
-                          "#FFF9E6", "#FFE6E6", "#E6F3FF", "#F0E6FF", "#FFE6F0", "#E6FFE6", "#E6FFFF",
-                        ].map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            className="ft-color"
-                            style={{ backgroundColor: c }}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              applyFormatToSavedRange("color", c);
-                              setFtMenu(null);
-                            }}
-                            aria-label={`color-${c}`}
-                          />
-                        ))}
+                      {/* Color */}
+                      <div className="ft-popover">
+                        <button
+                          type="button"
+                          className={`ft-btn ${ftMenu === "color" ? "open" : ""}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setFtMenu((m) => (m === "color" ? null : "color"));
+                          }}
+                        >
+                          Color
+                        </button>
+
+                        {ftMenu === "color" && (
+                          <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
+                            <div className="ft-color-grid">
+                              {[
+                                "#000000", "#FFFFFF", "#FF0000", "#FF6B6B", "#FFA500", "#FFD700",
+                                "#FFFF00", "#00FF00", "#00CED1", "#0000FF", "#4169E1", "#8B00FF",
+                                "#FF1493", "#FF69B4", "#A52A2A", "#808080", "#C0C0C0", "#FFB6C1",
+                                "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2", "#F8B88B", "#D5F4E6",
+                                "#FFF9E6", "#FFE6E6", "#E6F3FF", "#F0E6FF", "#FFE6F0", "#E6FFE6", "#E6FFFF",
+                              ].map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  className="ft-color"
+                                  style={{ backgroundColor: c }}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    applyFormatToSavedRange("color", c);
+                                    setFtMenu(null);
+                                  }}
+                                  aria-label={`color-${c}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Font */}
+                      <div className="ft-popover">
+                        <button
+                          type="button"
+                          className={`ft-btn ${ftMenu === "font" ? "open" : ""}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setFtMenu((m) => (m === "font" ? null : "font"));
+                          }}
+                        >
+                          {currentFontLabel}
+                        </button>
+
+                        {ftMenu === "font" && (
+                          <div className="ft-dropdown ft-dropdown--font" onMouseDown={(e) => e.preventDefault()}>
+                            {FONT_LIST.map((f) => (
+                              <button
+                                key={f.key}
+                                type="button"
+                                className={`ft-item ${selectedFont === f.key ? "selected" : ""}`}
+                                style={{ fontFamily: f.cssFamily }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  const quill = lastFocusedQuillRef.current ?? quillRef.current;
+                                  const saved = savedRangeRef.current;
+                                  if (!quill || !saved) return;
+
+                                  quill.setSelection(saved.index, saved.length, "silent");
+                                  quill.formatText(saved.index, saved.length, "font", f.key);
+                                  quill.focus();
+
+                                  setSelectedFont(f.key);
+                                  setFontLabel(f.key);
+                                  setFtMenu(null);
+                                }}
+                              >
+                                {f.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Size */}
+                      <div className="ft-popover">
+                        <button
+                          type="button"
+                          className={`ft-btn ${ftMenu === "size" ? "open" : ""}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setFtMenu((m) => (m === "size" ? null : "size"));
+                          }}
+                        >
+                          Size
+                        </button>
+
+                        {ftMenu === "size" && (
+                          <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
+                            {["small", "normal", "large", "huge"].map((s) => (
+                              <button
+                                key={s}
+                                type="button"
+                                className="ft-item"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  const sizeValue = s === "normal" ? false : s;
+
+                                  const quill = lastFocusedQuillRef.current ?? quillRef.current;
+                                  const saved = savedRangeRef.current;
+                                  if (!quill || !saved) return;
+
+                                  quill.setSelection(saved.index, saved.length, "silent");
+                                  quill.formatText(saved.index, saved.length, "size", sizeValue);
+                                  quill.focus();
+
+                                  setFtMenu(null);
+                                }}
+                              >
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Align */}
+                      <div className="ft-popover">
+                        <button
+                          type="button"
+                          className={`ft-btn ${ftMenu === "align" ? "open" : ""}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setFtMenu((m) => (m === "align" ? null : "align"));
+                          }}
+                        >
+                          Align
+                        </button>
+
+                        {ftMenu === "align" && (
+                          <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
+                            {[
+                              { key: "left", label: "Left" },
+                              { key: "center", label: "Center" },
+                              { key: "right", label: "Right" },
+                            ].map((a) => (
+                              <button
+                                key={a.key}
+                                type="button"
+                                className="ft-item"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  applyFormatToSavedRange("align", a.key === "left" ? false : a.key);
+                                  setFtMenu(null);
+                                }}
+                              >
+                                {a.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Line height */}
+                      <div className="ft-popover">
+                        <button
+                          type="button"
+                          className={`ft-btn ${ftMenu === "line" ? "open" : ""}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setFtMenu((m) => (m === "line" ? null : "line"));
+                          }}
+                        >
+                          Line
+                        </button>
+
+                        {ftMenu === "line" && (
+                          <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
+                            {[
+                              { v: "1.0", label: "100%" },
+                              { v: "1.2", label: "120%" },
+                              { v: "1.4", label: "140%" },
+                              { v: "1.6", label: "160%" },
+                              { v: "1.8", label: "180%" },
+                              { v: "2.0", label: "200%" },
+                            ].map((s) => (
+                              <button
+                                key={s.v}
+                                type="button"
+                                className="ft-item"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  applyLineHeightToSavedRange(s.v);
+                                  setFtMenu(null);
+                                }}
+                              >
+                                {s.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Font */}
-                <div className="ft-popover">
-                  <button
-                    type="button"
-                    className={`ft-btn ${ftMenu === "font" ? "open" : ""}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setFtMenu((m) => (m === "font" ? null : "font"));
-                    }}
-                  >
-                    {currentFontLabel}
-                  </button>
-
-                  {ftMenu === "font" && (
-                    <div className="ft-dropdown ft-dropdown--font" onMouseDown={(e) => e.preventDefault()}>
-                      {FONT_LIST.map((f) => (
-                        <button
-                          key={f.key}
-                          type="button"
-                          className={`ft-item ${selectedFont === f.key ? "selected" : ""}`}
-                          style={{ fontFamily: f.cssFamily }}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            const quill = lastFocusedQuillRef.current ?? quillRef.current;
-                            const saved = savedRangeRef.current;
-                            if (!quill || !saved) return;
-
-                            quill.setSelection(saved.index, saved.length, "silent");
-                            quill.formatText(saved.index, saved.length, "font", f.key);
-                            quill.focus();
-
-                            setSelectedFont(f.key);
-                            setFontLabel(f.key);
-                            setFtMenu(null);
-                          }}
-                        >
-                          {f.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Size */}
-                <div className="ft-popover">
-                  <button
-                    type="button"
-                    className={`ft-btn ${ftMenu === "size" ? "open" : ""}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setFtMenu((m) => (m === "size" ? null : "size"));
-                    }}
-                  >
-                    Size
-                  </button>
-
-                  {ftMenu === "size" && (
-                    <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
-                      {["small", "normal", "large", "huge"].map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          className="ft-item"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            const sizeValue = s === "normal" ? false : s;
-
-                            const quill = lastFocusedQuillRef.current ?? quillRef.current;
-                            const saved = savedRangeRef.current;
-                            if (!quill || !saved) return;
-
-                            quill.setSelection(saved.index, saved.length, "silent");
-                            quill.formatText(saved.index, saved.length, "size", sizeValue);
-                            quill.focus();
-
-                            setFtMenu(null);
-                          }}
-                        >
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Align */}
-                <div className="ft-popover">
-                  <button
-                    type="button"
-                    className={`ft-btn ${ftMenu === "align" ? "open" : ""}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setFtMenu((m) => (m === "align" ? null : "align"));
-                    }}
-                  >
-                    Align
-                  </button>
-
-                  {ftMenu === "align" && (
-                    <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
-                      {[
-                        { key: "left", label: "Left" },
-                        { key: "center", label: "Center" },
-                        { key: "right", label: "Right" },
-                      ].map((a) => (
-                        <button
-                          key={a.key}
-                          type="button"
-                          className="ft-item"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            applyFormatToSavedRange("align", a.key === "left" ? false : a.key);
-                            setFtMenu(null);
-                          }}
-                        >
-                          {a.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Line height */}
-                <div className="ft-popover">
-                  <button
-                    type="button"
-                    className={`ft-btn ${ftMenu === "line" ? "open" : ""}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setFtMenu((m) => (m === "line" ? null : "line"));
-                    }}
-                  >
-                    Line
-                  </button>
-
-                  {ftMenu === "line" && (
-                    <div className="ft-dropdown" onMouseDown={(e) => e.preventDefault()}>
-                      {[
-                        { v: "1.0", label: "100%" },
-                        { v: "1.2", label: "120%" },
-                        { v: "1.4", label: "140%" },
-                        { v: "1.6", label: "160%" },
-                        { v: "1.8", label: "180%" },
-                        { v: "2.0", label: "200%" },
-                      ].map((s) => (
-                        <button
-                          key={s.v}
-                          type="button"
-                          className="ft-item"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            applyLineHeightToSavedRange(s.v);
-                            setFtMenu(null);
-                          }}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </Panel>
 
-        <div className="center-panel" style={{ top: `${panelTop}px` }}>
-          <div className="panel-tabs" ref={tabsContainerRef}>
-            <div
-              className={`panel-tab ${activeTab === 'chat' ? 'active' : ''}`}
-              ref={el => (tabRefs.current.chat = el)}
-              onClick={() => setActiveTab('chat')}
-            >
-              챗봇
+          <Separator className="resize-handle" />
+
+          {/* 3) RIGHT: 챗봇/피드백/참고자료 */}
+          <Panel defaultSize={33} minSize={22} className="pane pane-right">
+            <div className="right-pane">
+              <div className="panel-tabs" ref={tabsContainerRef}>
+                <div
+                  className={`panel-tab ${activeTab === 'chat' ? 'active' : ''}`}
+                  ref={el => (tabRefs.current.chat = el)}
+                  onClick={() => setActiveTab('chat')}
+                >
+                  챗봇
+                </div>
+                <div
+                  className={`panel-tab ${activeTab === 'feedback' ? 'active' : ''}`}
+                  ref={el => (tabRefs.current.feedback = el)}
+                  onClick={() => setActiveTab('feedback')}
+                >
+                  피드백
+                </div>
+                <div
+                  className={`panel-tab ${activeTab === 'reference' ? 'active' : ''}`}
+                  ref={el => (tabRefs.current.reference = el)}
+                  onClick={() => setActiveTab('reference')}
+                >
+                  참고자료
+                </div>
+
+                <div
+                  className="panel-tab-underline"
+                  style={{ left: underlineStyle.left, width: underlineStyle.width }}
+                />
+              </div>
+
+              <div className="right-pane-body">
+                {renderPanelContent()}
+              </div>
             </div>
+          </Panel>
+
+        </Group>
+
+        {showMarginSettings && (
+          <div
+            className="margin-modal-overlay"
+            onClick={() => setShowMarginSettings(false)}
+          >
             <div
-              className={`panel-tab ${activeTab === 'feedback' ? 'active' : ''}`}
-              ref={el => (tabRefs.current.feedback = el)}
-              onClick={() => setActiveTab('feedback')}
+              className="margin-modal"
+              onClick={(e) => e.stopPropagation()}
             >
-              피드백
+              <div className="margin-modal-head">
+                <div className="margin-modal-title">페이지 여백</div>
+                <button
+                  type="button"
+                  className="margin-modal-close"
+                  onClick={() => setShowMarginSettings(false)}
+                  aria-label="close"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="margin-modal-grid">
+                <label>위</label>
+                <input
+                  type="number"
+                  value={margins.top}
+                  min={0}
+                  onChange={(e) => handleMarginChange('top', Number(e.target.value))}
+                />
+
+                <label>아래</label>
+                <input
+                  type="number"
+                  value={margins.bottom}
+                  min={0}
+                  onChange={(e) => handleMarginChange('bottom', Number(e.target.value))}
+                />
+
+                <label>좌</label>
+                <input
+                  type="number"
+                  value={margins.left}
+                  min={0}
+                  onChange={(e) => handleMarginChange('left', Number(e.target.value))}
+                />
+
+                <label>우</label>
+                <input
+                  type="number"
+                  value={margins.right}
+                  min={0}
+                  onChange={(e) => handleMarginChange('right', Number(e.target.value))}
+                />
+              </div>
+
+              <div className="margin-modal-actions">
+                <button
+                  type="button"
+                  className="margin-modal-apply"
+                  onClick={() => setShowMarginSettings(false)}
+                >
+                  적용
+                </button>
+                <button
+                  type="button"
+                  className="margin-modal-close-btn"
+                  onClick={() => setShowMarginSettings(false)}
+                >
+                  닫기
+                </button>
+              </div>
             </div>
-            <div
-              className={`panel-tab ${activeTab === 'reference' ? 'active' : ''}`}
-              ref={el => (tabRefs.current.reference = el)}
-              onClick={() => setActiveTab('reference')}
-            >
-              참고자료
-            </div>
-            <div
-              className="panel-tab-underline"
-              style={{ left: underlineStyle.left, width: underlineStyle.width }}
-            />
           </div>
-          {renderPanelContent()}
-        </div>
+        )}
       </div>
     </Layout>
   );
