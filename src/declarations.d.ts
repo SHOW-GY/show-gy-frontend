@@ -56,3 +56,8 @@ declare module "html2pdf.js" {
   const html2pdf: () => Html2Pdf;
   export default html2pdf;
 }
+
+declare module "quill-mention" {
+  const Mention: any;
+  export default Mention;
+}

@@ -1,22 +1,24 @@
 // React 라이브러리 호출
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-
 import { Group, Panel, Separator } from "react-resizable-panels";
-// (추가) 아이콘을 left pane에서 직접 쓰려면
 import saveIcon from "../assets/icons/save.png";
 import settingsIcon from "../assets/icons/settings.png";
-
 
 // Quill 라이브러리 호출
 import Quill from 'quill';
 import * as ImageResize from "quill-image-resize-module-plus";
 import { marked } from "marked";
 import QuillMarkdown from 'quilljs-markdown';
+import type { RangeStatic } from "quill";
 import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import { saveAs } from "file-saver";
 import html2pdf from "html2pdf.js";
+import Mention from "quill-mention";
+import "quill-mention/dist/quill.mention.css";
+import "katex/dist/katex.min.css";
+import katex from "katex";
 
 // 컴포넌트 호출
 import Layout from '../components/Layout';
@@ -30,12 +32,12 @@ import '../styles/summary.css';
 
 // Quill size 포맷 설정
 const Q: any = (Quill as any).default ?? Quill;
-const Size = Q.import("formats/size");
+const Size = Quill.import("formats/size");
 Size.whitelist = ["small", false, "large", "huge"];
 Q.register(Size, true);
 
 // Font 등록
-const Font = Q.import("formats/font");
+const Font = Quill.import("formats/font");
 Font.whitelist = [
   "sans-serif", "serif", "monospace",
   "YeogiOttaeJalnan",
@@ -53,9 +55,50 @@ Font.whitelist = [
   "JejuGothic",
   "BlackHanSans",
 ];
-Q.register(Font, true);
+
+Quill.register(Font, true);
 const ImageResizeModule = (ImageResize as any).default ?? ImageResize;
 Quill.register("modules/imageResize", ImageResizeModule);
+Quill.register("modules/mention", Mention);
+const BlockEmbed = Q.import("blots/block/embed");
+
+function renderKatexHtml(tex: string) {
+  const safe = (tex || "").trim();
+  if (!safe) {
+    return `<span class="sg-math-placeholder">수식 입력</span>`;
+  }
+  try {
+    return katex.renderToString(safe, {
+      displayMode: true,
+      throwOnError: false,
+      strict: "ignore",
+    });
+  } catch {
+    return `<span class="sg-math-error">Invalid TeX</span>`;
+  }
+}
+
+class SgMathBlockBlot extends BlockEmbed {
+  static blotName = "sg-math-block";
+  static tagName = "div";
+  static className = "sg-math-block";
+
+  static create(value: any) {
+    const node = super.create() as HTMLElement;
+    const tex = (value?.tex ?? "").toString();
+
+    node.setAttribute("data-tex", tex);
+    node.setAttribute("contenteditable", "false");
+    node.innerHTML = renderKatexHtml(tex);
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return { tex: node.getAttribute("data-tex") || "" };
+  }
+}
+
+Q.register(SgMathBlockBlot, true);
 
 export default function Center() {
   const location = useLocation();
@@ -106,6 +149,12 @@ export default function Center() {
 
   type FtMenu = null | "color" | "font" | "size" | "line" | "align";
   const [ftMenu, setFtMenu] = useState<FtMenu>(null);
+  const [mathOpen, setMathOpen] = useState(false);
+  const [mathTex, setMathTex] = useState("");
+  const [mathPos, setMathPos] = useState({ top: 0, left: 0 });
+  const mathTargetElRef = useRef<HTMLElement | null>(null);
+  const mathPrevTexRef = useRef<string>("");
+  const mathInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Draft text 적용
   useEffect(() => {
@@ -190,6 +239,14 @@ export default function Center() {
     const el = editorRef.current;
     if (!el || quillRef.current) return;
 
+    const SLASH_ITEMS = [
+      { id: "math",  value: "수식",   desc: "/math" },
+      { id: "table", value: "표",     desc: "/table" },
+      { id: "code",  value: "코드",   desc: "/code" },
+      { id: "text",  value: "텍스트", desc: "/text" },
+      { id: "image", value: "이미지", desc: "/image" },
+    ] as const;
+
     const quill = new Quill(el, {
       theme: "snow",
       modules: {
@@ -198,15 +255,63 @@ export default function Center() {
         history: {
           delay: 1000,
           maxStack: 200,
-          userOnly: true,
+          userOnly: true },
+        mention: {
+          mentionDenotationChars: ["/"],
+          showDenotationChar: true,
+          minChars: 0, // "/"만 쳐도 메뉴 뜨게
+          allowedChars: /^[A-Za-z]*$/, // /math 같은 것만 허용 (한글 입력하면 검색 안되게)
+          positioningStrategy: "fixed", // overflow/scroll 이슈 방지
+
+          source: (searchTerm: string, renderList: any) => {
+            const term = (searchTerm || "").toLowerCase();
+            const list = SLASH_ITEMS
+              .filter(it => it.id.startsWith(term) || it.value.includes(searchTerm))
+              .map(it => ({
+                id: it.id,
+                value: it.value,
+                denotationChar: "/",
+                desc: it.desc,
+              }));
+            renderList(list, searchTerm);
+          },
+
+          // ✅ 메뉴 item UI: Column 형태
+          renderItem: (item: any) => {
+            const div = document.createElement("div");
+            div.className = "sg-slash-item";
+            div.innerHTML = `
+              <div class="sg-slash-title">${item.value}</div>
+            `;
+            return div;
+          },
+
+          // ✅ 클릭 선택 시 실행
+          onSelect: (item: any) => {
+            requestAnimationFrame(() => runSlashCommand(item.id));
+          },
         },
       },
       formats: [
         "size", "font", "bold", "italic", "underline", "color", "align",
-        "header", "list", "blockquote", "code-block", "image",
+        "header", "list", "blockquote", "code-block", "image", "mention",
+        "sg-math-block",
       ],
       placeholder: "",
-    });
+    } as any);
+
+    quill.keyboard.addBinding(
+      { key: 13 }, // Enter
+      (range : RangeStatic, context: any) => {
+        // 커서 앞 텍스트에서 "/xxx" 감지
+        const before = quill.getText(Math.max(0, range.index - 50), 50);
+        const m = before.match(/\/(math|code|table|text|image)$/i);
+        if (!m) return true;
+        const cmd = m[1].toLowerCase();
+        void runSlashCommand(cmd);
+        return false;
+      }
+    );
 
     new QuillMarkdown(quill, {});
 
@@ -214,7 +319,34 @@ export default function Center() {
 
     quillRef.current = quill;
     lastFocusedQuillRef.current = quill;
+    const onRootClick = (e: MouseEvent) => {
+      const t = (e.target as HTMLElement | null)?.closest?.(".sg-math-block") as HTMLElement | null;
+      if (!t) return;
 
+      const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
+      if (!anchorEl) return;
+
+      const a = anchorEl.getBoundingClientRect();
+      const r = t.getBoundingClientRect();
+
+      const tex = t.getAttribute("data-tex") || "";
+      mathTargetElRef.current = t;
+      mathPrevTexRef.current = tex;
+
+      setMathTex(tex);
+      setMathPos({
+        top: (r.bottom - a.top) + 10,
+        left: (r.left - a.left),
+      });
+      setMathOpen(true);
+
+      requestAnimationFrame(() => {
+        mathInputRef.current?.focus();
+        mathInputRef.current?.setSelectionRange(tex.length, tex.length);
+      });
+    };
+
+    quill.root.addEventListener("click", onRootClick);
     quill.on("selection-change", (range) => {
       lastFocusedQuillRef.current = quill;
 
@@ -250,32 +382,21 @@ export default function Center() {
 
       const uniform = getUniformFontInRange(quill, range.index, range.length);
       setFontLabel(uniform ?? "");
-
-      // ✅ 좌표 계산 로직 교체 (scroll/rect 더하는거 전부 제거)
       const bounds = quill.getBounds(range.index, range.length);
-
-      // ✅ 툴바를 배치할 기준 엘리먼트들
-      const docEl = documentContainerRef.current;     // doc-pane-inner 상위(스크롤 포함)일 수도 있음
+      const docEl = documentContainerRef.current;
       const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
       const editorEl = editorRef.current;
 
       if (!anchorEl || !editorEl) return;
 
-      // ✅ 각 요소의 viewport 기준 rect
       const anchorRect = anchorEl.getBoundingClientRect();
       const editorRect = editorEl.getBoundingClientRect();
-
-      // ✅ bounds는 "quill editor(=editorEl 내부)" 기준 좌표라서
-      //    center-document(=anchorEl) 기준으로 변환해줘야 함
       const editorOffsetTop = editorRect.top - anchorRect.top;
       const editorOffsetLeft = editorRect.left - anchorRect.left;
-
-      // ✅ 항상 '선택 영역 바로 아래'로
       const GAP = 10;
       const top = editorOffsetTop + bounds.bottom + GAP;
       const left = editorOffsetLeft + bounds.left + bounds.width / 2;
-
-      const toolbarW = 560; // CSS max-width와 맞춤(대충)
+      const toolbarW = 280;
       let clampedLeft = left;
       clampedLeft = Math.max(toolbarW / 2 + 12, clampedLeft);
       clampedLeft = Math.min(anchorEl.clientWidth - toolbarW / 2 - 12, clampedLeft);
@@ -295,7 +416,97 @@ export default function Center() {
       setDocumentText(text);
     });
 
+    // ✅ 파일 선택기(이미지)
+    const pickImageFile = (): Promise<File | null> =>
+      new Promise((resolve) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.onchange = () => resolve(input.files?.[0] ?? null);
+        input.click();
+      });
+
+    const readAsDataURL = (file: File): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    // ✅ 현재 커서 앞의 "/xxx" 텍스트를 지우고 커맨드 실행
+    const runSlashCommand = async (cmd: string) => {
+      const q = quill;
+      const range = q.getSelection(true);
+      if (!range) return;
+
+      // 커서 앞 텍스트를 읽어서 "/..." 패턴 제거
+      const before = q.getText(Math.max(0, range.index - 50), 50);
+      const lastSlash = before.lastIndexOf("/");
+      if (lastSlash !== -1) {
+        const delLen = before.length - lastSlash;
+        q.deleteText(range.index - delLen, delLen, "user");
+      }
+
+      const insertAt = q.getSelection(true)?.index ?? range.index;
+
+      if (cmd === "text") {
+        // velog 스타일 = blockquote
+        q.insertText(insertAt, "\n", "user");
+        q.formatLine(insertAt, 1, "blockquote", true, "user");
+        q.setSelection(insertAt + 1, 0, "silent");
+        return;
+      }
+
+      if (cmd === "code") {
+        q.insertText(insertAt, "\n", "user");
+        q.formatLine(insertAt, 1, "code-block", true, "user");
+        q.setSelection(insertAt + 1, 0, "silent");
+        return;
+      }
+
+      if (cmd === "image") {
+        const file = await pickImageFile();
+        if (!file) return;
+        const url = await readAsDataURL(file);
+        q.insertEmbed(insertAt, "image", url, "user");
+        q.insertText(insertAt + 1, "\n", "user");
+        q.setSelection(insertAt + 2, 0, "silent");
+        return;
+      }
+
+      if (cmd === "math") {
+        q.insertEmbed(insertAt, "sg-math-block", { tex: "" }, "user");
+        q.insertText(insertAt + 1, "\n", "user");
+        q.setSelection(insertAt + 2, 0, "silent");
+
+        // 바로 입력창까지 자동으로 열고 싶으면:
+        requestAnimationFrame(() => {
+          const root = q.root as HTMLElement;
+          const nodes = root.querySelectorAll(".sg-math-block");
+          const last = nodes[nodes.length - 1] as HTMLElement | undefined;
+          if (!last) return;
+          last.scrollIntoView({ block: "nearest" });
+          last.click();
+        });
+
+        return;
+      }
+
+      if (cmd === "table") {
+        // 1차: markdown table 텍스트 삽입 (너가 말한 "html에 |목록|" 방식과 맞춤)
+        const tableMd =
+          "\n| 항목 | 내용 |\n| --- | --- |\n|  |  |\n";
+        q.insertText(insertAt, tableMd, "user");
+        // 첫 셀로 커서 이동
+        q.setSelection(insertAt + 3, 0, "silent");
+        return;
+      }
+    };
+
+
     return () => {
+      quill.root.removeEventListener("click", onRootClick);
       quillRef.current = null;
     };
   }, []);
@@ -449,6 +660,21 @@ export default function Center() {
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
   }, [showFloating]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!mathOpen) return;
+      const t = e.target as HTMLElement;
+      if (t.closest(".sg-math-editor")) return;
+      if (t.closest(".sg-math-block")) return; // 다른 수식 누르면 click 핸들러가 다시 열어줌
+
+      // 그냥 닫기(완료처럼)
+      setMathOpen(false);
+      mathTargetElRef.current = null;
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [mathOpen]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -759,7 +985,8 @@ export default function Center() {
                 >
                   <div ref={editorRef} className="document-input" />
 
-      {/* ✅ (가장 중요) floating-toolbar는 반드시 center-document 내부에서 렌더 */}
+      {/* ✅ (가장 중요) 
+      는 반드시 center-document 내부에서 렌더 */}
                   {showFloating && (
                     <div
                       ref={floatingRef}
@@ -1012,6 +1239,85 @@ export default function Center() {
                             ))}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {mathOpen && (
+                    <div
+                      className="sg-math-editor"
+                      style={{ top: `${mathPos.top}px`, left: `${mathPos.left}px` }}
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <textarea
+                        ref={mathInputRef}
+                        className="sg-math-textarea"
+                        value={mathTex}
+                        placeholder="LaTeX 입력 예: \\frac{a}{b}"
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setMathTex(next);
+
+                          const el = mathTargetElRef.current;
+                          if (!el) return;
+
+                          // ✅ 즉시 렌더 + 원본 저장
+                          el.setAttribute("data-tex", next);
+                          el.innerHTML = renderKatexHtml(next);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            // ESC = 취소(원복)
+                            const el = mathTargetElRef.current;
+                            if (el) {
+                              const prev = mathPrevTexRef.current;
+                              el.setAttribute("data-tex", prev);
+                              el.innerHTML = renderKatexHtml(prev);
+                            }
+                            setMathOpen(false);
+                            mathTargetElRef.current = null;
+                          }
+                          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                            e.preventDefault();
+                            // Cmd/Ctrl+Enter = 완료
+                            setMathOpen(false);
+                            mathTargetElRef.current = null;
+                          }
+                        }}
+                      />
+
+                      <div className="sg-math-actions">
+                        <button
+                          type="button"
+                          className="sg-math-btn"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setMathOpen(false);
+                            mathTargetElRef.current = null;
+                          }}
+                        >
+                          완료
+                        </button>
+
+                        <button
+                          type="button"
+                          className="sg-math-btn ghost"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            // 취소(원복)
+                            const el = mathTargetElRef.current;
+                            if (el) {
+                              const prev = mathPrevTexRef.current;
+                              el.setAttribute("data-tex", prev);
+                              el.innerHTML = renderKatexHtml(prev);
+                            }
+                            setMathOpen(false);
+                            mathTargetElRef.current = null;
+                          }}
+                        >
+                          취소
+                        </button>
                       </div>
                     </div>
                   )}

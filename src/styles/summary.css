@@ -1,5 +1,5 @@
 /* =========================
-   SUMMARY (Main)
+  SUMMARY (Main)
 ========================= */
 .summary-container{
   position: relative;
@@ -10,7 +10,7 @@
   flex-direction: column;
   align-items: center;
 
-  padding: 110px 0 120px; /* 헤더 고려 */
+  padding: 110px 0 120px;
   gap: 22px;
 
   box-sizing: border-box;
@@ -370,7 +370,7 @@
   padding: 71px 83px;
   box-sizing: border-box;
 
-  animation: sidebarRiseUp 0.7s ease-out forwards;
+  /* animation: sidebarRiseUp 0.7s ease-out forwards; */
   overflow: visible;
 }
 
@@ -517,6 +517,58 @@
   display: block;
   margin: 8px auto;
 }
+
+/* =========================
+   SHOW-GY Slash Command Menu (quill-mention)
+========================= */
+.ql-mention-list-container{
+  z-index: 20000; /* 네 floating-toolbar/모달 위로 */
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.ql-mention-list{
+  background: rgba(18,18,22,0.95);
+  padding: 8px;
+}
+
+.ql-mention-list-item{
+  padding: 0 !important; /* 내부 커스텀 ui 쓰니까 */
+  border-radius: 12px;
+}
+
+.ql-mention-list-item.selected .sg-slash-item{
+  background: rgba(255,255,255,0.10);
+}
+
+.sg-slash-item{
+  display: flex;
+  flex-direction: column; /* ✅ Column 형태 */
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.sg-slash-item:hover{
+  background: rgba(255,255,255,0.08);
+}
+
+.sg-slash-title{
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.sg-slash-desc{
+  font-size: 12px;
+  opacity: 0.75;
+  display: none !important;
+}
+
 
 /* =========================
    RESIZABLE 3-PANE LAYOUT
@@ -851,7 +903,7 @@
   z-index: 9999;
 
   /* ✅ 너비 제한 + 2줄 래핑 */
-  width: min(560px, calc(100vw - 120px));
+  width: 280px;
   max-width: 560px;
 
   display: flex;
@@ -892,16 +944,14 @@
   margin: 0 2px;
 }
 
-/* ✅ popover 기준점 */
 .ft-popover{
-  position: relative;      /* ✅ dropdown 기준점 */
+  position: relative;
   display: inline-flex;
   align-items: center;
 }
 
-/* ✅ dropdown: 레이아웃에서 분리 + 세로(column) */
 .ft-dropdown{
-  position: absolute;      /* ✅ 이게 핵심 */
+  position: absolute;
   top: calc(100% + 8px);
   left: 0;
   z-index: 10000;
@@ -945,7 +995,6 @@
 .ft-item:hover{ background: rgba(255,255,255,0.10); }
 .ft-item.selected{ background: rgba(255,255,255,0.16); }
 
-/* 색상 팔레트 */
 .ft-color-grid{
   display: grid;
   grid-template-columns: repeat(7, 18px);
@@ -960,7 +1009,76 @@
 }
 
 /* =========================
-   MOBILE
+  SG MATH (KaTeX + plain input)
+========================= */
+.sg-math-block{
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255);
+  /* border: 1px solid rgba(15, 15, 18, 0.12); */
+}
+
+.sg-math-placeholder{
+  color: rgba(15,15,18,0.45);
+  font-size: 13px;
+}
+
+.sg-math-error{
+  color: #ef4444;
+  font-size: 13px;
+}
+
+/* 노션식 입력창 */
+.sg-math-editor{
+  position: absolute;
+  z-index: 9999;
+  width: min(520px, calc(100% - 24px));
+  background: rgba(20, 20, 24, 0.92);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+}
+
+.sg-math-textarea{
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.sg-math-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sg-math-btn{
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: #8B5CF6;
+  color: #fff;
+  font-size: 13px;
+}
+.sg-math-btn.ghost{
+  background: rgba(255,255,255,0.12);
+}
+
+/* =========================
+  MOBILE
 ========================= */
 @media (max-width: 768px){
   .summary-container{
