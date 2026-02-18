@@ -40,14 +40,11 @@ function Header({
     // localStorage에서 사용자 정보 가져오기
     const loadUser = () => {
       const userStr = localStorage.getItem('user');
-      console.log('localStorage user:', userStr); // 디버그용
       if (userStr) {
         try {
           const user = JSON.parse(userStr);
-          console.log('파싱된 사용자 정보:', user); // 디버그용
           setUserNickname(user.nickname || user.name || '사용자');
         } catch (e) {
-          console.error('사용자 정보 파싱 실패:', e);
         }
       }
     };

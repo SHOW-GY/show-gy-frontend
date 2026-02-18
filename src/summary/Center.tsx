@@ -7,10 +7,9 @@ import settingsIcon from "../assets/icons/settings.png";
 
 // Quill 라이브러리 호출
 import Quill from 'quill';
-import * as ImageResize from "quill-image-resize-module-plus";
+import ImageResize from "@mgreminger/quill-image-resize-module";
 import { marked } from "marked";
 import QuillMarkdown from 'quilljs-markdown';
-import type { RangeStatic } from "quill";
 import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import { saveAs } from "file-saver";
@@ -32,12 +31,12 @@ import '../styles/summary.css';
 
 // Quill size 포맷 설정
 const Q: any = (Quill as any).default ?? Quill;
-const Size = Quill.import("formats/size");
+const Size: any = Q.import("formats/size");
 Size.whitelist = ["small", false, "large", "huge"];
 Q.register(Size, true);
 
 // Font 등록
-const Font = Quill.import("formats/font");
+const Font: any = Q.import("formats/font");
 Font.whitelist = [
   "sans-serif", "serif", "monospace",
   "YeogiOttaeJalnan",
@@ -56,10 +55,9 @@ Font.whitelist = [
   "BlackHanSans",
 ];
 
-Quill.register(Font, true);
-const ImageResizeModule = (ImageResize as any).default ?? ImageResize;
-Quill.register("modules/imageResize", ImageResizeModule);
-Quill.register("modules/mention", Mention);
+Q.register(Font, true);
+Q.register("modules/imageResize", ImageResize);
+Q.register("modules/mention", Mention);
 const BlockEmbed = Q.import("blots/block/embed");
 
 function renderKatexHtml(tex: string) {
@@ -247,7 +245,7 @@ export default function Center() {
       { id: "image", value: "이미지", desc: "/image" },
     ] as const;
 
-    const quill = new Quill(el, {
+    const quill = new Q(el, {
       theme: "snow",
       modules: {
         toolbar: false,
@@ -300,16 +298,20 @@ export default function Center() {
       placeholder: "",
     } as any);
 
+    // 2) Enter 시: "/math" "/code" 같은 커맨드 실행
     quill.keyboard.addBinding(
       { key: 13 }, // Enter
-      (range : RangeStatic, context: any) => {
-        // 커서 앞 텍스트에서 "/xxx" 감지
+      () => {
+        const range = quill.getSelection(true);
+        if (!range) return true;
+
         const before = quill.getText(Math.max(0, range.index - 50), 50);
         const m = before.match(/\/(math|code|table|text|image)$/i);
         if (!m) return true;
+
         const cmd = m[1].toLowerCase();
         void runSlashCommand(cmd);
-        return false;
+        return false; // Enter 기본 동작 막기
       }
     );
 
@@ -347,7 +349,7 @@ export default function Center() {
     };
 
     quill.root.addEventListener("click", onRootClick);
-    quill.on("selection-change", (range) => {
+    quill.on("selection-change", (range: any) => {
       lastFocusedQuillRef.current = quill;
 
       if (!range) {
@@ -387,7 +389,7 @@ export default function Center() {
       const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
       const editorEl = editorRef.current;
 
-      if (!anchorEl || !editorEl) return;
+      if (!anchorEl || !editorEl || !bounds) return; // Check if bounds is null
 
       const anchorRect = anchorEl.getBoundingClientRect();
       const editorRect = editorEl.getBoundingClientRect();
@@ -719,6 +721,7 @@ export default function Center() {
     const [lineStart] = quill.getLine(saved.index);
     const [lineEnd] = quill.getLine(saved.index + Math.max(saved.length - 1, 0));
 
+    if (!lineStart || !lineEnd) return; // Add this line to handle null cases
     const startIndex = quill.getIndex(lineStart);
     const endIndex = quill.getIndex(lineEnd);
 

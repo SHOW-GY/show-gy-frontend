@@ -1078,6 +1078,59 @@
 }
 
 /* =========================
+  Slash Command Palette
+========================= */
+.sg-slash-menu{
+  position: absolute;
+  z-index: 9999;
+  min-width: 260px;
+  max-width: 320px;
+  background: rgba(20, 20, 24, 0.94);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+  backdrop-filter: blur(12px);
+}
+
+.sg-slash-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.sg-slash-row:hover,
+.sg-slash-row.active{
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.sg-slash-title{
+  font-size: 14px;
+  font-weight: 500;
+  color: #F8FAFC;
+  letter-spacing: 0.3px;
+}
+
+.sg-slash-hint{
+  font-size: 12px;
+  color: rgba(248, 250, 252, 0.5);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.sg-slash-empty{
+  padding: 12px 14px;
+  font-size: 13px;
+  color: rgba(248, 250, 252, 0.6);
+  text-align: center;
+}
+
+/* =========================
   MOBILE
 ========================= */
 @media (max-width: 768px){
