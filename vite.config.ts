@@ -8,7 +8,9 @@ export default defineConfig({
   css: {
     devSourcemap: false,
   },
-
+  optimizeDeps: {
+    include: ['quill-mention'],
+  },
   build: {
     outDir: 'docs',
     emptyOutDir: true,

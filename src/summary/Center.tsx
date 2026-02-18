@@ -14,7 +14,7 @@ import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import { saveAs } from "file-saver";
 import html2pdf from "html2pdf.js";
-import Mention from "quill-mention";
+import { Mention } from "quill-mention";
 import "quill-mention/dist/quill.mention.css";
 import "katex/dist/katex.min.css";
 import katex from "katex";

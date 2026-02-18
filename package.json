@@ -22,6 +22,7 @@
     "quill": "^2.0.3",
     "quill-delta-to-html": "^0.12.1",
     "quill-image-resize-module-ts": "^3.0.3",
+    "quill-mention": "^6.1.1",
     "quill-to-pdf": "^1.0.7",
     "quilljs-markdown": "^1.2.0",
     "react": "^18.3.1",
