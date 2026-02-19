@@ -1031,15 +1031,21 @@
 
 /* 노션식 입력창 */
 .sg-math-editor{
-  position: absolute;
-  z-index: 9999;
-  width: min(520px, calc(100% - 24px));
+  position: fixed;   /* ✅ 중요 */
+  z-index: 9999999;
+  width: 560px;
+  max-width: calc(100% - 24px);
+  pointer-events: auto;
   background: rgba(20, 20, 24, 0.92);
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 14px;
   padding: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
   backdrop-filter: blur(10px);
+}
+
+.sg-math-editor *{
+  pointer-events: auto;
 }
 
 .sg-math-textarea{
@@ -1129,6 +1135,75 @@
   color: rgba(248, 250, 252, 0.6);
   text-align: center;
 }
+
+.sg-table-plus {
+  position: absolute;
+  width: 28px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(20,20,20,.65);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  z-index: 50;
+}
+
+.sg-table-plus:hover {
+  transform: scale(1.03);
+}
+
+/* 오른쪽(열 추가) */
+.sg-table-plus--col {
+  width: 28px;
+  height: 64px;
+}
+
+/* 아래(행 추가) */
+.sg-table-plus--row {
+  width: 64px;
+  height: 28px;
+}
+
+/* 드래그 중 텍스트 선택/드래그 방지 */
+.sg-table-resizing {
+  user-select: none !important;
+  cursor: col-resize;
+}
+.sg-table-resizing-row {
+  user-select: none !important;
+  cursor: row-resize;
+}
+
+/* 테이블 위에서 커서만 바뀌게(노션 느낌) */
+.ql-editor.sg-col-resize-cursor,
+.ql-editor.sg-col-resize-cursor * {
+  cursor: col-resize !important;
+}
+.ql-editor.sg-row-resize-cursor,
+.ql-editor.sg-row-resize-cursor * {
+  cursor: row-resize !important;
+}
+
+/* body로도 강제하면 더 확실 */
+body.sg-col-resize-cursor-body .ql-editor,
+body.sg-col-resize-cursor-body .ql-editor * {
+  cursor: col-resize !important;
+}
+body.sg-row-resize-cursor-body .ql-editor,
+body.sg-row-resize-cursor-body .ql-editor * {
+  cursor: row-resize !important;
+}
+
+/* 드래그 중 */
+body.sg-table-resizing { cursor: col-resize !important; user-select: none !important; }
+body.sg-table-resizing-row { cursor: row-resize !important; user-select: none !important; }
+
+
 
 /* =========================
   MOBILE

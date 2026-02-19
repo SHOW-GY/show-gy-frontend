@@ -1,11 +1,9 @@
-// React 라이브러리 호출
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { Group, Panel, Separator } from "react-resizable-panels";
 import saveIcon from "../assets/icons/save.png";
 import settingsIcon from "../assets/icons/settings.png";
-
-// Quill 라이브러리 호출
 import Quill from 'quill';
 import ImageResize from "@mgreminger/quill-image-resize-module";
 import { marked } from "marked";
@@ -14,12 +12,10 @@ import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import { saveAs } from "file-saver";
 import html2pdf from "html2pdf.js";
-import { Mention } from "quill-mention";
+import {Mention} from "quill-mention";
 import "quill-mention/dist/quill.mention.css";
 import "katex/dist/katex.min.css";
 import katex from "katex";
-
-// 컴포넌트 호출
 import Layout from '../components/Layout';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
@@ -29,13 +25,12 @@ import '../styles/animations.css';
 import "../assets/font/font.css";
 import '../styles/summary.css';
 
-// Quill size 포맷 설정
 const Q: any = (Quill as any).default ?? Quill;
+(window as any).Quill = Q; 
 const Size: any = Q.import("formats/size");
 Size.whitelist = ["small", false, "large", "huge"];
 Q.register(Size, true);
 
-// Font 등록
 const Font: any = Q.import("formats/font");
 Font.whitelist = [
   "sans-serif", "serif", "monospace",
@@ -144,17 +139,30 @@ export default function Center() {
   const [floatingPos, setFloatingPos] = useState({ top: 0, left: 0 });
   const savedRangeRef = useRef<{ index: number; length: number } | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
+  const [tablePlus, setTablePlus] = useState<null | {
+    top: number;
+    left: number;
+    w: number;
+    h: number;
+  }>(null);
+  const hoveredTableRef = useRef<HTMLTableElement | null>(null);
 
   type FtMenu = null | "color" | "font" | "size" | "line" | "align";
   const [ftMenu, setFtMenu] = useState<FtMenu>(null);
   const [mathOpen, setMathOpen] = useState(false);
+  const mathOpenRef = useRef(false); // ✅ selection-change에서 참조용
   const [mathTex, setMathTex] = useState("");
   const [mathPos, setMathPos] = useState({ top: 0, left: 0 });
   const mathTargetElRef = useRef<HTMLElement | null>(null);
   const mathPrevTexRef = useRef<string>("");
   const mathInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const tableApiRef = useRef<{
+  addRow?: (where: "above" | "below") => void;
+  addCol?: (where: "left" | "right") => void;
+  refresh?: () => void;
+}>({});
 
-  // Draft text 적용
+
   useEffect(() => {
     if (uploadData || uploadErrorMessage) return;
     if (!draftText) return;
@@ -173,7 +181,6 @@ export default function Center() {
     })();
   }, [draftText]);
 
-  // Typing effect initialization
   useEffect(() => {
     if (hasTypingStartedRef.current) return;
     if (uploadData || uploadErrorMessage) return;
@@ -232,7 +239,6 @@ export default function Center() {
     };
   }, [isTyping, typingText]);
 
-  // 1) Quill 생성: 딱 한 번만
   useEffect(() => {
     const el = editorRef.current;
     if (!el || quillRef.current) return;
@@ -245,60 +251,68 @@ export default function Center() {
       { id: "image", value: "이미지", desc: "/image" },
     ] as const;
 
-    const quill = new Q(el, {
-      theme: "snow",
-      modules: {
-        toolbar: false,
-        imageResize: {},
-        history: {
-          delay: 1000,
-          maxStack: 200,
-          userOnly: true },
-        mention: {
-          mentionDenotationChars: ["/"],
-          showDenotationChar: true,
-          minChars: 0, // "/"만 쳐도 메뉴 뜨게
-          allowedChars: /^[A-Za-z]*$/, // /math 같은 것만 허용 (한글 입력하면 검색 안되게)
-          positioningStrategy: "fixed", // overflow/scroll 이슈 방지
-
-          source: (searchTerm: string, renderList: any) => {
-            const term = (searchTerm || "").toLowerCase();
-            const list = SLASH_ITEMS
-              .filter(it => it.id.startsWith(term) || it.value.includes(searchTerm))
-              .map(it => ({
-                id: it.id,
-                value: it.value,
-                denotationChar: "/",
-                desc: it.desc,
-              }));
-            renderList(list, searchTerm);
+    let quill: any;
+    try {
+      quill = new Q(el, {
+        theme: "snow",
+        modules: {
+          table: true,
+          toolbar: false,
+          imageResize: {},
+          history: {
+            delay: 1000,
+            maxStack: 200,
+            userOnly: true },
+          keyboard: {
+            bindings: {},
           },
+          mention: {
+            mentionDenotationChars: ["/"],
+            showDenotationChar: true,
+            minChars: 0,
+            allowedChars: /^[A-Za-z]*$/,
+            positioningStrategy: "fixed",
 
-          // ✅ 메뉴 item UI: Column 형태
-          renderItem: (item: any) => {
-            const div = document.createElement("div");
-            div.className = "sg-slash-item";
-            div.innerHTML = `
-              <div class="sg-slash-title">${item.value}</div>
-            `;
-            return div;
-          },
+            source: (searchTerm: string, renderList: any) => {
+              const term = (searchTerm || "").toLowerCase();
+              const list = SLASH_ITEMS
+                .filter(it => it.id.startsWith(term) || it.value.includes(searchTerm))
+                .map(it => ({
+                  id: it.id,
+                  value: it.value,
+                  denotationChar: "/",
+                  desc: it.desc,
+                }));
+              renderList(list, searchTerm);
+            },
 
-          // ✅ 클릭 선택 시 실행
-          onSelect: (item: any) => {
-            requestAnimationFrame(() => runSlashCommand(item.id));
+            renderItem: (item: any) => {
+              const div = document.createElement("div");
+              div.className = "sg-slash-item";
+              div.innerHTML = `
+                <div class="sg-slash-title">${item.value}</div>
+              `;
+              return div;
+            },
+
+            onSelect: (item: any) => {
+              requestAnimationFrame(() => runSlashCommand(item.id));
+            },
           },
         },
-      },
-      formats: [
-        "size", "font", "bold", "italic", "underline", "color", "align",
-        "header", "list", "blockquote", "code-block", "image", "mention",
-        "sg-math-block",
-      ],
-      placeholder: "",
-    } as any);
+        formats: [
+          "size", "font", "bold", "italic", "underline", "color", "align",
+          "header", "list", "blockquote", "code-block", "image",
+          "sg-math-block", "table"
+        ],
+        placeholder: "",
+      } as any);
 
-    // 2) Enter 시: "/math" "/code" 같은 커맨드 실행
+    } catch (err) {
+      console.error("[Quill] init FAILED:", err);
+      return;
+    }
+
     quill.keyboard.addBinding(
       { key: 13 }, // Enter
       () => {
@@ -306,12 +320,12 @@ export default function Center() {
         if (!range) return true;
 
         const before = quill.getText(Math.max(0, range.index - 50), 50);
-        const m = before.match(/\/(math|code|table|text|image)$/i);
+        const m = before.match(/\/(math|code|text|image|table)$/i);
         if (!m) return true;
 
         const cmd = m[1].toLowerCase();
         void runSlashCommand(cmd);
-        return false; // Enter 기본 동작 막기
+        return false;
       }
     );
 
@@ -321,6 +335,95 @@ export default function Center() {
 
     quillRef.current = quill;
     lastFocusedQuillRef.current = quill;
+
+    function updateTablePlusPosition(table: HTMLTableElement) {
+      const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
+      if (!anchorEl) return;
+
+      const a = anchorEl.getBoundingClientRect();
+      const r = table.getBoundingClientRect();
+
+      const top = r.top - a.top;
+      const left = r.left - a.left;
+
+      setTablePlus({
+        top,
+        left,
+        w: r.width,
+        h: r.height,
+      });
+    }
+
+    function hideTablePlus() {
+      hoveredTableRef.current = null;
+      setTablePlus(null);
+    }
+
+    const hideTimerRef = { current: null as number | null };
+
+    function scheduleHide() {
+      if (hideTimerRef.current != null) return;
+      hideTimerRef.current = window.setTimeout(() => {
+        hideTimerRef.current = null;
+        const active = hoveredTableRef.current ?? getActiveTableEl(quill);
+        if (!active) hideTablePlus();
+      }, 180);
+    }
+
+    function cancelHide() {
+      if (hideTimerRef.current != null) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    }
+
+    const isOverPlus = (el: HTMLElement | null) =>
+      !!el?.closest?.(".sg-table-plus");
+    const onMouseMove = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null;
+
+      if (isOverPlus(t)) {
+        cancelHide();
+        const table = hoveredTableRef.current ?? getActiveTableEl(quill);
+        if (table) updateTablePlusPosition(table);
+        return;
+      }
+
+      const table = (t?.closest?.("table") as HTMLTableElement | null) ?? null;
+
+      if (!table) {
+        scheduleHide();
+        return;
+      }
+
+      cancelHide();
+      hoveredTableRef.current = table;
+      updateTablePlusPosition(table);
+    };
+
+    const showPlusIfCursorInTable = () => {
+      if (mathOpenRef.current) return;
+      
+      const table = getActiveTableEl(quill);
+      if (!table) {
+        if (!hoveredTableRef.current) hideTablePlus();
+        return;
+      }
+      hoveredTableRef.current = table;
+      updateTablePlusPosition(table);
+    };
+
+    quill.root.addEventListener("mousemove", onMouseMove);
+    quill.on("selection-change", showPlusIfCursorInTable);
+
+    const onWin = () => {
+      const table = hoveredTableRef.current ?? getActiveTableEl(quill);
+      if (!table) return;
+      updateTablePlusPosition(table);
+    };
+    window.addEventListener("scroll", onWin, { passive: true });
+    window.addEventListener("resize", onWin, { passive: true });
+
     const onRootClick = (e: MouseEvent) => {
       const t = (e.target as HTMLElement | null)?.closest?.(".sg-math-block") as HTMLElement | null;
       if (!t) return;
@@ -337,10 +440,11 @@ export default function Center() {
 
       setMathTex(tex);
       setMathPos({
-        top: (r.bottom - a.top) + 10,
+        top: (r.bottom - a.top) + 200, 
         left: (r.left - a.left),
       });
       setMathOpen(true);
+      mathOpenRef.current = true;
 
       requestAnimationFrame(() => {
         mathInputRef.current?.focus();
@@ -350,6 +454,8 @@ export default function Center() {
 
     quill.root.addEventListener("click", onRootClick);
     quill.on("selection-change", (range: any) => {
+      if (mathOpenRef.current) return;
+      
       lastFocusedQuillRef.current = quill;
 
       if (!range) {
@@ -407,7 +513,6 @@ export default function Center() {
       setShowFloating(true);
     });
 
-    // 문서 변경 저장
     quill.on("text-change", () => {
       if (suppressRef.current) return;
 
@@ -418,7 +523,6 @@ export default function Center() {
       setDocumentText(text);
     });
 
-    // ✅ 파일 선택기(이미지)
     const pickImageFile = (): Promise<File | null> =>
       new Promise((resolve) => {
         const input = document.createElement("input");
@@ -436,13 +540,11 @@ export default function Center() {
         reader.readAsDataURL(file);
       });
 
-    // ✅ 현재 커서 앞의 "/xxx" 텍스트를 지우고 커맨드 실행
     const runSlashCommand = async (cmd: string) => {
       const q = quill;
       const range = q.getSelection(true);
       if (!range) return;
 
-      // 커서 앞 텍스트를 읽어서 "/..." 패턴 제거
       const before = q.getText(Math.max(0, range.index - 50), 50);
       const lastSlash = before.lastIndexOf("/");
       if (lastSlash !== -1) {
@@ -453,7 +555,6 @@ export default function Center() {
       const insertAt = q.getSelection(true)?.index ?? range.index;
 
       if (cmd === "text") {
-        // velog 스타일 = blockquote
         q.insertText(insertAt, "\n", "user");
         q.formatLine(insertAt, 1, "blockquote", true, "user");
         q.setSelection(insertAt + 1, 0, "silent");
@@ -482,7 +583,6 @@ export default function Center() {
         q.insertText(insertAt + 1, "\n", "user");
         q.setSelection(insertAt + 2, 0, "silent");
 
-        // 바로 입력창까지 자동으로 열고 싶으면:
         requestAnimationFrame(() => {
           const root = q.root as HTMLElement;
           const nodes = root.querySelectorAll(".sg-math-block");
@@ -496,24 +596,325 @@ export default function Center() {
       }
 
       if (cmd === "table") {
-        // 1차: markdown table 텍스트 삽입 (너가 말한 "html에 |목록|" 방식과 맞춤)
-        const tableMd =
-          "\n| 항목 | 내용 |\n| --- | --- |\n|  |  |\n";
-        q.insertText(insertAt, tableMd, "user");
-        // 첫 셀로 커서 이동
-        q.setSelection(insertAt + 3, 0, "silent");
+        insert3x3Table(q);
         return;
       }
     };
 
+    const MAX_COLS = 10;
+    const MAX_ROWS = 100;
+
+    function getActiveTableEl(q: any): HTMLTableElement | null {
+      const range = q.getSelection(true);
+      if (!range) return null;
+
+      const [leaf] = q.getLeaf(range.index);
+      const dom: HTMLElement | null = leaf?.domNode ?? null;
+      if (!dom || !(dom instanceof HTMLElement)) return null;
+      if (typeof dom.closest !== "function") return null;
+
+      // Quill table은 실제 <table>을 만든다. (현재 커서 위치에서 가장 가까운 table 찾기)
+      return dom.closest("table") as HTMLTableElement | null;
+    }
+
+    function getTableSize(table: HTMLTableElement): { rows: number; cols: number } {
+      const tbody = table.querySelector("tbody");
+      const trs = Array.from((tbody ?? table).querySelectorAll("tr"));
+      const rows = trs.length;
+
+      // 첫 row 기준으로 col 수 측정 (row마다 다르면 어차피 이상한 상태)
+      const firstTr = trs[0];
+      const cols = firstTr ? Array.from(firstTr.querySelectorAll("td,th")).length : 0;
+
+      return { rows, cols };
+    }
+
+    const MIN_COL_W = 40;  // 최소 열 너비(px)
+    const MIN_ROW_H = 24;  // 최소 행 높이(px)
+    const EDGE = 12;        // 테두리 판정(몇 px 안쪽이면 리사이즈)
+
+    function ensureColGroup(table: HTMLTableElement) {
+      const { cols } = getTableSize(table);
+
+      let cg = table.querySelector("colgroup");
+      if (!cg) {
+        cg = document.createElement("colgroup");
+        table.insertBefore(cg, table.firstChild);
+      }
+
+      while (cg.children.length < cols) cg.appendChild(document.createElement("col"));
+      while (cg.children.length > cols) cg.removeChild(cg.lastChild!);
+
+
+      table.style.tableLayout = "fixed";
+      table.style.width = table.style.width || "100%"; // 기본 100%
+      return cg as HTMLTableColElement;
+    }
+
+    function findCell(e: PointerEvent): HTMLTableCellElement | null {
+      const t = e.target as HTMLElement | null;
+      return (t?.closest?.("td,th") as HTMLTableCellElement | null) ?? null;
+    }
+
+    function findTableFromEvent(e: PointerEvent): HTMLTableElement | null {
+      const t = e.target as HTMLElement | null;
+      return (t?.closest?.("table") as HTMLTableElement | null) ?? null;
+    }
+
+    function findRowAtY(table: HTMLTableElement, clientY: number): HTMLTableRowElement | null {
+      const rows = Array.from(table.querySelectorAll("tr")) as HTMLTableRowElement[];
+      for (const row of rows) {
+        const r = row.getBoundingClientRect();
+        if (clientY >= r.top && clientY <= r.bottom) return row;
+      }
+      return null;
+    }
+
+    function getCellEdgeHit(cell: HTMLTableCellElement, e: PointerEvent) {
+      const r = cell.getBoundingClientRect();
+      const nearRight = Math.abs(e.clientX - r.right) <= EDGE;
+      const nearBottom = Math.abs(e.clientY - r.bottom) <= EDGE;
+      return { nearRight, nearBottom, rect: r };
+    }
+
+    function getColWidths(table: HTMLTableElement): number[] {
+      ensureColGroup(table);
+      const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
+      return cols.map((c) => parseFloat(c.style.width || "") || c.getBoundingClientRect().width);
+    }
+
+    function hitTestColBoundary(table: HTMLTableElement, clientX: number) {
+      // table 내부 x좌표
+      const tr = table.getBoundingClientRect();
+      const x = clientX - tr.left;
+
+      const widths = getColWidths(table);
+      let acc = 0;
+
+      // 경계는 col 끝지점(acc+width)들
+      for (let i = 0; i < widths.length; i++) {
+        acc += widths[i];
+        if (Math.abs(x - acc) <= EDGE) {
+          return { boundaryIndex: i, startX: clientX };
+          // boundaryIndex=i 는 i번째 col의 오른쪽 경계 (즉 col i를 resize)
+        }
+      }
+
+      return null;
+    }
+
+    function hitTestRowBoundary(rowEl: HTMLTableRowElement, clientY: number) {
+      const r = rowEl.getBoundingClientRect();
+      if (Math.abs(clientY - r.bottom) <= EDGE) return true;
+      return false;
+    }
+
+    function startColResize(table: HTMLTableElement, colIndex: number, startX: number) {
+      const cg = ensureColGroup(table);
+      const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
+      const colEl = cols[colIndex];
+      if (!colEl) return;
+
+      const startW = parseFloat(colEl.style.width || "0") || colEl.getBoundingClientRect().width;
+      document.body.classList.add("sg-table-resizing");
+
+      const onMove = (ev: PointerEvent) => {
+        const dx = ev.clientX - startX;
+        const next = Math.max(MIN_COL_W, startW + dx);
+        colEl.style.width = `${next}px`;
+        tableApiRef.current.refresh?.();
+      };
+
+      const onUp = () => {
+        document.body.classList.remove("sg-table-resizing");
+        window.removeEventListener("pointermove", onMove, true);
+        window.removeEventListener("pointerup", onUp, true);
+        tableApiRef.current.refresh?.();
+      };
+
+      window.addEventListener("pointermove", onMove, true);
+      window.addEventListener("pointerup", onUp, true);
+    }
+
+    function startRowResize(rowEl: HTMLTableRowElement, startY: number) {
+      const startH = rowEl.getBoundingClientRect().height;
+      document.body.classList.add("sg-table-resizing-row");
+
+      const onMove = (ev: PointerEvent) => {
+        const dy = ev.clientY - startY;
+        const next = Math.max(MIN_ROW_H, startH + dy);
+        rowEl.style.height = `${next}px`;
+        tableApiRef.current.refresh?.();
+      };
+
+      const onUp = () => {
+        document.body.classList.remove("sg-table-resizing-row");
+        window.removeEventListener("pointermove", onMove, true);
+        window.removeEventListener("pointerup", onUp, true);
+        tableApiRef.current.refresh?.();
+      };
+
+      window.addEventListener("pointermove", onMove, true);
+      window.addEventListener("pointerup", onUp, true);
+    }
+
+    function currentLineText(q: any) {
+      const range = q.getSelection();
+      if (!range) return null;
+      const [line] = q.getLine(range.index);
+      if (!line) return null;
+      return ((line.domNode?.textContent as string) || "").trim();
+    }
+
+    function deleteCurrentLine(q: any, QuillNS: any) {
+      const range = q.getSelection();
+      if (!range) return;
+      const [line, offset] = q.getLine(range.index);
+      if (!line) return;
+
+      const lineStart = range.index - offset;
+      const len = line.length();
+      q.deleteText(lineStart, len, QuillNS.sources.USER);
+      q.setSelection(lineStart, 0, QuillNS.sources.SILENT);
+    }
+
+    function insert3x3Table(q: any) {
+      const tb = quill.getModule("table");
+      tb.insertTable(3, 3);
+      q.setSelection(q.getLength() - 1, 0, Q.sources.SILENT);
+    }
+
+    function addRow(q: any, where: "above" | "below") {
+      const tb = q.getModule("table");
+      if (!tb) return;
+
+      const table = getActiveTableEl(q);
+      if (!table) return;
+
+      const { rows } = getTableSize(table);
+      if (rows >= MAX_ROWS) {
+        // 여기 toast로 바꿔도 됨
+        alert(`세로(행)는 최대 ${MAX_ROWS}칸까지 가능합니다.`);
+        return;
+      }
+
+      if (where === "above") tb.insertRowAbove();
+      else tb.insertRowBelow();
+    }
+
+    function addCol(q: any, where: "left" | "right") {
+      const tb = q.getModule("table");
+      if (!tb) return;
+
+      const table = getActiveTableEl(q);
+      if (!table) return;
+
+      const { cols } = getTableSize(table);
+      if (cols >= MAX_COLS) {
+        alert(`가로(열)는 최대 ${MAX_COLS}칸까지 가능합니다.`);
+        return;
+      }
+
+      if (where === "left") tb.insertColumnLeft();
+      else tb.insertColumnRight();
+    }
+
+    tableApiRef.current.addRow = (where) => addRow(quill, where);
+    tableApiRef.current.addCol = (where) => addCol(quill, where);
+    tableApiRef.current.refresh = () => {
+      const t = hoveredTableRef.current ?? getActiveTableEl(quill);
+      if (!t) return;
+      ensureColGroup(t);
+      updateTablePlusPosition(t);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      const root = quill.root as HTMLElement;
+      root.classList.remove("sg-col-resize-cursor", "sg-row-resize-cursor");
+      document.body.classList.remove("sg-col-resize-cursor-body", "sg-row-resize-cursor-body");
+
+      const table = findTableFromEvent(e);
+      if (!table) return;
+
+      const colHit = hitTestColBoundary(table, e.clientX);
+      if (colHit) {
+        document.body.classList.add("sg-col-resize-cursor-body");
+        root.classList.add("sg-col-resize-cursor");
+        return;
+      }
+
+      const row = findRowAtY(table, e.clientY);
+      if (row && hitTestRowBoundary(row, e.clientY)) {
+        document.body.classList.add("sg-row-resize-cursor-body");
+        root.classList.add("sg-row-resize-cursor");
+      }
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.(".sg-table-plus")) return;
+
+      const table = findTableFromEvent(e);
+      if (!table) return;
+
+      // col resize 먼저
+      const colHit = hitTestColBoundary(table, e.clientX);
+      if (colHit) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        hoveredTableRef.current = table;
+        updateTablePlusPosition(table);
+
+        // boundaryIndex = i => col i width 조절
+        startColResize(table, colHit.boundaryIndex, colHit.startX);
+        return;
+      }
+
+      // row resize: 아래 테두리 드래그
+      const row = findRowAtY(table, e.clientY);
+      if (row && hitTestRowBoundary(row, e.clientY)) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        hoveredTableRef.current = table;
+        updateTablePlusPosition(table);
+
+        startRowResize(row, e.clientY);
+      }
+    };
+
+    const onKeydown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+
+      const text = currentLineText(quill);
+      if (text !== "/table") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      deleteCurrentLine(quill, Q);
+      insert3x3Table(quill);
+    };
+
+    quill.root.addEventListener("keydown", onKeydown, true);
+    quill.root.addEventListener("pointermove", onPointerMove, true);
+    quill.root.addEventListener("pointerdown", onPointerDown, true);
 
     return () => {
-      quill.root.removeEventListener("click", onRootClick);
+      quill.root.removeEventListener("mousemove", onMouseMove);
+      quill.off("selection-change", showPlusIfCursorInTable);
+      window.removeEventListener("scroll", onWin);
+      window.removeEventListener("resize", onWin);
+      quill.root.removeEventListener("keydown", onKeydown, true);
+      quill.root.removeEventListener("pointermove", onPointerMove, true);
+      quill.root.removeEventListener("pointerdown", onPointerDown, true);
+      if (hideTimerRef.current != null) clearTimeout(hideTimerRef.current);
+      tableApiRef.current = {};
       quillRef.current = null;
     };
   }, []);
 
-  // 2) fontSize 변경 시: 단일 Quill에만 적용
   useEffect(() => {
     const q = quillRef.current;
     if (!q) return;
@@ -529,7 +930,6 @@ export default function Center() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showMarginSettings]);
 
-  // Scroll position handlers
   useEffect(() => {
     const handleScroll = () => {
       if (timeoutRef.current !== null) {
@@ -552,7 +952,6 @@ export default function Center() {
     };
   }, []);
 
-  // ResizeObserver to track document height changes when pages are added/removed
   useEffect(() => {
     const quill = quillRef.current;
     if (!quill) return;
@@ -596,7 +995,6 @@ export default function Center() {
     };
   }, []);
 
-  // Helper Underline position handlers
   useEffect(() => {
     const recalcUnderline = () => {
       const container = tabsContainerRef.current;
@@ -626,7 +1024,6 @@ export default function Center() {
     };
   }, [activeTab]);
 
-  // 업로드 결과 적용 (본문/요약/오류)
   useEffect(() => {
     if (!uploadData && !uploadErrorMessage) return;
     const quill = quillRef.current;
@@ -668,10 +1065,9 @@ export default function Center() {
       if (!mathOpen) return;
       const t = e.target as HTMLElement;
       if (t.closest(".sg-math-editor")) return;
-      if (t.closest(".sg-math-block")) return; // 다른 수식 누르면 click 핸들러가 다시 열어줌
-
-      // 그냥 닫기(완료처럼)
+      if (t.closest(".sg-math-block")) return;
       setMathOpen(false);
+      mathOpenRef.current = false;
       mathTargetElRef.current = null;
     };
     window.addEventListener("mousedown", onDown);
@@ -687,13 +1083,9 @@ export default function Center() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [showFloating]);
-
-  // Margin handler
   const handleMarginChange = (side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
     setMargins(prev => ({ ...prev, [side]: value }));
   };
-
-  // Update sidebar and panel positions based on scroll
   const updatePositions = () => {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const scrollThreshold = 75;
@@ -721,7 +1113,7 @@ export default function Center() {
     const [lineStart] = quill.getLine(saved.index);
     const [lineEnd] = quill.getLine(saved.index + Math.max(saved.length - 1, 0));
 
-    if (!lineStart || !lineEnd) return; // Add this line to handle null cases
+    if (!lineStart || !lineEnd) return;
     const startIndex = quill.getIndex(lineStart);
     const endIndex = quill.getIndex(lineEnd);
 
@@ -740,8 +1132,6 @@ export default function Center() {
 
     quill.focus();
   };
-
-  // Markdown 적용 함수
   const applyMarkdown = async (md: string) => {
     const quill = quillRef.current;
     if (!quill) return;
@@ -755,8 +1145,6 @@ export default function Center() {
 
     quill.focus();
   };
-
-  // Panel content renderer
   const extractTopicFromHtml = (html: string) => {
     const div = document.createElement("div");
     div.innerHTML = html;
@@ -773,8 +1161,6 @@ export default function Center() {
     if (activeTab === 'feedback') return <Feedback />;
     return <Search />;
   };
-
-  // PDF Export
   const exportPdf = async () => {
     const quill = quillRef.current;
     if (!quill) return;
@@ -813,9 +1199,7 @@ export default function Center() {
 
     void wrapper.offsetHeight;
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-    // @ts-ignore
-    if (document.fonts?.ready) await (document.fonts as any).ready;
+    if (await document.fonts?.ready) await (document.fonts as any).ready;
 
     try {
       const worker = html2pdf()
@@ -898,8 +1282,6 @@ export default function Center() {
       document.body.removeChild(wrapper);
     }
   };
-
-  // 유틸: 단일 폰트 확인
   const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
     const contents = quill.getContents(index, length);
     const fonts = new Set<string>();
@@ -951,13 +1333,10 @@ export default function Center() {
     quill.focus();
   };
 
-  // Render
   return (
     <Layout activeMenu="summary">
       <div className="center-split-root">
         <Group orientation="horizontal" className="center-split-group">
-
-          {/* 1) LEFT: 저장/설정 + 여백 조절 */}
           <Panel defaultSize={18} minSize={14} maxSize={50} className="pane pane-left">
             <div className="left-pane">
               <button className="left-pane-btn" onClick={exportPdf} title="저장(PDF)">
@@ -976,7 +1355,6 @@ export default function Center() {
 
           <Separator className="resize-handle" />
 
-          {/* 2) CENTER: 문서 */}
           <Panel defaultSize={55} minSize={35} className="pane pane-center">
             <div className="doc-pane">
               <div ref={documentContainerRef} className="doc-pane-inner">
@@ -987,9 +1365,43 @@ export default function Center() {
                   }}
                 >
                   <div ref={editorRef} className="document-input" />
+                  {tablePlus && (
+                    <>
+                      {/* 열 추가(오른쪽) */}
+                      <div
+                        className="sg-table-plus sg-table-plus--col"
+                        style={{
+                          top: tablePlus.top + tablePlus.h / 2 - 32,
+                          left: tablePlus.left + tablePlus.w + 10,
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          tableApiRef.current.addCol?.("right");
+                          requestAnimationFrame(() => tableApiRef.current.refresh?.());
+                        }}
+                        title="열 추가"
+                      >
+                        +
+                      </div>
 
-      {/* ✅ (가장 중요) 
-      는 반드시 center-document 내부에서 렌더 */}
+                      {/* 행 추가(아래) */}
+                      <div
+                        className="sg-table-plus sg-table-plus--row"
+                        style={{
+                          top: tablePlus.top + tablePlus.h + 10,
+                          left: tablePlus.left + tablePlus.w / 2 - 32,
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          tableApiRef.current.addRow?.("below");
+                          requestAnimationFrame(() => tableApiRef.current.refresh?.());
+                        }}
+                        title="행 추가"
+                      >
+                        +
+                      </div>
+                    </>
+                  )}
                   {showFloating && (
                     <div
                       ref={floatingRef}
@@ -1000,7 +1412,6 @@ export default function Center() {
                       }}
                       onMouseDown={(e) => e.preventDefault()}
                     >
-                      {/* Bold */}
                       <button
                         type="button"
                         className={`ft-btn ${isBoldActive ? "active" : ""}`}
@@ -1012,8 +1423,6 @@ export default function Center() {
                       >
                         B
                       </button>
-
-                      {/* Underline */}
                       <button
                         type="button"
                         className={`ft-btn ${isUnderlineActive ? "active" : ""}`}
@@ -1025,8 +1434,6 @@ export default function Center() {
                       >
                         U
                       </button>
-
-                      {/* Italic */}
                       <button
                         type="button"
                         className={`ft-btn ${isItalicActive ? "active" : ""}`}
@@ -1040,8 +1447,6 @@ export default function Center() {
                       </button>
 
                       <div className="ft-divider" />
-
-                      {/* Color */}
                       <div className="ft-popover">
                         <button
                           type="button"
@@ -1081,8 +1486,6 @@ export default function Center() {
                           </div>
                         )}
                       </div>
-
-                      {/* Font */}
                       <div className="ft-popover">
                         <button
                           type="button"
@@ -1125,7 +1528,6 @@ export default function Center() {
                         )}
                       </div>
 
-                      {/* Size */}
                       <div className="ft-popover">
                         <button
                           type="button"
@@ -1246,11 +1648,12 @@ export default function Center() {
                     </div>
                   )}
 
-                  {mathOpen && (
+                  {mathOpen && createPortal(
                     <div
                       className="sg-math-editor"
                       style={{ top: `${mathPos.top}px`, left: `${mathPos.left}px` }}
-                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <textarea
                         ref={mathInputRef}
@@ -1264,14 +1667,12 @@ export default function Center() {
                           const el = mathTargetElRef.current;
                           if (!el) return;
 
-                          // ✅ 즉시 렌더 + 원본 저장
                           el.setAttribute("data-tex", next);
                           el.innerHTML = renderKatexHtml(next);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Escape") {
                             e.preventDefault();
-                            // ESC = 취소(원복)
                             const el = mathTargetElRef.current;
                             if (el) {
                               const prev = mathPrevTexRef.current;
@@ -1279,12 +1680,13 @@ export default function Center() {
                               el.innerHTML = renderKatexHtml(prev);
                             }
                             setMathOpen(false);
+                            mathOpenRef.current = false;
                             mathTargetElRef.current = null;
                           }
                           if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                             e.preventDefault();
-                            // Cmd/Ctrl+Enter = 완료
                             setMathOpen(false);
+                            mathOpenRef.current = false;
                             mathTargetElRef.current = null;
                           }
                         }}
@@ -1297,6 +1699,7 @@ export default function Center() {
                           onMouseDown={(e) => {
                             e.preventDefault();
                             setMathOpen(false);
+                            mathOpenRef.current = false;
                             mathTargetElRef.current = null;
                           }}
                         >
@@ -1308,7 +1711,6 @@ export default function Center() {
                           className="sg-math-btn ghost"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            // 취소(원복)
                             const el = mathTargetElRef.current;
                             if (el) {
                               const prev = mathPrevTexRef.current;
@@ -1316,13 +1718,15 @@ export default function Center() {
                               el.innerHTML = renderKatexHtml(prev);
                             }
                             setMathOpen(false);
+                            mathOpenRef.current = false;
                             mathTargetElRef.current = null;
                           }}
                         >
                           취소
                         </button>
                       </div>
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               </div>
@@ -1331,7 +1735,6 @@ export default function Center() {
 
           <Separator className="resize-handle" />
 
-          {/* 3) RIGHT: 챗봇/피드백/참고자료 */}
           <Panel defaultSize={33} minSize={22} className="pane pane-right">
             <div className="right-pane">
               <div className="panel-tabs" ref={tabsContainerRef}>
