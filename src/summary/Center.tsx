@@ -1,21 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import type Quill from 'quill';
 import { useLocation } from 'react-router-dom';
 import { Group, Panel, Separator } from "react-resizable-panels";
 import saveIcon from "../assets/icons/save.png";
 import settingsIcon from "../assets/icons/settings.png";
-import Quill from 'quill';
-import ImageResize from "@mgreminger/quill-image-resize-module";
-import { marked } from "marked";
-import QuillMarkdown from 'quilljs-markdown';
-import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
+import 'quilljs-markdown/dist/quilljs-markdown-common-style.css';
 import 'quill/dist/quill.snow.css';
-import { saveAs } from "file-saver";
-import html2pdf from "html2pdf.js";
-import {Mention} from "quill-mention";
 import "quill-mention/dist/quill.mention.css";
-import "katex/dist/katex.min.css";
-import katex from "katex";
 import Layout from '../components/Layout';
 import Chatbot from '../helper/Chatbot';
 import Feedback from '../helper/Feedback';
@@ -24,74 +16,11 @@ import '../styles/design.css';
 import '../styles/animations.css';
 import "../assets/font/font.css";
 import '../styles/summary.css';
-
-const Q: any = (Quill as any).default ?? Quill;
-(window as any).Quill = Q; 
-const Size: any = Q.import("formats/size");
-Size.whitelist = ["small", false, "large", "huge"];
-Q.register(Size, true);
-
-const Font: any = Q.import("formats/font");
-Font.whitelist = [
-  "sans-serif", "serif", "monospace",
-  "YeogiOttaeJalnan",
-  "OngleipParkDahyeon",
-  "KerisKeduLine",
-  "Yeongwol",
-  "Hamchorom",
-  "Simple",
-  "DaeguDongseongRo",
-  "GiantsInline",
-  "Mujeokhaebeong",
-  "Cafe24Decobox",
-  "NanumGothic",
-  "NanumMyeongjo",
-  "JejuGothic",
-  "BlackHanSans",
-];
-
-Q.register(Font, true);
-Q.register("modules/imageResize", ImageResize);
-Q.register("modules/mention", Mention);
-const BlockEmbed = Q.import("blots/block/embed");
-
-function renderKatexHtml(tex: string) {
-  const safe = (tex || "").trim();
-  if (!safe) {
-    return `<span class="sg-math-placeholder">수식 입력</span>`;
-  }
-  try {
-    return katex.renderToString(safe, {
-      displayMode: true,
-      throwOnError: false,
-      strict: "ignore",
-    });
-  } catch {
-    return `<span class="sg-math-error">Invalid TeX</span>`;
-  }
-}
-
-class SgMathBlockBlot extends BlockEmbed {
-  static blotName = "sg-math-block";
-  static tagName = "div";
-  static className = "sg-math-block";
-
-  static create(value: any) {
-    const node = super.create() as HTMLElement;
-    const tex = (value?.tex ?? "").toString();
-
-    node.setAttribute("data-tex", tex);
-    node.setAttribute("contenteditable", "false");
-    node.innerHTML = renderKatexHtml(tex);
-    return node;
-  }
-
-  static value(node: HTMLElement) {
-    return { tex: node.getAttribute("data-tex") || "" };
-  }
-}
-
-Q.register(SgMathBlockBlot, true);
+import { renderKatexHtml } from "./mathBlot";
+import { useQuillInit } from "./hooks/useQuillInit";
+import { applyMarkdown } from "./utils/markdown";
+import { exportPdf } from "./utils/pdf";
+import { FONT_LIST, getFontLabel } from "./fonts";
 
 export default function Center() {
   const location = useLocation();
@@ -113,9 +42,7 @@ export default function Center() {
   const [margins, setMargins] = useState({ top: 71, bottom: 71, left: 83, right: 83 });
   const lastFocusedQuillRef = useRef<Quill | null>(null);
   const documentContainerRef = useRef<HTMLDivElement | null>(null);
-  const centerContainerRef = useRef<HTMLDivElement | null>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 60, width: 79 });
-  const [containerHeight, setContainerHeight] = useState<number>(0);
   const timeoutRef = useRef<number | null>(null);
   const resizeRafRef = useRef<number | null>(null);
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -129,11 +56,7 @@ export default function Center() {
     | { title?: string; text?: string; summary?: string }
     | null;
   const uploadErrorMessage = (location.state as any)?.uploadErrorMessage as string | null;
-  const [uploadedContent, setUploadedContent] = useState<
-    { title?: string; text?: string; summary?: string } | null
-  >(null);
   const [documentText, setDocumentText] = useState<string>("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [showFloating, setShowFloating] = useState(false);
   const [floatingPos, setFloatingPos] = useState({ top: 0, left: 0 });
@@ -169,16 +92,7 @@ export default function Center() {
     const quill = quillRef.current;
     if (!quill) return;
 
-    (async () => {
-      const html = await marked.parse(draftText);
-
-      suppressRef.current = true;
-      quill.setText("");
-      quill.clipboard.dangerouslyPasteHTML(html);
-      setTimeout(() => (suppressRef.current = false), 0);
-
-      quill.focus();
-    })();
+    void applyMarkdown(quill, draftText, suppressRef);
   }, [draftText]);
 
   useEffect(() => {
@@ -239,671 +153,48 @@ export default function Center() {
     };
   }, [isTyping, typingText]);
 
-  useEffect(() => {
-    const el = editorRef.current;
-    if (!el || quillRef.current) return;
+  const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
+    const contents = quill.getContents(index, length);
+    const fonts = new Set<string>();
 
-    const SLASH_ITEMS = [
-      { id: "math",  value: "수식",   desc: "/math" },
-      { id: "table", value: "표",     desc: "/table" },
-      { id: "code",  value: "코드",   desc: "/code" },
-      { id: "text",  value: "텍스트", desc: "/text" },
-      { id: "image", value: "이미지", desc: "/image" },
-    ] as const;
-
-    let quill: any;
-    try {
-      quill = new Q(el, {
-        theme: "snow",
-        modules: {
-          table: true,
-          toolbar: false,
-          imageResize: {},
-          history: {
-            delay: 1000,
-            maxStack: 200,
-            userOnly: true },
-          keyboard: {
-            bindings: {},
-          },
-          mention: {
-            mentionDenotationChars: ["/"],
-            showDenotationChar: true,
-            minChars: 0,
-            allowedChars: /^[A-Za-z]*$/,
-            positioningStrategy: "fixed",
-
-            source: (searchTerm: string, renderList: any) => {
-              const term = (searchTerm || "").toLowerCase();
-              const list = SLASH_ITEMS
-                .filter(it => it.id.startsWith(term) || it.value.includes(searchTerm))
-                .map(it => ({
-                  id: it.id,
-                  value: it.value,
-                  denotationChar: "/",
-                  desc: it.desc,
-                }));
-              renderList(list, searchTerm);
-            },
-
-            renderItem: (item: any) => {
-              const div = document.createElement("div");
-              div.className = "sg-slash-item";
-              div.innerHTML = `
-                <div class="sg-slash-title">${item.value}</div>
-              `;
-              return div;
-            },
-
-            onSelect: (item: any) => {
-              requestAnimationFrame(() => runSlashCommand(item.id));
-            },
-          },
-        },
-        formats: [
-          "size", "font", "bold", "italic", "underline", "color", "align",
-          "header", "list", "blockquote", "code-block", "image",
-          "sg-math-block", "table"
-        ],
-        placeholder: "",
-      } as any);
-
-    } catch (err) {
-      console.error("[Quill] init FAILED:", err);
-      return;
+    for (const op of contents.ops || []) {
+      if (typeof op.insert !== "string") continue;
+      const f = (op.attributes as any)?.font ?? "__DEFAULT__";
+      fonts.add(f);
+      if (fonts.size > 1) return null;
     }
 
-    quill.keyboard.addBinding(
-      { key: 13 }, // Enter
-      () => {
-        const range = quill.getSelection(true);
-        if (!range) return true;
-
-        const before = quill.getText(Math.max(0, range.index - 50), 50);
-        const m = before.match(/\/(math|code|text|image|table)$/i);
-        if (!m) return true;
-
-        const cmd = m[1].toLowerCase();
-        void runSlashCommand(cmd);
-        return false;
-      }
-    );
-
-    new QuillMarkdown(quill, {});
-
-    quill.root.style.paddingTop = "8px";
-
-    quillRef.current = quill;
-    lastFocusedQuillRef.current = quill;
-
-    function updateTablePlusPosition(table: HTMLTableElement) {
-      const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
-      if (!anchorEl) return;
-
-      const a = anchorEl.getBoundingClientRect();
-      const r = table.getBoundingClientRect();
-
-      const top = r.top - a.top;
-      const left = r.left - a.left;
-
-      setTablePlus({
-        top,
-        left,
-        w: r.width,
-        h: r.height,
-      });
-    }
-
-    function hideTablePlus() {
-      hoveredTableRef.current = null;
-      setTablePlus(null);
-    }
-
-    const hideTimerRef = { current: null as number | null };
-
-    function scheduleHide() {
-      if (hideTimerRef.current != null) return;
-      hideTimerRef.current = window.setTimeout(() => {
-        hideTimerRef.current = null;
-        const active = hoveredTableRef.current ?? getActiveTableEl(quill);
-        if (!active) hideTablePlus();
-      }, 180);
-    }
-
-    function cancelHide() {
-      if (hideTimerRef.current != null) {
-        clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = null;
-      }
-    }
-
-    const isOverPlus = (el: HTMLElement | null) =>
-      !!el?.closest?.(".sg-table-plus");
-    const onMouseMove = (e: MouseEvent) => {
-      const t = e.target as HTMLElement | null;
-
-      if (isOverPlus(t)) {
-        cancelHide();
-        const table = hoveredTableRef.current ?? getActiveTableEl(quill);
-        if (table) updateTablePlusPosition(table);
-        return;
-      }
-
-      const table = (t?.closest?.("table") as HTMLTableElement | null) ?? null;
-
-      if (!table) {
-        scheduleHide();
-        return;
-      }
-
-      cancelHide();
-      hoveredTableRef.current = table;
-      updateTablePlusPosition(table);
-    };
-
-    const showPlusIfCursorInTable = () => {
-      if (mathOpenRef.current) return;
-      
-      const table = getActiveTableEl(quill);
-      if (!table) {
-        if (!hoveredTableRef.current) hideTablePlus();
-        return;
-      }
-      hoveredTableRef.current = table;
-      updateTablePlusPosition(table);
-    };
-
-    quill.root.addEventListener("mousemove", onMouseMove);
-    quill.on("selection-change", showPlusIfCursorInTable);
-
-    const onWin = () => {
-      const table = hoveredTableRef.current ?? getActiveTableEl(quill);
-      if (!table) return;
-      updateTablePlusPosition(table);
-    };
-    window.addEventListener("scroll", onWin, { passive: true });
-    window.addEventListener("resize", onWin, { passive: true });
-
-    const onRootClick = (e: MouseEvent) => {
-      const t = (e.target as HTMLElement | null)?.closest?.(".sg-math-block") as HTMLElement | null;
-      if (!t) return;
-
-      const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
-      if (!anchorEl) return;
-
-      const a = anchorEl.getBoundingClientRect();
-      const r = t.getBoundingClientRect();
-
-      const tex = t.getAttribute("data-tex") || "";
-      mathTargetElRef.current = t;
-      mathPrevTexRef.current = tex;
-
-      setMathTex(tex);
-      setMathPos({
-        top: (r.bottom - a.top) + 200, 
-        left: (r.left - a.left),
-      });
-      setMathOpen(true);
-      mathOpenRef.current = true;
-
-      requestAnimationFrame(() => {
-        mathInputRef.current?.focus();
-        mathInputRef.current?.setSelectionRange(tex.length, tex.length);
-      });
-    };
-
-    quill.root.addEventListener("click", onRootClick);
-    quill.on("selection-change", (range: any) => {
-      if (mathOpenRef.current) return;
-      
-      lastFocusedQuillRef.current = quill;
-
-      if (!range) {
-        setFtMenu(null);
-        setShowFloating(false);
-        savedRangeRef.current = null;
-
-        setIsBoldActive(false);
-        setIsUnderlineActive(false);
-        setIsItalicActive(false);
-        setFontLabel("");
-        return;
-      }
-
-      const format = quill.getFormat(range.index, range.length);
-      setIsBoldActive(!!format.bold);
-      setIsUnderlineActive(!!format.underline);
-      setIsItalicActive(!!format.italic);
-
-      if (range.length === 0) {
-        setFtMenu(null);
-        setShowFloating(false);
-        savedRangeRef.current = null;
-
-        const f = (quill.getFormat(range).font as string | undefined) ?? "";
-        setFontLabel(f);
-        return;
-      }
-
-      savedRangeRef.current = { index: range.index, length: range.length };
-
-      const uniform = getUniformFontInRange(quill, range.index, range.length);
-      setFontLabel(uniform ?? "");
-      const bounds = quill.getBounds(range.index, range.length);
-      const docEl = documentContainerRef.current;
-      const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
-      const editorEl = editorRef.current;
-
-      if (!anchorEl || !editorEl || !bounds) return; // Check if bounds is null
-
-      const anchorRect = anchorEl.getBoundingClientRect();
-      const editorRect = editorEl.getBoundingClientRect();
-      const editorOffsetTop = editorRect.top - anchorRect.top;
-      const editorOffsetLeft = editorRect.left - anchorRect.left;
-      const GAP = 10;
-      const top = editorOffsetTop + bounds.bottom + GAP;
-      const left = editorOffsetLeft + bounds.left + bounds.width / 2;
-      const toolbarW = 280;
-      let clampedLeft = left;
-      clampedLeft = Math.max(toolbarW / 2 + 12, clampedLeft);
-      clampedLeft = Math.min(anchorEl.clientWidth - toolbarW / 2 - 12, clampedLeft);
-
-      setFloatingPos({ top, left: clampedLeft });
-      setShowFloating(true);
-    });
-
-    quill.on("text-change", () => {
-      if (suppressRef.current) return;
-
-      const html = quill.root.innerHTML;
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      const text = (div.textContent || div.innerText || "").trim();
-      setDocumentText(text);
-    });
-
-    const pickImageFile = (): Promise<File | null> =>
-      new Promise((resolve) => {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*";
-        input.onchange = () => resolve(input.files?.[0] ?? null);
-        input.click();
-      });
-
-    const readAsDataURL = (file: File): Promise<string> =>
-      new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-    const runSlashCommand = async (cmd: string) => {
-      const q = quill;
-      const range = q.getSelection(true);
-      if (!range) return;
-
-      const before = q.getText(Math.max(0, range.index - 50), 50);
-      const lastSlash = before.lastIndexOf("/");
-      if (lastSlash !== -1) {
-        const delLen = before.length - lastSlash;
-        q.deleteText(range.index - delLen, delLen, "user");
-      }
-
-      const insertAt = q.getSelection(true)?.index ?? range.index;
-
-      if (cmd === "text") {
-        q.insertText(insertAt, "\n", "user");
-        q.formatLine(insertAt, 1, "blockquote", true, "user");
-        q.setSelection(insertAt + 1, 0, "silent");
-        return;
-      }
-
-      if (cmd === "code") {
-        q.insertText(insertAt, "\n", "user");
-        q.formatLine(insertAt, 1, "code-block", true, "user");
-        q.setSelection(insertAt + 1, 0, "silent");
-        return;
-      }
-
-      if (cmd === "image") {
-        const file = await pickImageFile();
-        if (!file) return;
-        const url = await readAsDataURL(file);
-        q.insertEmbed(insertAt, "image", url, "user");
-        q.insertText(insertAt + 1, "\n", "user");
-        q.setSelection(insertAt + 2, 0, "silent");
-        return;
-      }
-
-      if (cmd === "math") {
-        q.insertEmbed(insertAt, "sg-math-block", { tex: "" }, "user");
-        q.insertText(insertAt + 1, "\n", "user");
-        q.setSelection(insertAt + 2, 0, "silent");
-
-        requestAnimationFrame(() => {
-          const root = q.root as HTMLElement;
-          const nodes = root.querySelectorAll(".sg-math-block");
-          const last = nodes[nodes.length - 1] as HTMLElement | undefined;
-          if (!last) return;
-          last.scrollIntoView({ block: "nearest" });
-          last.click();
-        });
-
-        return;
-      }
-
-      if (cmd === "table") {
-        insert3x3Table(q);
-        return;
-      }
-    };
-
-    const MAX_COLS = 10;
-    const MAX_ROWS = 100;
-
-    function getActiveTableEl(q: any): HTMLTableElement | null {
-      const range = q.getSelection(true);
-      if (!range) return null;
-
-      const [leaf] = q.getLeaf(range.index);
-      const dom: HTMLElement | null = leaf?.domNode ?? null;
-      if (!dom || !(dom instanceof HTMLElement)) return null;
-      if (typeof dom.closest !== "function") return null;
-
-      return dom.closest("table") as HTMLTableElement | null;
-    }
-
-    function getTableSize(table: HTMLTableElement): { rows: number; cols: number } {
-      const tbody = table.querySelector("tbody");
-      const trs = Array.from((tbody ?? table).querySelectorAll("tr"));
-      const rows = trs.length;
-
-      const firstTr = trs[0];
-      const cols = firstTr ? Array.from(firstTr.querySelectorAll("td,th")).length : 0;
-
-      return { rows, cols };
-    }
-
-    const MIN_COL_W = 40;
-    const MIN_ROW_H = 24;
-    const EDGE = 12;
-
-    function ensureColGroup(table: HTMLTableElement) {
-      const { cols } = getTableSize(table);
-
-      let cg = table.querySelector("colgroup");
-      if (!cg) {
-        cg = document.createElement("colgroup");
-        table.insertBefore(cg, table.firstChild);
-      }
-
-      while (cg.children.length < cols) cg.appendChild(document.createElement("col"));
-      while (cg.children.length > cols) cg.removeChild(cg.lastChild!);
-
-
-      table.style.tableLayout = "fixed";
-      table.style.width = table.style.width || "100%"; // 기본 100%
-      return cg as HTMLTableColElement;
-    }
-
-    function findCell(e: PointerEvent): HTMLTableCellElement | null {
-      const t = e.target as HTMLElement | null;
-      return (t?.closest?.("td,th") as HTMLTableCellElement | null) ?? null;
-    }
-
-    function findTableFromEvent(e: PointerEvent): HTMLTableElement | null {
-      const t = e.target as HTMLElement | null;
-      return (t?.closest?.("table") as HTMLTableElement | null) ?? null;
-    }
-
-    function findRowAtY(table: HTMLTableElement, clientY: number): HTMLTableRowElement | null {
-      const rows = Array.from(table.querySelectorAll("tr")) as HTMLTableRowElement[];
-      for (const row of rows) {
-        const r = row.getBoundingClientRect();
-        if (clientY >= r.top && clientY <= r.bottom) return row;
-      }
-      return null;
-    }
-
-    function getCellEdgeHit(cell: HTMLTableCellElement, e: PointerEvent) {
-      const r = cell.getBoundingClientRect();
-      const nearRight = Math.abs(e.clientX - r.right) <= EDGE;
-      const nearBottom = Math.abs(e.clientY - r.bottom) <= EDGE;
-      return { nearRight, nearBottom, rect: r };
-    }
-
-    function getColWidths(table: HTMLTableElement): number[] {
-      ensureColGroup(table);
-      const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
-      return cols.map((c) => parseFloat(c.style.width || "") || c.getBoundingClientRect().width);
-    }
-
-    function hitTestColBoundary(table: HTMLTableElement, clientX: number) {
-      const tr = table.getBoundingClientRect();
-      const x = clientX - tr.left;
-
-      const widths = getColWidths(table);
-      let acc = 0;
-
-      for (let i = 0; i < widths.length; i++) {
-        acc += widths[i];
-        if (Math.abs(x - acc) <= EDGE) {
-          return { boundaryIndex: i, startX: clientX };
-        }
-      }
-
-      return null;
-    }
-
-    function hitTestRowBoundary(rowEl: HTMLTableRowElement, clientY: number) {
-      const r = rowEl.getBoundingClientRect();
-      if (Math.abs(clientY - r.bottom) <= EDGE) return true;
-      return false;
-    }
-
-    function startColResize(table: HTMLTableElement, colIndex: number, startX: number) {
-      const cg = ensureColGroup(table);
-      const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
-      const colEl = cols[colIndex];
-      if (!colEl) return;
-
-      const startW = parseFloat(colEl.style.width || "0") || colEl.getBoundingClientRect().width;
-      document.body.classList.add("sg-table-resizing");
-
-      const onMove = (ev: PointerEvent) => {
-        const dx = ev.clientX - startX;
-        const next = Math.max(MIN_COL_W, startW + dx);
-        colEl.style.width = `${next}px`;
-        tableApiRef.current.refresh?.();
-      };
-
-      const onUp = () => {
-        document.body.classList.remove("sg-table-resizing");
-        window.removeEventListener("pointermove", onMove, true);
-        window.removeEventListener("pointerup", onUp, true);
-        tableApiRef.current.refresh?.();
-      };
-
-      window.addEventListener("pointermove", onMove, true);
-      window.addEventListener("pointerup", onUp, true);
-    }
-
-    function startRowResize(rowEl: HTMLTableRowElement, startY: number) {
-      const startH = rowEl.getBoundingClientRect().height;
-      document.body.classList.add("sg-table-resizing-row");
-
-      const onMove = (ev: PointerEvent) => {
-        const dy = ev.clientY - startY;
-        const next = Math.max(MIN_ROW_H, startH + dy);
-        rowEl.style.height = `${next}px`;
-        tableApiRef.current.refresh?.();
-      };
-
-      const onUp = () => {
-        document.body.classList.remove("sg-table-resizing-row");
-        window.removeEventListener("pointermove", onMove, true);
-        window.removeEventListener("pointerup", onUp, true);
-        tableApiRef.current.refresh?.();
-      };
-
-      window.addEventListener("pointermove", onMove, true);
-      window.addEventListener("pointerup", onUp, true);
-    }
-
-    function currentLineText(q: any) {
-      const range = q.getSelection();
-      if (!range) return null;
-      const [line] = q.getLine(range.index);
-      if (!line) return null;
-      return ((line.domNode?.textContent as string) || "").trim();
-    }
-
-    function deleteCurrentLine(q: any, QuillNS: any) {
-      const range = q.getSelection();
-      if (!range) return;
-      const [line, offset] = q.getLine(range.index);
-      if (!line) return;
-
-      const lineStart = range.index - offset;
-      const len = line.length();
-      q.deleteText(lineStart, len, QuillNS.sources.USER);
-      q.setSelection(lineStart, 0, QuillNS.sources.SILENT);
-    }
-
-    function insert3x3Table(q: any) {
-      const tb = quill.getModule("table");
-      tb.insertTable(3, 3);
-      q.setSelection(q.getLength() - 1, 0, Q.sources.SILENT);
-    }
-
-    function addRow(q: any, where: "above" | "below") {
-      const tb = q.getModule("table");
-      if (!tb) return;
-
-      const table = getActiveTableEl(q);
-      if (!table) return;
-
-      const { rows } = getTableSize(table);
-      if (rows >= MAX_ROWS) {
-        alert(`세로(행)는 최대 ${MAX_ROWS}칸까지 가능합니다.`);
-        return;
-      }
-
-      if (where === "above") tb.insertRowAbove();
-      else tb.insertRowBelow();
-    }
-
-    function addCol(q: any, where: "left" | "right") {
-      const tb = q.getModule("table");
-      if (!tb) return;
-
-      const table = getActiveTableEl(q);
-      if (!table) return;
-
-      const { cols } = getTableSize(table);
-      if (cols >= MAX_COLS) {
-        alert(`가로(열)는 최대 ${MAX_COLS}칸까지 가능합니다.`);
-        return;
-      }
-
-      if (where === "left") tb.insertColumnLeft();
-      else tb.insertColumnRight();
-    }
-
-    tableApiRef.current.addRow = (where) => addRow(quill, where);
-    tableApiRef.current.addCol = (where) => addCol(quill, where);
-    tableApiRef.current.refresh = () => {
-      const t = hoveredTableRef.current ?? getActiveTableEl(quill);
-      if (!t) return;
-      ensureColGroup(t);
-      updateTablePlusPosition(t);
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      const root = quill.root as HTMLElement;
-      root.classList.remove("sg-col-resize-cursor", "sg-row-resize-cursor");
-      document.body.classList.remove("sg-col-resize-cursor-body", "sg-row-resize-cursor-body");
-
-      const table = findTableFromEvent(e);
-      if (!table) return;
-
-      const colHit = hitTestColBoundary(table, e.clientX);
-      if (colHit) {
-        document.body.classList.add("sg-col-resize-cursor-body");
-        root.classList.add("sg-col-resize-cursor");
-        return;
-      }
-
-      const row = findRowAtY(table, e.clientY);
-      if (row && hitTestRowBoundary(row, e.clientY)) {
-        document.body.classList.add("sg-row-resize-cursor-body");
-        root.classList.add("sg-row-resize-cursor");
-      }
-    };
-
-    const onPointerDown = (e: PointerEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t?.closest?.(".sg-table-plus")) return;
-
-      const table = findTableFromEvent(e);
-      if (!table) return;
-
-      const colHit = hitTestColBoundary(table, e.clientX);
-      if (colHit) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        hoveredTableRef.current = table;
-        updateTablePlusPosition(table);
-
-        startColResize(table, colHit.boundaryIndex, colHit.startX);
-        return;
-      }
-
-      const row = findRowAtY(table, e.clientY);
-      if (row && hitTestRowBoundary(row, e.clientY)) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        hoveredTableRef.current = table;
-        updateTablePlusPosition(table);
-
-        startRowResize(row, e.clientY);
-      }
-    };
-
-    const onKeydown = (e: KeyboardEvent) => {
-      if (e.key !== "Enter") return;
-
-      const text = currentLineText(quill);
-      if (text !== "/table") return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      deleteCurrentLine(quill, Q);
-      insert3x3Table(quill);
-    };
-
-    quill.root.addEventListener("keydown", onKeydown, true);
-    quill.root.addEventListener("pointermove", onPointerMove, true);
-    quill.root.addEventListener("pointerdown", onPointerDown, true);
-
-    return () => {
-      quill.root.removeEventListener("mousemove", onMouseMove);
-      quill.off("selection-change", showPlusIfCursorInTable);
-      window.removeEventListener("scroll", onWin);
-      window.removeEventListener("resize", onWin);
-      quill.root.removeEventListener("keydown", onKeydown, true);
-      quill.root.removeEventListener("pointermove", onPointerMove, true);
-      quill.root.removeEventListener("pointerdown", onPointerDown, true);
-      if (hideTimerRef.current != null) clearTimeout(hideTimerRef.current);
-      tableApiRef.current = {};
-      quillRef.current = null;
-    };
-  }, []);
+    const only = [...fonts][0];
+    if (!only || only === "__DEFAULT__") return null;
+    return only;
+  };
+
+  useQuillInit({
+    editorRef,
+    quillRef,
+    lastFocusedQuillRef,
+    suppressRef,
+    setTablePlus,
+    hoveredTableRef,
+    tableApiRef,
+    mathOpenRef,
+    mathTargetElRef,
+    mathPrevTexRef,
+    mathInputRef,
+    setMathTex,
+    setMathPos,
+    setMathOpen,
+    setShowFloating,
+    setFloatingPos,
+    setFtMenu,
+    setFontLabel,
+    setIsBoldActive,
+    setIsUnderlineActive,
+    setIsItalicActive,
+    savedRangeRef,
+    setDocumentText,
+    getUniformFontInRange,
+  });
 
   useEffect(() => {
     const q = quillRef.current;
@@ -951,9 +242,6 @@ export default function Center() {
       if (!centerDoc) return;
 
       const docHeight = (centerDoc as HTMLElement).offsetHeight;
-
-      const newHeight = Math.max(100 * 16, docHeight + 170);
-      setContainerHeight(newHeight);
     };
 
     setTimeout(updateContainerHeight, 100);
@@ -1020,19 +308,13 @@ export default function Center() {
     if (!quill) return;
 
     if (uploadErrorMessage) {
-      setUploadedContent(null);
-      applyMarkdown(uploadErrorMessage);
+      void applyMarkdown(quill, uploadErrorMessage, suppressRef);
       return;
     }
 
     const title = normalizeTitle(uploadData?.title);
     const text = uploadData?.text || uploadData?.summary || "";
-    setUploadedContent({
-      title,
-      text: uploadData?.text ?? "",
-      summary: uploadData?.summary ?? "",
-    });
-    applyMarkdown(buildMarkdownWithTitle(title, text));
+    void applyMarkdown(quill, buildMarkdownWithTitle(title, text), suppressRef);
   }, [uploadData, uploadErrorMessage]);
 
   useEffect(() => {
@@ -1122,19 +404,6 @@ export default function Center() {
 
     quill.focus();
   };
-  const applyMarkdown = async (md: string) => {
-    const quill = quillRef.current;
-    if (!quill) return;
-
-    const html = await marked.parse(md);
-
-    suppressRef.current = true;
-    quill.setText("");
-    quill.clipboard.dangerouslyPasteHTML(html);
-    setTimeout(() => (suppressRef.current = false), 0);
-
-    quill.focus();
-  };
   const extractTopicFromHtml = (html: string) => {
     const div = document.createElement("div");
     div.innerHTML = html;
@@ -1151,167 +420,12 @@ export default function Center() {
     if (activeTab === 'feedback') return <Feedback />;
     return <Search />;
   };
-  const exportPdf = async () => {
+  const handleExportPdf = async () => {
     const quill = quillRef.current;
     if (!quill) return;
-
-    const html = quill.root.innerHTML;
-
-    const wrapper = document.createElement("div");
-    wrapper.id = "pdf-wrapper";
-    wrapper.className = "ql-snow";
-
-    wrapper.style.position = "fixed";
-    wrapper.style.left = "-10000px";
-    wrapper.style.top = "0";
-    wrapper.style.width = "794px";
-    wrapper.style.background = "#fff";
-    wrapper.style.pointerEvents = "none";
-    wrapper.style.zIndex = "9999";
-    wrapper.style.display = "block";
-    wrapper.style.height = "auto";
-    wrapper.style.overflow = "visible";
-
-    const editor = document.createElement("div");
-    editor.className = "ql-editor";
-    editor.innerHTML = html;
-
-    editor.style.setProperty("display", "block", "important");
-    editor.style.setProperty("height", "auto", "important");
-    editor.style.setProperty("min-height", "1px", "important");
-    editor.style.setProperty("overflow", "visible", "important");
-
-    editor.style.padding = `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`;
-    editor.style.fontSize = `${fontSize}px`;
-
-    wrapper.appendChild(editor);
-    document.body.appendChild(wrapper);
-
-    void wrapper.offsetHeight;
-    await new Promise<void>((r) => requestAnimationFrame(() => r()));
-    if (await document.fonts?.ready) await (document.fonts as any).ready;
-
-    try {
-      const worker = html2pdf()
-        .from(wrapper)
-        .set({
-          margin: 10,
-          filename: "document.pdf",
-          pagebreak: {
-            mode: ["avoid-all", "css", "legacy"],
-            avoid: ["p", "li", "pre", "blockquote", "table", "img", "h1", "h2", "h3", "hr"],
-          },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-            scrollY: 0,
-            windowWidth: 794,
-            onclone: (clonedDoc: Document) => {
-              const style = clonedDoc.createElement("style");
-              style.textContent = `
-                html, body { height: auto !important; overflow: visible !important; }
-                .ql-container, .ql-snow, .ql-editor { height: auto !important; overflow: visible !important; }
-                .ql-editor { min-height: 1px !important; display: block !important; }
-
-                .ql-editor p,
-                .ql-editor li,
-                .ql-editor blockquote,
-                .ql-editor pre,
-                .ql-editor table,
-                .ql-editor img,
-                .ql-editor h1,
-                .ql-editor h2,
-                .ql-editor h3 {
-                  break-inside: avoid !important;
-                  page-break-inside: avoid !important;
-                }
-
-                .ql-editor h1, .ql-editor h2, .ql-editor h3 {
-                  break-after: avoid !important;
-                  page-break-after: avoid !important;
-                }
-
-                #pdf-wrapper { position: static !important; display: block !important; }
-
-                .ql-editor ol,
-                .ql-editor ul {
-                  padding-left: 1.6em !important;
-                  margin: 0.4em 0 !important;
-                }
-
-                .ql-editor ol > li { list-style-type: decimal !important; }
-                .ql-editor ul > li { list-style-type: disc !important; }
-
-                .ql-editor li::before { content: none !important; }
-                .ql-editor li > .ql-ui { display: none !important; }
-
-                .ql-editor ol, .ql-editor ul,
-                .ql-editor li {
-                  list-style: initial !important;
-                }
-              `;
-              clonedDoc.head.appendChild(style);
-
-              const w = clonedDoc.getElementById("pdf-wrapper") as HTMLElement | null;
-              if (!w) return;
-              w.style.position = "static";
-              w.style.display = "block";
-              w.style.height = "auto";
-              w.style.overflow = "visible";
-              w.style.background = "#fff";
-            },
-          },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        } as any)
-        .toPdf();
-
-      const blob = (await worker.output("blob")) as Blob;
-      saveAs(blob, "document.pdf");
-    } finally {
-      document.body.removeChild(wrapper);
-    }
+    await exportPdf(quill, margins, fontSize);
   };
-  const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
-    const contents = quill.getContents(index, length);
-    const fonts = new Set<string>();
-
-    for (const op of contents.ops || []) {
-      if (typeof op.insert !== "string") continue;
-      const f = (op.attributes as any)?.font ?? "__DEFAULT__";
-      fonts.add(f);
-      if (fonts.size > 1) return null;
-    }
-
-    const only = [...fonts][0];
-    if (!only || only === "__DEFAULT__") return null;
-    return only;
-  };
-
-  const FONT_LIST = [
-    { key: 'sans-serif', label: 'Sans Serif', cssFamily: 'sans-serif' },
-    { key: 'serif', label: 'Serif', cssFamily: 'serif' },
-    { key: 'monospace', label: 'Monospace', cssFamily: 'monospace' },
-
-    { key: 'YeogiOttaeJalnan', label: '잘난체', cssFamily: "'YeogiOttaeJalnan'" },
-    { key: 'OngleipParkDahyeon', label: '박다현체', cssFamily: "'OngleipParkDahyeon'" },
-    { key: 'KerisKeduLine', label: '케리스케두', cssFamily: "'KerisKeduLine'" },
-    { key: 'Yeongwol', label: '영월', cssFamily: "'Yeongwol'" },
-    { key: 'Hamchorom', label: '함초롬바탕', cssFamily: "'Hamchorom'" },
-    { key: 'Simple', label: '단조', cssFamily: "'Simple'" },
-    { key: 'DaeguDongseongRo', label: '대구동성로', cssFamily: "'DaeguDongseongRo'" },
-    { key: 'GiantsInline', label: '롯데자이언츠', cssFamily: "'GiantsInline'" },
-    { key: 'Mujeokhaebeong', label: '무적해병', cssFamily: "'Mujeokhaebeong'" },
-    { key: 'Cafe24Decobox', label: '카페24데코', cssFamily: "'Cafe24Decobox'" },
-
-    { key: 'NanumGothic', label: '나눔고딕', cssFamily: "'Nanum Gothic', sans-serif" },
-    { key: 'NanumMyeongjo', label: '나눔명조', cssFamily: "'Nanum Myeongjo', serif" },
-    { key: 'JejuGothic', label: '제주고딕', cssFamily: "'Jeju Gothic', sans-serif" },
-    { key: 'BlackHanSans', label: '검은고딕', cssFamily: "'Black Han Sans', sans-serif" },
-  ] as const;
-
-  const currentFontLabel =
-    FONT_LIST.find(f => f.key === (fontLabel || selectedFont))?.label ?? "Font";
+  const currentFontLabel = getFontLabel(fontLabel || selectedFont);
 
   const applyFormatToSavedRange = (name: string, value: any) => {
     const quill = lastFocusedQuillRef.current ?? quillRef.current;
@@ -1329,7 +443,7 @@ export default function Center() {
         <Group orientation="horizontal" className="center-split-group">
           <Panel defaultSize={18} minSize={14} maxSize={50} className="pane pane-left">
             <div className="left-pane">
-              <button className="left-pane-btn" onClick={exportPdf} title="저장(PDF)">
+              <button className="left-pane-btn" onClick={handleExportPdf} title="저장(PDF)">
                 <img src={saveIcon} alt="save" />
               </button>
 
