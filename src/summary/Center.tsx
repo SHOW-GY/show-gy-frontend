@@ -150,7 +150,7 @@ export default function Center() {
   type FtMenu = null | "color" | "font" | "size" | "line" | "align";
   const [ftMenu, setFtMenu] = useState<FtMenu>(null);
   const [mathOpen, setMathOpen] = useState(false);
-  const mathOpenRef = useRef(false); // ✅ selection-change에서 참조용
+  const mathOpenRef = useRef(false);
   const [mathTex, setMathTex] = useState("");
   const [mathPos, setMathPos] = useState({ top: 0, left: 0 });
   const mathTargetElRef = useRef<HTMLElement | null>(null);
@@ -470,7 +470,6 @@ export default function Center() {
         return;
       }
 
-      // 버튼 활성화
       const format = quill.getFormat(range.index, range.length);
       setIsBoldActive(!!format.bold);
       setIsUnderlineActive(!!format.underline);
@@ -613,7 +612,6 @@ export default function Center() {
       if (!dom || !(dom instanceof HTMLElement)) return null;
       if (typeof dom.closest !== "function") return null;
 
-      // Quill table은 실제 <table>을 만든다. (현재 커서 위치에서 가장 가까운 table 찾기)
       return dom.closest("table") as HTMLTableElement | null;
     }
 
@@ -622,16 +620,15 @@ export default function Center() {
       const trs = Array.from((tbody ?? table).querySelectorAll("tr"));
       const rows = trs.length;
 
-      // 첫 row 기준으로 col 수 측정 (row마다 다르면 어차피 이상한 상태)
       const firstTr = trs[0];
       const cols = firstTr ? Array.from(firstTr.querySelectorAll("td,th")).length : 0;
 
       return { rows, cols };
     }
 
-    const MIN_COL_W = 40;  // 최소 열 너비(px)
-    const MIN_ROW_H = 24;  // 최소 행 높이(px)
-    const EDGE = 12;        // 테두리 판정(몇 px 안쪽이면 리사이즈)
+    const MIN_COL_W = 40;
+    const MIN_ROW_H = 24;
+    const EDGE = 12;
 
     function ensureColGroup(table: HTMLTableElement) {
       const { cols } = getTableSize(table);
@@ -684,19 +681,16 @@ export default function Center() {
     }
 
     function hitTestColBoundary(table: HTMLTableElement, clientX: number) {
-      // table 내부 x좌표
       const tr = table.getBoundingClientRect();
       const x = clientX - tr.left;
 
       const widths = getColWidths(table);
       let acc = 0;
 
-      // 경계는 col 끝지점(acc+width)들
       for (let i = 0; i < widths.length; i++) {
         acc += widths[i];
         if (Math.abs(x - acc) <= EDGE) {
           return { boundaryIndex: i, startX: clientX };
-          // boundaryIndex=i 는 i번째 col의 오른쪽 경계 (즉 col i를 resize)
         }
       }
 
@@ -793,7 +787,6 @@ export default function Center() {
 
       const { rows } = getTableSize(table);
       if (rows >= MAX_ROWS) {
-        // 여기 toast로 바꿔도 됨
         alert(`세로(행)는 최대 ${MAX_ROWS}칸까지 가능합니다.`);
         return;
       }
@@ -857,7 +850,6 @@ export default function Center() {
       const table = findTableFromEvent(e);
       if (!table) return;
 
-      // col resize 먼저
       const colHit = hitTestColBoundary(table, e.clientX);
       if (colHit) {
         e.preventDefault();
@@ -866,12 +858,10 @@ export default function Center() {
         hoveredTableRef.current = table;
         updateTablePlusPosition(table);
 
-        // boundaryIndex = i => col i width 조절
         startColResize(table, colHit.boundaryIndex, colHit.startX);
         return;
       }
 
-      // row resize: 아래 테두리 드래그
       const row = findRowAtY(table, e.clientY);
       if (row && hitTestRowBoundary(row, e.clientY)) {
         e.preventDefault();
