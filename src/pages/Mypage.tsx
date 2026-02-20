@@ -15,9 +15,8 @@ import Team_join from "../components/Team_join";
 type TeamCard = {
   team_name: string;
   team_code: string;
-  leader_id: string; // = user_id
+  leader_id: string;
 };
-
 
 export default function Mypage() {
   const PAGE_SIZE = 8;

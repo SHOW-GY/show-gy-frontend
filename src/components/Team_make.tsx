@@ -12,14 +12,12 @@ const Team_make: React.FC<TeamMakeProps> = ({ open, onClose, onCreate }) => {
   const modalBackground = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // 열릴 때 입력 포커스 + 초기화
   useEffect(() => {
     if (!open) return;
     setTeamName("");
     requestAnimationFrame(() => inputRef.current?.focus());
   }, [open]);
 
-  // ESC로 닫기
   useEffect(() => {
     if (!open) return;
 

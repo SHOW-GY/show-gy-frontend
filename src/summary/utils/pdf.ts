@@ -4,6 +4,7 @@ import html2pdf from "html2pdf.js";
 
 type Margins = { top: number; bottom: number; left: number; right: number };
 
+{/*PDF로 내보내는 로직 */ }
 export async function exportPdf(quill: Quill, margins: Margins, fontSize: number) {
   const html = quill.root.innerHTML;
 

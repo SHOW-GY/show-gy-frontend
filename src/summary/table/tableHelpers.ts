@@ -4,6 +4,7 @@ export const MIN_COL_W = 40;
 export const MIN_ROW_H = 24;
 export const EDGE = 12;
 
+{/* 커서의 위치파악 로직 */}
 export function getActiveTableEl(q: any): HTMLTableElement | null {
   const range = q.getSelection(true);
   if (!range) return null;
@@ -16,6 +17,7 @@ export function getActiveTableEl(q: any): HTMLTableElement | null {
   return dom.closest("table") as HTMLTableElement | null;
 }
 
+{/* 표의 행과 열의 개수 파악하는 로직 */}
 export function getTableSize(table: HTMLTableElement): { rows: number; cols: number } {
   const tbody = table.querySelector("tbody");
   const trs = Array.from((tbody ?? table).querySelectorAll("tr"));
@@ -27,9 +29,9 @@ export function getTableSize(table: HTMLTableElement): { rows: number; cols: num
   return { rows, cols };
 }
 
+{ /*표의 열 너비 조절하는 로직 */}
 export function ensureColGroup(table: HTMLTableElement) {
   const { cols } = getTableSize(table);
-
   let cg = table.querySelector("colgroup");
   if (!cg) {
     cg = document.createElement("colgroup");
@@ -44,11 +46,13 @@ export function ensureColGroup(table: HTMLTableElement) {
   return cg as HTMLTableColElement;
 }
 
+{ /*표의 행과 열 사이의 경계에 커서가 있는지 감지하는 로직 */}
 export function findTableFromEvent(e: PointerEvent): HTMLTableElement | null {
   const t = e.target as HTMLElement | null;
   return (t?.closest?.("table") as HTMLTableElement | null) ?? null;
 }
 
+{ /*표의 행과 열 사이의 경계에 커서가 있는지 감지하는 로직 */}
 export function findRowAtY(
   table: HTMLTableElement,
   clientY: number
@@ -61,12 +65,14 @@ export function findRowAtY(
   return null;
 }
 
+{ /*표에서 현재 라인의 텍스트 가져오는 로직 */ }
 export function getColWidths(table: HTMLTableElement): number[] {
   ensureColGroup(table);
   const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
   return cols.map((c) => parseFloat(c.style.width || "") || c.getBoundingClientRect().width);
 }
 
+{ /*표에서 현재 라인의 텍스트 가져오는 로직 */ }
 export function hitTestColBoundary(table: HTMLTableElement, clientX: number) {
   const tr = table.getBoundingClientRect();
   const x = clientX - tr.left;
@@ -84,6 +90,7 @@ export function hitTestColBoundary(table: HTMLTableElement, clientX: number) {
   return null;
 }
 
+{/*표에서 현재 라인의 텍스트 가져오는 로직 */ }
 export function hitTestRowBoundary(rowEl: HTMLTableRowElement, clientY: number) {
   const r = rowEl.getBoundingClientRect();
   return Math.abs(clientY - r.bottom) <= EDGE;

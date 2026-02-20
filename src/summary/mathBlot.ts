@@ -5,6 +5,7 @@ import "katex/dist/katex.min.css";
 const Q: any = (Quill as any).default ?? Quill;
 const BlockEmbed = Q.import("blots/block/embed");
 
+{ /*수식 블록을 렌더링하는 로직 */ }
 export function renderKatexHtml(tex: string) {
   const safe = (tex || "").trim();
   if (!safe) {
@@ -21,6 +22,7 @@ export function renderKatexHtml(tex: string) {
   }
 }
 
+{ /*수식 블록을 정의하는 로직 */ }
 export class SgMathBlockBlot extends BlockEmbed {
   static blotName = "sg-math-block";
   static tagName = "div";

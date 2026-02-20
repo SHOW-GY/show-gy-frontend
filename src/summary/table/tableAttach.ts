@@ -70,13 +70,16 @@ export function attachTableInteractions({
     });
   }
 
+  {/* 테이블 플러스 버튼 숨기는 로직 */ }
   function hideTablePlus() {
     hoveredTableRef.current = null;
     setTablePlus(null);
   }
 
+  {/* 테이블 플러스 버튼 보여주는 로직 */ }
   const hideTimerRef = { current: null as number | null };
 
+  {/* 테이블 플러스 버튼 숨기는 로직 */ }
   function scheduleHide() {
     if (hideTimerRef.current != null) return;
     hideTimerRef.current = window.setTimeout(() => {
@@ -86,6 +89,7 @@ export function attachTableInteractions({
     }, 180);
   }
 
+  {/* 테이블 플러스 버튼 숨기는 타이머 취소하는 로직 */ }
   function cancelHide() {
     if (hideTimerRef.current != null) {
       clearTimeout(hideTimerRef.current);
@@ -93,8 +97,10 @@ export function attachTableInteractions({
     }
   }
 
+  {/* 마우스가 테이블 플러스 버튼 위에 있는지 체크하는 로직 */ }
   const isOverPlus = (el: HTMLElement | null) => !!el?.closest?.(".sg-table-plus");
 
+  { /* 마우스가 움직일 때 테이블과 테이블 플러스 버튼과의 상호작용 처리하는 로직 */ }
   const onMouseMove = (e: MouseEvent) => {
     const t = e.target as HTMLElement | null;
 
@@ -108,6 +114,7 @@ export function attachTableInteractions({
     const table = (t?.closest?.("table") as HTMLTableElement | null) ?? null;
 
     if (!table) {
+      hoveredTableRef.current = null;
       scheduleHide();
       return;
     }
@@ -117,6 +124,7 @@ export function attachTableInteractions({
     updateTablePlusPosition(table);
   };
 
+  {/* 커서가 테이블 안에 있는지 체크해서 테이블 플러스 버튼 보여주는 로직 */ }
   const showPlusIfCursorInTable = () => {
     if (mathOpenRef.current) return;
 
@@ -129,12 +137,14 @@ export function attachTableInteractions({
     updateTablePlusPosition(table);
   };
 
+  {/* 윈도우가 스크롤되거나 리사이즈될 때 테이블 플러스 버튼 위치 업데이트하는 로직 */ }
   const onWin = () => {
     const table = hoveredTableRef.current ?? getActiveTableEl(quill);
     if (!table) return;
     updateTablePlusPosition(table);
   };
 
+  {/* 엔터쳤을 때 현재 라인이 "/table"이면 표 삽입하는 로직 */ }
   function insert3x3Table(q: Quill) {
     const tb = q.getModule("table") as TableModule | null;
     if (!tb) return;
@@ -142,6 +152,7 @@ export function attachTableInteractions({
     q.setSelection(q.getLength() - 1, 0, Q.sources.SILENT);
   }
 
+  {/* 표에 행 추가하는 로직 */ }
   function addRow(q: Quill, where: "above" | "below") {
     const tb = q.getModule("table") as TableModule | null;
     if (!tb) return;
@@ -159,6 +170,7 @@ export function attachTableInteractions({
     else tb.insertRowBelow();
   }
 
+  {/* 표에 열 추가하는 로직 */ }
   function addCol(q: Quill, where: "left" | "right") {
     const tb = q.getModule("table") as TableModule | null;
     if (!tb) return;
@@ -176,33 +188,7 @@ export function attachTableInteractions({
     else tb.insertColumnRight();
   }
 
-  function startColResize(table: HTMLTableElement, colIndex: number, startX: number) {
-    ensureColGroup(table);
-    const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
-    const colEl = cols[colIndex];
-    if (!colEl) return;
-
-    const startW = parseFloat(colEl.style.width || "0") || colEl.getBoundingClientRect().width;
-    document.body.classList.add("sg-table-resizing");
-
-    const onMove = (ev: PointerEvent) => {
-      const dx = ev.clientX - startX;
-      const next = Math.max(MIN_COL_W, startW + dx);
-      colEl.style.width = `${next}px`;
-      tableApiRef.current.refresh?.();
-    };
-
-    const onUp = () => {
-      document.body.classList.remove("sg-table-resizing");
-      window.removeEventListener("pointermove", onMove, true);
-      window.removeEventListener("pointerup", onUp, true);
-      tableApiRef.current.refresh?.();
-    };
-
-    window.addEventListener("pointermove", onMove, true);
-    window.addEventListener("pointerup", onUp, true);
-  }
-
+  {/* 표의 행 크기 조절하는 로직 */ }
   function startRowResize(rowEl: HTMLTableRowElement, startY: number) {
     const startH = rowEl.getBoundingClientRect().height;
     document.body.classList.add("sg-table-resizing-row");
@@ -225,6 +211,7 @@ export function attachTableInteractions({
     window.addEventListener("pointerup", onUp, true);
   }
 
+  {/* 현재 커서가 있는 라인의 텍스트 가져오는 로직 */ }
   function currentLineText(q: Quill) {
     const range = q.getSelection();
     if (!range) return null;
@@ -233,6 +220,7 @@ export function attachTableInteractions({
     return ((line as any).domNode?.textContent as string | undefined)?.trim() ?? "";
   }
 
+  { /* 표에서 현재 라인 삭제하는 로직 */ }
   function deleteCurrentLine(q: Quill) {
     const range = q.getSelection();
     if (!range) return;
@@ -254,6 +242,7 @@ export function attachTableInteractions({
     updateTablePlusPosition(t);
   };
 
+  {/* 마우스가 테이블과 테이블 플러스 버튼 위에 있는지 체크해서 테이블 플러스 버튼 보여주는 로직 */ }
   const onPointerMove = (e: PointerEvent) => {
     const root = quill.root as HTMLElement;
     root.classList.remove("sg-col-resize-cursor", "sg-row-resize-cursor");
@@ -276,6 +265,7 @@ export function attachTableInteractions({
     }
   };
 
+  {/* 마우스가 테이블과 테이블 플러스 버튼 위에 있는지 체크해서 테이블 플러스 버튼 보여주는 로직 */ }
   const onPointerDown = (e: PointerEvent) => {
     const t = e.target as HTMLElement | null;
     if (t?.closest?.(".sg-table-plus")) return;
@@ -290,8 +280,6 @@ export function attachTableInteractions({
 
       hoveredTableRef.current = table;
       updateTablePlusPosition(table);
-
-      startColResize(table, colHit.boundaryIndex, colHit.startX);
       return;
     }
 
@@ -307,6 +295,7 @@ export function attachTableInteractions({
     }
   };
 
+  {/* 엔터쳤을 때 현재 라인이 "/table"이면 표 삽입하는 로직 */ }
   const onKeydown = (e: KeyboardEvent) => {
     if (e.key !== "Enter") return;
 

@@ -18,7 +18,6 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <>
-      {/* 웹용 햄버거 버튼 */}
       <button
         className="sidebar-toggle"
         aria-label="Toggle sidebar"

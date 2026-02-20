@@ -25,14 +25,10 @@ export default function Login() {
         password: password,
       });
       
-      console.log('로그인 응답:', response);  // 디버그용
-      
       alert('로그인 성공!');
-      navigate('/');  // 홈으로 이동
+      navigate('/');
     } catch (error: any) {
-      console.error('로그인 실패:', error);
       
-      // 404 에러일 때
       if (error.response?.status === 404) {
         alert('로그인에 실패하였습니다');
       } else {

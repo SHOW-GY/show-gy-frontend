@@ -8,7 +8,7 @@ interface LayoutProps {
   children: React.ReactNode;
 
   onSelectLibraryMenu?: (menu: LibraryMenu) => void;
-  activeLibraryMenu?: LibraryMenu; // 선택된 메뉴 표시용(선택 사항)
+  activeLibraryMenu?: LibraryMenu;
 }
 
 function Layout({

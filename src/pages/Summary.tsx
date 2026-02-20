@@ -1,31 +1,39 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { marked } from "marked";
-import Quill from 'quill';
-import 'quilljs-markdown/dist/quilljs-markdown-common-style.css'
 import 'quill/dist/quill.snow.css';
 import '../styles/design.css';
 import '../styles/animations.css';
 import '../styles/summary.css';
-import { uploadDocument } from '../apis/documentApi';
 import fileuploadIcon from '../assets/icons/fileupload.png';
 import searchIcon from '../assets/icons/search.png';
 import showgy from '../assets/image/showgy.png';
 
 import Layout from '../components/Layout';
+import { getTeamInfo } from '../apis/cooperation';
+
+interface TeamOption {
+  team_id: string;
+  team_name: string;
+}
+
+interface TeamInfoResponse {
+  status: string;
+  data: TeamOption[];
+}
 
 export default function Summary() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [userNickname, setUserNickname] = useState<string>('사용자');
-  const [teamOptions, setTeamOptions] = useState<Array<{ team_code: string; team_name: string }>>([]);
+  const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('personal');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isTeamLoading, setIsTeamLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const navigate = useNavigate();
-  const quillInstances = useRef<(Quill | null)[]>([]);
+  const didFetchRef = useRef(false);
 
-  // 사용자 정보 로드
+  {/*사용자 정보 로드*/}
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -38,32 +46,52 @@ export default function Summary() {
     }
   }, []);
 
+  {/*팀 선택*/}
   useEffect(() => {
-    const storedTeam = localStorage.getItem('team_id');
-    if (storedTeam) setSelectedTeam(storedTeam);
+    if (didFetchRef.current) return;
+    didFetchRef.current = true;
 
-    const storedTeams = localStorage.getItem('team_list');
-    if (storedTeams) {
+    const fetchTeamInfo = async () => {
+      setIsTeamLoading(true);
       try {
-        const parsed = JSON.parse(storedTeams);
-        if (Array.isArray(parsed)) {
-          setTeamOptions(parsed);
+        const res = await getTeamInfo();
+
+        const teams = Array.isArray(res.data) ? res.data : [];
+        setTeamOptions(teams);
+
+        const saved = localStorage.getItem("team_id");
+        if (saved && (saved === "personal" || teams.some(t => t.team_id === saved))) {
+          setSelectedTeam(saved);
+        } else {
+          setSelectedTeam("personal");
         }
-      } catch (e) {
-        console.error('팀 목록 파싱 실패:', e);
+      } catch (err) {
+        setErrorMessage("팀 정보를 불러오지 못했습니다.");
+      } finally {
+        setIsTeamLoading(false);
       }
-    }
+    };
+
+    fetchTeamInfo();
   }, []);
 
-  // 파일 선택 핸들러
+  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newTeamId = e.target.value;
+    setSelectedTeam(newTeamId);
+
+    if (newTeamId === "personal") localStorage.removeItem("team_id");
+    else localStorage.setItem("team_id", newTeamId);
+  };
+
+  {/*파일 관련 코드*/}  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
+      setErrorMessage('');
     }
   };
 
-  // 파일 제거 핸들러
   const handleFileRemove = () => {
     setUploadedFile(null);
     const fileInput = document.getElementById('summary-file-input') as HTMLInputElement;
@@ -72,113 +100,32 @@ export default function Summary() {
     }
   };
 
-  // 텍스트 입력 핸들러
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSearchQuery(e.target.value);
     e.target.style.height = 'auto';
     const maxHeight = 135;
     e.target.style.height = `${Math.min(e.target.scrollHeight, maxHeight)}px`;
+    setErrorMessage('');
   };
 
-  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setSelectedTeam(value);
-    if (value === 'personal') {
-      localStorage.removeItem('team_id');
-    } else {
-      localStorage.setItem('team_id', value);
-    }
-  };
-
-  // 검색/업로드 핸들러
   const handleSearch = async () => {
+    // TODO: 문서 업로드 및 요약 처리 로직 구현(Marker PDF 구현되면 코드 짤게요)
+    if (!uploadedFile && !searchQuery.trim()) {
+      setErrorMessage('파일을 업로드하거나 문서 내용을 입력해주세요.');
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMessage('');
+
     try {
-      const hasText = searchQuery.trim().length > 0;
-      const hasFile = !!uploadedFile;
-      let uploadData: { title?: string; text?: string; summary?: string } | null = null;
-
-      if (!hasText && !hasFile) {
-        setErrorMessage('문서를 업로드 또는 작성해주세요');
-        return;
-      }
-      setErrorMessage('');
-
-      setIsUploading(true);
-      
-      if (hasFile) {
-        // 필수 쿼리 파라미터 준비 (team_id, approver_id, creator_id)
-        const userStr = localStorage.getItem('user');
-        let creatorId: string | undefined;
-        try {
-          if (userStr) {
-            const u = JSON.parse(userStr);
-            creatorId = u?.user_id;
-          }
-        } catch {}
-
-        let teamId = localStorage.getItem('team_id') || undefined;
-        let approverId = localStorage.getItem('approver_id') || undefined;
-
-        // 필요한 경우 간단히 입력 받기 (임시)
-        if (!teamId) {
-          teamId = window.prompt('team_id가 필요합니다. 값을 입력해주세요.') || undefined;
-          if (teamId) localStorage.setItem('team_id', teamId);
-        }
-        if (!approverId) {
-          approverId = window.prompt('approver_id가 필요합니다. 값을 입력해주세요.') || undefined;
-          if (approverId) localStorage.setItem('approver_id', approverId);
-        }
-
-        const res = await uploadDocument(uploadedFile!, {
-          team_id: teamId,
-          approver_id: approverId,
-          creator_id: creatorId,
-        });
-        console.log('문서 업로드 결과:', res);
-
-        const payload = (res as any)?.data ?? res;
-        const extracted = payload?.extracted_data ?? payload?.data?.extracted_data;
-        uploadData = {
-          title: payload?.title ?? payload?.data?.title ?? uploadedFile?.name,
-          text: extracted?.text ?? '',
-          summary: extracted?.summary ?? '',
-        };
-      }
-      
-      // 요약 페이지로 이동
-      if (hasText) {
-        localStorage.setItem('draft_document', searchQuery);
-      }
-      
-      navigate('/summary/center', {
-        state: {
-          draftText: hasText ? searchQuery : null,
-          uploadData,
-        },
-      });
+      console.log('문서 업로드:', { uploadedFile, searchQuery, selectedTeam });
     } catch (err) {
       console.error('문서 업로드 실패:', err);
-      const hasText = searchQuery.trim().length > 0;
-      navigate('/summary/center', {
-        state: {
-          draftText: hasText ? searchQuery : null,
-          uploadErrorMessage: '업로드에 실패하였습니다',
-        },
-      });
+      setErrorMessage('문서 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const insertMarkdownToQuill = async (md: string, pageIdx = 0) => {
-    const quill = quillInstances.current[pageIdx];
-    if (!quill) return;
-
-    // Markdown -> HTML
-    const html = await marked.parse(md);
-
-
-    quill.clipboard.dangerouslyPasteHTML(html);
   };
 
   return (
@@ -201,11 +148,12 @@ export default function Summary() {
               className="summary-team-select"
               value={selectedTeam}
               onChange={handleTeamChange}
+              disabled={isTeamLoading}
               aria-label="팀 선택"
             >
               <option value="personal">개인용</option>
               {teamOptions.map((team) => (
-                <option key={team.team_code} value={team.team_code}>
+                <option key={team.team_id} value={team.team_id}>
                   {team.team_name}
                 </option>
               ))}
@@ -254,9 +202,10 @@ export default function Summary() {
                 <img src={fileuploadIcon} alt="파일 업로드" className="summary-upload-icon" />
               </label>
               <button
-                onClick={handleSearch}
                 className="summary-search-btn"
                 aria-label="검색"
+                onClick={handleSearch}
+                disabled={isUploading}
               >
                 <img src={searchIcon} alt="검색" className="summary-search-icon" />
               </button>

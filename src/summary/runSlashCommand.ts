@@ -1,12 +1,14 @@
 import type Quill from "quill";
 import type { SlashItemId } from "./slashItems";
 
+{/*슬래시 명령어 실행하는 로직 */ }
 export type SlashCommandHelpers = {
   pickImageFile: () => Promise<File | null>;
   readAsDataURL: (file: File) => Promise<string>;
   insert3x3Table: (q: Quill) => void;
 };
 
+{/*슬래시 명령어 실행하는 로직 */ }
 export async function runSlashCommand(
   q: Quill,
   cmd: SlashItemId | string,

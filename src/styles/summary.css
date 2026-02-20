@@ -1203,8 +1203,6 @@ body.sg-row-resize-cursor-body .ql-editor * {
 body.sg-table-resizing { cursor: col-resize !important; user-select: none !important; }
 body.sg-table-resizing-row { cursor: row-resize !important; user-select: none !important; }
 
-
-
 /* =========================
   MOBILE
 ========================= */

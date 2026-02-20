@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-
 import Layout from '../components/Layout';
 import '../styles/design.css';
 import '../styles/animations.css';
 import '../styles/home.css';
-
 import folder from '../assets/icons/folder.png';
 import pen from '../assets/icons/pen.png';
 import desktop from '../assets/image/desktop.png';
@@ -14,7 +12,6 @@ import balloon from '../assets/icons/balloon.png';
 import robot from '../assets/image/robot.png';
 import garbage from '../assets/icons/Garbage.png';
 import collection from '../assets/image/collection.png';
-
 import erica from '../assets/image/erica.jpg';
 import lotte from '../assets/image/Lotteinovate.jpeg';
 import showgy_stand from '../assets/image/showgy_stand.png';
@@ -31,6 +28,7 @@ export default function Home() {
   const lastRef = useRef<{ step: number; offset: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  {/* 모바일 여부 체크 */}
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 480);
     onResize();
@@ -38,37 +36,28 @@ export default function Home() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // useLayoutEffect: 카드/뷰포트 사이즈 측정
+  {/* 홈 캐러셀 좌표 계산 로직 */}
   useLayoutEffect(() => {
     const measure = () => {
       const viewport = viewportRef.current;
       const track = trackRef.current;
       if (!viewport || !track) return;
-
       const firstCard = track.querySelector<HTMLDivElement>(".service-card-bg");
       if (!firstCard) return;
-
       const cardW = firstCard.offsetWidth;
       const styles = window.getComputedStyle(track);
       const gap = parseFloat(styles.gap || "0") || 0;
       const viewportW = viewport.getBoundingClientRect().width;
-
       if (!cardW || !viewportW) return;
-
-      // 소수점 흔들림 줄이기
       const step = Math.round((cardW + gap) * 1000) / 1000;
       const offset = Math.round(((viewportW - cardW) / 2) * 1000) / 1000;
-
-      // 값이 진짜 바뀔 때만 setState
       const last = lastRef.current;
       if (last && last.step === step && last.offset === offset) return;
       lastRef.current = { step, offset };
-
       setStepPx(step);
       setOffsetPx(offset);
     };
 
-    // resize 폭주 방지: rAF로 1프레임에 1번만 측정
     const onResize = () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
@@ -76,10 +65,8 @@ export default function Home() {
         measure();
       });
     };
-
     measure();
     window.addEventListener("resize", onResize);
-
     return () => {
       window.removeEventListener("resize", onResize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -87,14 +74,14 @@ export default function Home() {
   }, []);
 
 
-  // useEffect: index 변경 시 transform 적용
+  {/* 홈 캐러셀 이동 및 렌더링 */}
   useEffect(() => {
     if (isMobile) return;
     const track = trackRef.current;
     if (!track) {
       return;
     }
-    if (stepPx === 0) return;      // offsetPx가 0인 건 정상일 수 있음
+    if (stepPx === 0) return;
     const x = -(index * stepPx) + offsetPx;
     track.style.transform = `translateX(${x}px)`;
   }, [index, stepPx, offsetPx, isMobile]);
@@ -148,6 +135,7 @@ export default function Home() {
           <div className="service-card-container">
             <div className={`carousel-viewport ${isMobile ? "is-mobile" : ""}`} ref={viewportRef}>
               <div className={`Home-carousel ${isMobile ? "is-mobile" : ""}`} ref={trackRef}>
+                
                 {/* 1st Card */}
                 <div className={`service-card-bg ${getPosClass(0)}`}>
                   <div className="service-card-main-text">

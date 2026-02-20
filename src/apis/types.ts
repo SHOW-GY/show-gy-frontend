@@ -52,7 +52,7 @@ export interface CheckUserIdRequest {
 }
 
 export interface CheckUserIdResponse {
-  message: string; // 예: "새로운 ID 입니다."
+  message: string;
 }
 
 // Email Verification
@@ -105,4 +105,17 @@ export interface TeamparticipationResponse{
     user_id: string;
     team_owner: boolean;
   };
+}
+
+export interface TeamInfoRequest {}
+
+export interface TeamInfoResponse {
+  status : string;
+  message : string;
+  data : {
+    team_name : string;
+    team_id : string;
+    team_code : string;
+    team_owner : boolean;
+  }
 }

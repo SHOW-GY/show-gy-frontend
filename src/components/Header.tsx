@@ -37,7 +37,6 @@ function Header({
   };
 
   useEffect(() => {
-    // localStorage에서 사용자 정보 가져오기
     const loadUser = () => {
       const userStr = localStorage.getItem('user');
       if (userStr) {
@@ -48,14 +47,9 @@ function Header({
         }
       }
     };
-
     loadUser();
-
-    // storage 이벤트 리스너 추가 (다른 탭/창에서 변경 감지)
     window.addEventListener('storage', loadUser);
-    // 커스텀 이벤트 리스너 추가 (같은 페이지에서 로그인 시)
     window.addEventListener('userLogin', loadUser as EventListener);
-
     return () => {
       window.removeEventListener('storage', loadUser);
       window.removeEventListener('userLogin', loadUser as EventListener);

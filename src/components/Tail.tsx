@@ -2,7 +2,6 @@ import logo from '../assets/image/logo.png';
 import '../styles/design.css';
 import '../styles/home.css';
 
-
 const Tail = () => {
   return (
     <div className="tail">

@@ -72,6 +72,7 @@ export function useQuillInit({
     const el = editorRef.current;
     if (!el || quillRef.current) return;
 
+    {/*이미지 생성*/}
     const pickImageFile = (): Promise<File | null> =>
       new Promise((resolve) => {
         const input = document.createElement("input");
@@ -80,7 +81,8 @@ export function useQuillInit({
         input.onchange = () => resolve(input.files?.[0] ?? null);
         input.click();
       });
-
+    
+    {/*base64로 변환*/}
     const readAsDataURL = (file: File): Promise<string> =>
       new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -88,7 +90,8 @@ export function useQuillInit({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-
+    
+    {/*표 삽입 로직*/}
     const insert3x3Table = (q: Quill) => {
       const tb = q.getModule("table") as TableModule | null;
       if (!tb) return;
@@ -169,10 +172,10 @@ export function useQuillInit({
         placeholder: "",
       } as any);
     } catch (err) {
-      console.error("[Quill] init FAILED:", err);
       return;
     }
 
+    {/* '/'를 했을때 드롭다운 나오게 하는 로직 */}
     quill.keyboard.addBinding({ key: 13 }, () => {
       const range = quill.getSelection(true);
       if (!range) return true;
@@ -196,7 +199,8 @@ export function useQuillInit({
 
     quillRef.current = quill;
     lastFocusedQuillRef.current = quill;
-
+    
+    {/*quill에서 표 관련 인터랙션 붙이는 로직*/}
     const detachTable = attachTableInteractions({
       quill,
       hoveredTableRef,
@@ -205,6 +209,7 @@ export function useQuillInit({
       mathOpenRef,
     });
 
+    {/*수식 입력 인터랙션 붙이는 로직*/}
     const onRootClick = (e: MouseEvent) => {
       const t = (e.target as HTMLElement | null)?.closest?.(".sg-math-block") as HTMLElement | null;
       if (!t) return;
@@ -233,6 +238,7 @@ export function useQuillInit({
       });
     };
 
+    {/* quill에서 포커스 변경, 텍스트 변경 감지하는 로직 */}
     quill.root.addEventListener("click", onRootClick);
     quill.on("selection-change", (range: any) => {
       if (mathOpenRef.current) return;
@@ -243,7 +249,6 @@ export function useQuillInit({
         setFtMenu(null);
         setShowFloating(false);
         savedRangeRef.current = null;
-
         setIsBoldActive(false);
         setIsUnderlineActive(false);
         setIsItalicActive(false);
@@ -292,6 +297,7 @@ export function useQuillInit({
       setShowFloating(true);
     });
 
+    {/* quill에서 텍스트 변경 감지하는 로직 */}
     quill.on("text-change", () => {
       if (suppressRef.current) return;
 

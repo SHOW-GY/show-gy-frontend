@@ -27,7 +27,7 @@ export default function Signup() {
     return `${emailPrefix}@${finalDomain}`;
   };
 
-  // 아이디 중복확인 (백엔드 엔드포인트 필요)
+  {/*아이디 중복확인*/}
   const handleIdCheck = async () => {
     if (!userId) {
       alert('아이디를 입력해주세요.');
@@ -47,7 +47,6 @@ export default function Signup() {
         alert(message || '이미 사용 중인 아이디입니다.');
       }
     } catch (error: any) {
-      console.error('아이디 중복 확인 실패:', error);
       const errorMessage = error.response?.data?.detail 
         ? (typeof error.response.data.detail === 'string' 
           ? error.response.data.detail 
@@ -57,7 +56,7 @@ export default function Signup() {
     }
   };
 
-  // 인증번호 요청
+  {/* 인증번호 요청*/}
   const handleRequestCode = async () => {
     if (!isIdChecked) {
       alert('아이디 중복확인을 먼저 해주세요.');
@@ -82,12 +81,11 @@ export default function Signup() {
       setIsCodeSent(true);
       alert('인증번호가 발송되었습니다.');
     } catch (error: any) {
-      console.error('인증번호 요청 실패:', error);
       alert(error.response?.data?.detail || '인증번호 요청에 실패했습니다.');
     }
   };
 
-  // 인증번호 확인
+  {/* 인증번호 확인*/}
   const handleVerifyCode = async () => {
     if (!verificationCode) {
       alert('인증번호를 입력해주세요.');
@@ -100,12 +98,11 @@ export default function Signup() {
       setIsCodeVerified(true);
       alert('인증이 완료되었습니다.');
     } catch (error: any) {
-      console.error('인증번호 확인 실패:', error);
       alert(error.response?.data?.detail || '인증번호가 올바르지 않습니다.');
     }
   };
 
-  // 회원가입
+  {/* 회원가입*/}
   const handleSignup = async () => {
     if (!userId || !password || !confirmPassword || !firstName || !lastName || !nickname || !emailPrefix || !emailDomain) {
       alert('모든 필수 항목을 입력해주세요.');
@@ -117,7 +114,6 @@ export default function Signup() {
       return;
     }
 
-    // 이메일 인증 미완료 시 회원가입 차단
     if (!isCodeVerified) {
       alert('이메일 인증을 완료해주세요.');
       return;
@@ -153,7 +149,6 @@ export default function Signup() {
       alert('회원가입이 완료되었습니다!');
       navigate('/login');
     } catch (error: any) {
-      console.error('회원가입 실패:', error);
       const errorMessage = error.response?.data?.detail 
         ? (typeof error.response.data.detail === 'string' 
           ? error.response.data.detail 
@@ -299,10 +294,10 @@ export default function Signup() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="인증번호 6자리 입력"
+                  placeholder="인증번호 4자리 입력"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  maxLength={6}
+                  maxLength={4}
                 />
                 <button 
                   className="duplicate-check-btn" 
