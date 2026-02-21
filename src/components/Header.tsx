@@ -29,13 +29,13 @@ function Header({
     requireAuth("/library", () => onSelectLibraryMenu?.(menu));
   };
 
-  // ✅ 2차 가드: access token 존재 확인
+  {/*2차 가드: access token 존재 확인*/}
   const hasAccessToken = () => {
     const token = localStorage.getItem("access_token");
     return !!token;
   };
 
-  // ✅ 공통 가드: 로그인(닉네임) + access token 둘 다 확인
+  {/*공통 가드: 로그인(닉네임) + access token 둘 다 확인*/}
   const requireAuth = (nextPath: string, onSuccess?: () => void) => {
     if (!userNickname) {
       console.warn("[AUTH] blocked: no user");

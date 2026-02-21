@@ -7,6 +7,7 @@ type TeamJoinProps = {
   onJoin: (teamCode: string) => void;
 };
 
+{/*팀 참가 모달 컴포넌트*/}
 const Team_join: React.FC<TeamJoinProps> = ({ open, onClose, onJoin }) => {
   const [teamCode, setTeamCode] = useState("");
   const modalBackground = useRef<HTMLDivElement | null>(null);

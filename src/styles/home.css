@@ -95,6 +95,7 @@
   justify-content: center;
   text-align: center;
   z-index: 5;
+  margin-top: clamp(18px, 20vh, 140px);
 }
 
 .hero-title-main {
