@@ -26,20 +26,45 @@ function Header({
 
   {/*라이브러리 메뉴 선택 핸들러*/}
   const handleLibraryMenuSelect = (menu: LibraryMenu) => {
-    onSelectLibraryMenu?.(menu);
-    navigate('/library');
+    requireAuth("/library", () => onSelectLibraryMenu?.(menu));
+  };
+
+  // ✅ 2차 가드: access token 존재 확인
+  const hasAccessToken = () => {
+    const token = localStorage.getItem("access_token");
+    return !!token;
+  };
+
+  // ✅ 공통 가드: 로그인(닉네임) + access token 둘 다 확인
+  const requireAuth = (nextPath: string, onSuccess?: () => void) => {
+    if (!userNickname) {
+      console.warn("[AUTH] blocked: no user");
+      alert("로그인이 필요한 페이지입니다");
+      navigate("/login");
+      setMobileOpen(false);
+      return;
+    }
+
+    if (!hasAccessToken()) {
+      console.warn("[AUTH] blocked: no access token");
+      alert("세션이 만료되었어요. 다시 로그인 해주세요.");
+      // 깨끗하게 정리 (선택)
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("userLogin")); // 헤더 즉시 갱신
+      navigate("/login");
+      setMobileOpen(false);
+      return;
+    }
+    console.log("[AUTH] passed");
+    onSuccess?.();
+    navigate(nextPath);
     setMobileOpen(false);
   };
 
   {/*모바일 라이브러리 진입 핸들러*/}
   const handleMobileLibraryEntry = () => {
-    if (userNickname) {
-      onSelectLibraryMenu?.('recent');
-      navigate('/library');
-    } else {
-      navigate('/login');
-    }
-    setMobileOpen(false);
+    requireAuth("/library", () => onSelectLibraryMenu?.("recent"));
   };
 
   {/*사용자 정보 로드*/}
@@ -50,9 +75,11 @@ function Header({
         try {
           const user = JSON.parse(userStr);
           setUserNickname(user.nickname || user.name || '사용자');
+          return;
         } catch (e) {
         }
       }
+      setUserNickname(null);
     };
     loadUser();
     window.addEventListener('storage', loadUser);
@@ -80,34 +107,14 @@ function Header({
           </div>
 
           <div style={{ position: 'relative' }}>
-            <div
-              className="menu-summary"
-              onClick={() => {
-                if (userNickname) {
-                  navigate('/summary');
-                } else {
-                  alert('로그인이 필요한 페이지입니다');
-                  navigate('/login');
-                }
-              }}
-            >
+            <div className="menu-summary" onClick={() => requireAuth("/summary")}>
               문서요약
             </div>
             {activeMenu === 'summary' && <div className="menu-underline" />}
           </div>
 
           <div style={{ position: 'relative' }}>
-            <div
-              className="menu-library"
-              onClick={() => {
-                if (userNickname) {
-                  navigate('/library');
-                } else {
-                  alert('로그인이 필요한 페이지입니다');
-                  navigate('/login');
-                }
-              }}
-            >
+            <div className="menu-library" onClick={() => requireAuth("/library")}>
               문서보관함
             </div>
             {activeMenu === 'library' && <div className="menu-underline" />}
@@ -116,9 +123,9 @@ function Header({
           <div style={{ position: 'relative' }}>
             <div
               className="menu-login"
-              onClick={() => navigate(userNickname ? '/mypage' : '/login')}
+              onClick={() => (userNickname ? requireAuth("/mypage") : navigate("/login"))}
             >
-              {userNickname ? `${userNickname}님` : '로그인'}
+              {userNickname ? `${userNickname}님` : "로그인"}
             </div>
             {(activeMenu === 'login' || activeMenu === 'mypage') && (
               <div className="menu-underline" />
@@ -139,13 +146,12 @@ function Header({
       {mobileOpen && (
         <div className="mobile-menu">
           <div className="mobile-menu-item" onClick={() => { navigate('/'); setMobileOpen(false); }}>HOME</div>
-          <div
-            className="mobile-menu-item"
-            onClick={() => { userNickname ? navigate('/summary') : navigate('/login'); setMobileOpen(false); }}
-          >
+          <div className="mobile-menu-item" onClick={() => requireAuth("/summary")}>
             문서요약
           </div>
-          <div className="mobile-menu-item" onClick={handleMobileLibraryEntry}>문서보관함</div>
+          <div className="mobile-menu-item" onClick={() => handleMobileLibraryEntry()}>
+            문서보관함
+          </div>
           {activeMenu === 'library' && (
             <>
               <div
@@ -170,9 +176,9 @@ function Header({
           )}
           <div
             className="mobile-menu-item"
-            onClick={() => { navigate(userNickname ? '/mypage' : '/login'); setMobileOpen(false); }}
+            onClick={() => (userNickname ? requireAuth("/mypage") : navigate("/login"))}
           >
-            {userNickname ? `${userNickname}님` : '로그인'}
+            {userNickname ? `${userNickname}님` : "로그인"}
           </div>
         </div>
       )}

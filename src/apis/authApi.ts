@@ -30,7 +30,6 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   // Save Token
   if (response.data.data?.access_token) {
     localStorage.setItem('access_token', response.data.data.access_token);
-    localStorage.setItem('refresh_token', response.data.data.refresh_token);
   }
   
   // Save User Info
@@ -59,8 +58,8 @@ export const logout = async (): Promise<void> => {
   
   // Remove tokens
   localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  window.dispatchEvent(new Event('userLogout'));
 };
 
 // Refresh Token

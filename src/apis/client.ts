@@ -3,7 +3,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 // FastAPI Server URL
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
-// Axios Instacne
+{/*Axios 인스턴스 생성*/}
 const apiClient: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
   headers: {    
@@ -12,6 +12,7 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 10000, 
 });
 
+{/*인터셉터 설정 - 요청마다 토큰 자동 첨부 + 401 에러 시 토큰 갱신 시도*/}
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
@@ -25,9 +26,11 @@ apiClient.interceptors.request.use(
   }
 );
 
+{/*로그인 API 함수*/}
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
+{/*토큰 갱신 후 대기 중인 요청 처리 함수*/}
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -39,6 +42,7 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+{/* 토큰이 없으면 강제 로그아웃 기능(401에러)*/}
 apiClient.interceptors.response.use(
   (response) => {   
     return response;
@@ -64,7 +68,6 @@ apiClient.interceptors.response.use(
       const refreshToken = localStorage.getItem('refresh_token');
       
       if (!refreshToken) {
-        // Refresh token이 없으면 로그아웃
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
@@ -73,7 +76,6 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        // refresh token으로 새 access token 요청
         const response = await axios.post(`${BACKEND_URL}/api/v1/auth/refresh`);
         const newAccessToken = response.data.data.access_token;
         
@@ -86,7 +88,6 @@ apiClient.interceptors.response.use(
         
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh token도 만료되었으면 로그아웃
         processQueue(refreshError, null);
         isRefreshing = false;
         
