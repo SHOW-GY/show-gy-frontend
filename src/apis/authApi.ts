@@ -113,6 +113,6 @@ export const checkUserIdAvailability = async (
   userId: string
 ): Promise<CheckUserIdResponse> => {
   const payload: CheckUserIdRequest = { user_id: userId };
-  const response = await apiClient.post<CheckUserIdResponse>('/api/v1/auth/checking_user_id', payload);
+  const response = await apiClient.post<CheckUserIdResponse>('/api/v1/auth/auth/checking_user_id', payload);
   return response.data;
 };

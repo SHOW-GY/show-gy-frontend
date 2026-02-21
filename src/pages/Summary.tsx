@@ -75,6 +75,7 @@ export default function Summary() {
     fetchTeamInfo();
   }, []);
 
+  {/*팀 선택 핸들러*/}
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTeamId = e.target.value;
     setSelectedTeam(newTeamId);
@@ -92,6 +93,7 @@ export default function Summary() {
     }
   };
 
+  {/*파일 제거 핸들러*/}
   const handleFileRemove = () => {
     setUploadedFile(null);
     const fileInput = document.getElementById('summary-file-input') as HTMLInputElement;
@@ -100,6 +102,7 @@ export default function Summary() {
     }
   };
 
+  {/*텍스트 입력 핸들러*/}
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setSearchQuery(e.target.value);
     e.target.style.height = 'auto';

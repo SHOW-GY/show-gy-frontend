@@ -10,6 +10,7 @@ import wonjun from '../assets/image/Wonjun.jpg';
 import gaeun from '../assets/image/Gaeun.jpg';
 import hyojin from '../assets/image/Hyojin.jpg';
 
+{/*SHOW-GY 팀원 소개 페이지 */}
 export default function Showgy() {
   const characters = [
     {

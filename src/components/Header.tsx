@@ -11,21 +11,27 @@ interface HeaderProps {
   activeLibraryMenu?: LibraryMenu;
 }
 
+{/*헤더 컴포넌트*/}
 function Header({
   activeMenu = 'home',
   onSelectLibraryMenu,
   activeLibraryMenu,
 }: HeaderProps) {
+  {/*라우터 네비게이션 훅*/}
   const navigate = useNavigate();
+  {/*사용자 닉네임 상태*/}
   const [userNickname, setUserNickname] = useState<string | null>(null);
+  {/*모바일 메뉴 열림 상태*/}
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  {/*라이브러리 메뉴 선택 핸들러*/}
   const handleLibraryMenuSelect = (menu: LibraryMenu) => {
     onSelectLibraryMenu?.(menu);
     navigate('/library');
     setMobileOpen(false);
   };
 
+  {/*모바일 라이브러리 진입 핸들러*/}
   const handleMobileLibraryEntry = () => {
     if (userNickname) {
       onSelectLibraryMenu?.('recent');
@@ -36,6 +42,7 @@ function Header({
     setMobileOpen(false);
   };
 
+  {/*사용자 정보 로드*/}
   useEffect(() => {
     const loadUser = () => {
       const userStr = localStorage.getItem('user');

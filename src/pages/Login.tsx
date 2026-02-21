@@ -12,19 +12,18 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  {/*로그인 핸들러 */}
   const handleLogin = async () => {
     if (!userId || !password) {
       alert('아이디와 비밀번호를 입력해주세요.');
       return;
     }
-
     setLoading(true);
     try {
       const response = await login({
         username: userId,
         password: password,
       });
-      
       alert('로그인 성공!');
       navigate('/');
     } catch (error: any) {

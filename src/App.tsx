@@ -5,7 +5,7 @@ import Signup from "./login/Signup";
 import Summary from "./pages/Summary";
 import Library from "./pages/Library";
 import Center from "./summary/Center";
-import Mypage from "./pages/Mypage";
+import Mypage from "./pages/Mypage/index";
 import Showgy from "./pages/Showgy";
 
 export default function App() {
