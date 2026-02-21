@@ -9,7 +9,7 @@ import 'quilljs-markdown/dist/quilljs-markdown-common-style.css';
 import 'quill/dist/quill.snow.css';
 import "quill-mention/dist/quill.mention.css";
 import Layout from '../components/Layout';
-import Chatbot from '../helper/Chatbot';
+import Chatbot from '../helper/chatbot/Chatbot';
 import Feedback from '../helper/Feedback';
 import Search from '../helper/Search';
 import '../styles/design.css';

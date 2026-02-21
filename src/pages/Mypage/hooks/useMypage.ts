@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { deleteUser } from '../../../apis/userApi';
 import { logout } from '../../../apis/authApi';
 import { generateTeam, participateTeam } from '../../../apis/cooperation';
 import { TeamCard } from '../types';
+import { getTeamInfo } from '../../../apis/cooperation';
 
-// TODO: 팀 목록 API fetch 구현 필요
 // TODO: 팀 클릭 시 상세 페이지 이동 구현 필요
 // TODO: 팀 탈퇴 기능 구현 필요
 
 export function useMypage() {
-  const PAGE_SIZE = 8;
+  const PAGE_SIZE = 6;
   const [userInfo, setUserInfo] = useState<any>(null);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [teamJoinOpen, setTeamJoinOpen] = useState(false);
@@ -19,6 +19,9 @@ export function useMypage() {
   const navigate = useNavigate();
   const pageCount = Math.ceil(teamCards.length / PAGE_SIZE);
   const currentTeams = teamCards.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const didFetchTeamsRef = useRef(false);
+  const [isTeamLoading, setIsTeamLoading] = useState(false);
+  const [teamErrorMessage, setTeamErrorMessage] = useState("");
 
   {/*팀 생성 핸들러 */}
   const handleCreateTeam = async (teamName: string) => {
@@ -34,6 +37,16 @@ export function useMypage() {
         return [newCard, ...prev];
       });
       alert(`${result.message}\n팀 코드: ${result.data.team_code}`);
+      const res2 = await getTeamInfo();
+      const teams2 = Array.isArray(res2.data) ? res2.data : [];
+      setTeamCards(
+        teams2.map((t: any) => ({
+          team_name: t.team_name,
+          team_code: t.team_id,        
+          leader_id: t.leader_id ?? "",
+        }))
+      );
+      setPage(0);
     } catch (error) {
       alert("팀 생성에 실패했습니다. 다시 시도해주세요.");
     }
@@ -54,6 +67,17 @@ export function useMypage() {
         return [newCard, ...prev];
       });
       alert(`${result.message}\n참가한 팀: ${result.data.team_name}`);
+      const res2 = await getTeamInfo();
+      const teams2 = Array.isArray(res2.data) ? res2.data : [];
+      setTeamCards(
+        teams2.map((t: any) => ({
+          team_name: t.team_name,
+          team_code: t.team_id,
+          leader_id: t.leader_id ?? "",
+        }))
+      );
+      setPage(0);
+
     } catch (error) {
       alert("팀 참가에 실패했습니다. 팀 코드를 확인해주세요.");
     }
@@ -72,6 +96,36 @@ export function useMypage() {
       navigate('/login');
     }
   }, [navigate]);
+
+  {/*팀 목록 로드 - 최초 1회만 실행 */}
+  useEffect(() => {
+    if (didFetchTeamsRef.current) return;
+    didFetchTeamsRef.current = true;
+
+    const fetchTeams = async () => {
+      setIsTeamLoading(true);
+      setTeamErrorMessage("");
+      try {
+        const res = await getTeamInfo();
+        const teams = Array.isArray(res.data) ? res.data : [];
+
+        const mapped: TeamCard[] = teams.map((t: any) => ({
+          team_name: t.team_name,
+          team_code: t.team_id,       
+          leader_id: t.leader_id ?? "",
+        }));
+
+        setTeamCards(mapped);
+        setPage(0);
+      } catch (e) {
+        setTeamErrorMessage("팀 목록을 불러오지 못했습니다.");
+      } finally {
+        setIsTeamLoading(false);
+      }
+    };
+
+    fetchTeams();
+  }, []);
 
   {/*페이지 변경 시 유효성 검사 */}
   useEffect(() => {

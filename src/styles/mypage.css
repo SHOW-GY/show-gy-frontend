@@ -16,6 +16,7 @@
 /* Left panel */
 .mypage-left-panel {
   width: 100%;
+  min-height: 735px;
   background: rgba(139, 92, 246, 0.05);
   border-radius: 12px;
   border: 2px solid rgba(139, 92, 246, 0.30);
@@ -36,6 +37,15 @@
   margin-bottom: 24px;
   aspect-ratio: 1 / 1;
   flex-shrink: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.mypage-avatar-img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 원형에 꽉 채우기 */
+  display: block;
 }
 
 @media (min-width: 769px){
@@ -260,7 +270,7 @@
   border-radius: 16px;
   width : 100%;
   height : auto;
-  min-height: 460px;
+  min-height: 540px;
   position : relative;
   background: rgba(139, 92, 246, 0.06);
   border: 2px solid rgba(139, 92, 246, 0.25);
