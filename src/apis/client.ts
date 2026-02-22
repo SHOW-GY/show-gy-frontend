@@ -63,22 +63,11 @@ apiClient.interceptors.response.use(
       url.startsWith('/api/') || url.startsWith('api/');
 
     const status = error.response?.status;
-
-    /* ================================
-       ✅ 1. 백엔드 꺼짐 / 네트워크 에러
-       ================================ */
-
     if (!error.response && !originalRequest._logoutHandled) {
       originalRequest._logoutHandled = true;
       forceLogout();
       return Promise.reject(error);
     }
-
-    /* ================================
-       ✅ 2. API 404 → 백엔드 없음 판단
-       (Cloudflare 정적 404 대응)
-       ================================ */
-
     if (
       isApiCall &&
       status === 404 &&
@@ -88,11 +77,6 @@ apiClient.interceptors.response.use(
       forceLogout();
       return Promise.reject(error);
     }
-
-    /* ================================
-       ✅ 3. Access Token 만료 → Refresh
-       ================================ */
-
     if (status === 401 && !originalRequest._retry) {
 
       if (isRefreshing) {
@@ -122,11 +106,6 @@ apiClient.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-
-    /* ================================
-       ✅ 4. 권한 없음
-       ================================ */
-
     if (status === 403) {
       forceLogout();
       return Promise.reject(error);
