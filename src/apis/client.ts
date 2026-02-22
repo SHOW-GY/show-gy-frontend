@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-// FastAPI Server URL
+{/*FastAPI Server URL*/}
 const BACKEND_URL = 'http://127.0.0.1:8000';
 
 {/*Axios 인스턴스 생성*/}
@@ -10,20 +10,16 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000, 
+  withCredentials: true,
 });
 
 {/*인터셉터 설정 - 요청마다 토큰 자동 첨부 + 401 에러 시 토큰 갱신 시도*/}
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // ✅ 쿠키 기반 인증: Authorization 헤더를 JS가 만들지 않음
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 {/*로그인 API 함수*/}
@@ -31,73 +27,67 @@ let isRefreshing = false;
 let failedQueue: any[] = [];
 
 {/*토큰 갱신 후 대기 중인 요청 처리 함수*/}
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: any) => {
   failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+    if (error) prom.reject(error);
+    else prom.resolve();
   });
   failedQueue = [];
 };
 
-{/* 토큰이 없으면 강제 로그아웃 기능(401에러)*/}
+{/*강제 로그아웃 함수 (중복 제거)*/}
+const forceLogout = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+};
+
+{/* 강제 로그아웃 기능*/}
 apiClient.interceptors.response.use(
-  (response) => {   
+  (response) => { 
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest: any = error.config;
+    const originalRequest: any = error.config ?? {};
+    if (!error.response) {
+      forceLogout();
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then(token => {
-          originalRequest.headers['Authorization'] = 'Bearer ' + token;
+        }).then(() => {
           return apiClient(originalRequest);
-        }).catch(err => {
-          return Promise.reject(err);
-        });
+        }).catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refresh_token');
-      
-      if (!refreshToken) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
-
       try {
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/refresh`);
-        const newAccessToken = response.data.data.access_token;
-        
-        localStorage.setItem('access_token', newAccessToken);
-        apiClient.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
-        originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
-        
-        processQueue(null, newAccessToken);
+        // ✅ refresh_token 쿠키로 재발급 요청
+        await apiClient.post('/api/v1/auth/refresh'); // withCredentials는 apiClient에 이미 true
+
+        // ✅ access_token도 쿠키로 갱신됐을 테니, 원래 요청을 그냥 재시도
+        processQueue(null);
         isRefreshing = false;
-        
+
         return apiClient(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        processQueue(refreshError);
         isRefreshing = false;
         
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        
+        forceLogout();
         return Promise.reject(refreshError);
       }
+    }
+
+    if (error.response?.status === 403) {
+      forceLogout();
+      return Promise.reject(error);
     }
     
     return Promise.reject(error);

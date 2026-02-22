@@ -106,10 +106,6 @@ export default function Home() {
     <Layout activeMenu="home">
       <div className="home-container">
         <section className="hero">
-          <div className="blob-purple"></div>
-          <div className="blob-pink"></div>
-          <div className="blob-cyan"></div>
-          {/* <div className="show-gy animate-slide-up"><img src={showgy_stand} alt="Show-Gy stand" /></div> */}
           <div className="hero-title">
             <p className="hero-title-main animate-slide-up">긴 문서, 한눈에 핵심만</p>
             <p className="hero-title-sub animate-slide-up delay-200">AI 기반 스마트 요약 시스템</p>

@@ -85,7 +85,7 @@ export default function Center() {
   refresh?: () => void;
 }>({});
 
-
+  {/* 문서 텍스트가 변경될 때마다 챗봇 패널에 전달하여 최신 상태 유지 */}
   useEffect(() => {
     if (uploadData || uploadErrorMessage) return;
     if (!draftText) return;
@@ -95,6 +95,7 @@ export default function Center() {
     void applyMarkdown(quill, draftText, suppressRef);
   }, [draftText]);
 
+  {/* 페이지 진입 시 draftText가 있으면 타이핑 애니메이션으로 입력 시작. 단, 이미 타이핑이 시작된 경우나 업로드 결과가 있는 경우에는 무시하여 중복 실행 방지 */ }
   useEffect(() => {
     if (hasTypingStartedRef.current) return;
     if (uploadData || uploadErrorMessage) return;
@@ -110,6 +111,7 @@ export default function Center() {
     }
   }, [location.state]);
 
+  {/* 타이핑 애니메이션 효과 구현. quill 인스턴스가 준비될 때까지 대기한 후, typingText의 각 문자를 일정 간격으로 에디터에 삽입. 컴포넌트가 언마운트되거나 타이핑이 중단될 때 타이머 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     if (!isTyping || !typingText) return;
 
@@ -153,6 +155,7 @@ export default function Center() {
     };
   }, [isTyping, typingText]);
 
+  {/* Quill 에디터 초기화 및 관련 이벤트 핸들링을 위한 커스텀 훅 사용. getUniformFontInRange 함수를 훅에 전달하여 에디터 내 특정 범위의 글꼴이 모두 동일한지 확인하는 기능 제공. 이 함수는 주어진 범위의 콘텐츠를 검사하여 적용된 글꼴을 수집하고, 하나의 글꼴만 존재하면 해당 글꼴을 반환하며, 여러 글꼴이 혼합되어 있거나 기본 글꼴만 존재하는 경우 null 반환 */ }
   const getUniformFontInRange = (quill: Quill, index: number, length: number) => {
     const contents = quill.getContents(index, length);
     const fonts = new Set<string>();
@@ -169,6 +172,7 @@ export default function Center() {
     return only;
   };
 
+  {/* Quill 에디터 초기화 및 관련 이벤트 핸들링을 위한 커스텀 훅 사용. 여러 상태와 참조를 훅에 전달하여 에디터의 다양한 기능과 상호작용을 관리. 예를 들어, 테이블 플러스 버튼 위치 설정, 수학식 편집기 열기/닫기, 포맷팅 툴바 표시 등 에디터 내에서 발생하는 다양한 이벤트에 대응 */ }
   useQuillInit({
     editorRef,
     quillRef,
@@ -196,12 +200,14 @@ export default function Center() {
     getUniformFontInRange,
   });
 
+  {/* fontSize 상태가 변경될 때마다 Quill 에디터의 루트 요소에 해당 글꼴 크기 적용. quillRef를 통해 현재 Quill 인스턴스에 접근하여 스타일을 직접 수정. 이렇게 하면 에디터 전체의 글꼴 크기가 변경되어 사용자가 입력하는 모든 텍스트에 새로운 크기가 적용 */ }
   useEffect(() => {
     const q = quillRef.current;
     if (!q) return;
     q.root.style.fontSize = `${fontSize}px`;
   }, [fontSize]);
 
+  {/* showMarginSettings 상태가 true로 변경될 때마다 Escape 키 이벤트 리스너 등록. 사용자가 Escape 키를 누르면 페이지 여백 설정 패널이 닫히도록 구현. 컴포넌트가 언마운트되거나 showMarginSettings가 false로 변경될 때 이벤트 리스너를 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     if (!showMarginSettings) return;
     const onKey = (e: KeyboardEvent) => {
@@ -211,6 +217,7 @@ export default function Center() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showMarginSettings]);
 
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     const handleScroll = () => {
       if (timeoutRef.current !== null) {
@@ -233,6 +240,7 @@ export default function Center() {
     };
   }, []);
 
+  {/* 문서 텍스트가 변경될 때마다 챗봇 패널에 전달하여 최신 상태 유지 */}
   useEffect(() => {
     const quill = quillRef.current;
     if (!quill) return;
@@ -273,6 +281,7 @@ export default function Center() {
     };
   }, []);
 
+  {/* 페이지 진입 시 draftText가 있으면 타이핑 애니메이션으로 입력 시작. 단, 이미 타이핑이 시작된 경우나 업로드 결과가 있는 경우에는 무시하여 중복 실행 방지 */ }
   useEffect(() => {
     const recalcUnderline = () => {
       const container = tabsContainerRef.current;
@@ -302,6 +311,7 @@ export default function Center() {
     };
   }, [activeTab]);
 
+  {/* 업로드된 문서 데이터나 오류 메시지가 변경될 때마다 Quill 에디터에 해당 내용을 마크다운 형식으로 적용. 업로드 결과가 있으면 이를 기반으로 제목과 본문을 구성하여 에디터에 삽입. 만약 업로드 중 오류가 발생한 경우에는 오류 메시지를 마크다운으로 변환하여 에디터에 표시. suppressRef를 사용하여 이 과정에서 발생하는 이벤트를 일시적으로 무시하도록 설정하여 불필요한 이벤트 핸들러 실행 방지 */ }
   useEffect(() => {
     if (!uploadData && !uploadErrorMessage) return;
     const quill = quillRef.current;
@@ -317,6 +327,7 @@ export default function Center() {
     void applyMarkdown(quill, buildMarkdownWithTitle(title, text), suppressRef);
   }, [uploadData, uploadErrorMessage]);
 
+  {/* 에디터 내에서 마우스 다운 이벤트를 감지하여 포맷팅 툴바나 수학식 편집기 등 특정 UI 요소가 열려 있을 때 외부 클릭을 감지하여 해당 요소들을 닫는 기능 구현. 예를 들어, showFloating이 true인 경우에만 이벤트 리스너가 활성화되어 툴바 외부 클릭 시 툴바가 닫히도록 함. mathOpen이 true인 경우에도 수학식 편집기 외부 클릭 시 편집기가 닫히도록 구현. 컴포넌트가 언마운트될 때 이벤트 리스너를 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (!showFloating) return;
@@ -332,6 +343,7 @@ export default function Center() {
     return () => window.removeEventListener("mousedown", onDown);
   }, [showFloating]);
 
+  {/* mathOpen이 true인 경우에만 이벤트 리스너가 활성화되어 수학식 편집기 외부 클릭 시 편집기가 닫히도록 구현. 컴포넌트가 언마운트될 때 이벤트 리스너를 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (!mathOpen) return;
@@ -346,6 +358,7 @@ export default function Center() {
     return () => window.removeEventListener("mousedown", onDown);
   }, [mathOpen]);
 
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     const onScroll = () => {
       if (!showFloating) return;
@@ -355,9 +368,12 @@ export default function Center() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [showFloating]);
+
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const handleMarginChange = (side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
     setMargins(prev => ({ ...prev, [side]: value }));
   };
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const updatePositions = () => {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const scrollThreshold = 75;
@@ -365,16 +381,19 @@ export default function Center() {
     setPanelTop(targetTop);
   };
 
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const normalizeTitle = (raw?: string | null) => {
     if (!raw) return "";
     return raw.replace(/\.pdf$/i, "").trim();
   };
 
+  {/* 페이지 진입 시 draftText가 있으면 타이핑 애니메이션으로 입력 시작. 단, 이미 타이핑이 시작된 경우나 업로드 결과가 있는 경우에는 무시하여 중복 실행 방지 */ }
   const buildMarkdownWithTitle = (title?: string, body?: string) => {
     const heading = title ? `# ${title}\n\n` : "";
     return `${heading}${body ?? ""}`.trimEnd();
   };
 
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const applyLineHeightToSavedRange = (lineHeight: string) => {
     const quill = lastFocusedQuillRef.current ?? quillRef.current;
     const saved = savedRangeRef.current;
@@ -404,6 +423,8 @@ export default function Center() {
 
     quill.focus();
   };
+
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const extractTopicFromHtml = (html: string) => {
     const div = document.createElement("div");
     div.innerHTML = html;
@@ -411,6 +432,7 @@ export default function Center() {
     return (heading?.textContent || "").trim();
   };
 
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
       const topicId = extractTopicFromHtml(quillRef.current?.root?.innerHTML || "");
@@ -420,13 +442,18 @@ export default function Center() {
     if (activeTab === 'feedback') return <Feedback />;
     return <Search />;
   };
+
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const handleExportPdf = async () => {
     const quill = quillRef.current;
     if (!quill) return;
     await exportPdf(quill, margins, fontSize);
   };
+
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const currentFontLabel = getFontLabel(fontLabel || selectedFont);
 
+  {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   const applyFormatToSavedRange = (name: string, value: any) => {
     const quill = lastFocusedQuillRef.current ?? quillRef.current;
     const saved = savedRangeRef.current;

@@ -12,58 +12,14 @@
 
 .hero{
   position: relative;
-  min-height: 100vh;
-  padding: 84px 16px 48px;  /* 헤더 아래 여백 포함 */
+  min-height: auto;
+  padding: 84px 16px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 18px;
   overflow-x: clip;
-}
-
-.blob-purple {
-  width: 120px;
-  height: 120px;
-  left: clamp(0px, 70vw, calc(50% + 400px));
-  top: 600px;
-  position: absolute;
-  opacity: 0.60;
-  background: radial-gradient(ellipse 98.99% 98.99% at 30.00% 30.00%, #667EEA 0%, #764BA2 100%);
-  box-shadow: 1px 1px 1px;
-  border-radius: 60px;
-  z-index: 2;
-  will-change: transform;
-}
-
-.blob-pink {
-  width: 60px;
-  height: 60px;
-  left: clamp(0px, 10vw, calc(50% - 450px));
-  top: 600px;
-  position: absolute;
-  opacity: 0.60;
-  background: radial-gradient(ellipse 98.99% 98.99% at 30.00% 30.00%, #F093FB 0%, #F5576C 100%);
-  box-shadow: 1px 1px 1px;
-  border-radius: 30px;
-  /* filter: blur(0.50px); */
-  z-index: 2;
-  will-change: transform;
-}
-
-.blob-cyan {
-  width: 100px;
-  height: 100px;
-  left: clamp(0px, 60vw, calc(50% + 200px));
-  top: 300px;
-  position: absolute;
-  opacity: 0.60;
-  background: radial-gradient(ellipse 98.99% 98.99% at 30.00% 30.00%, #4FACFE 0%, #00F2FE 100%);
-  box-shadow: 1px 1px 1px;
-  border-radius: 50px;
-  /* filter: blur(0.50px); */
-  z-index: 2;
-  will-change: transform;
 }
 
 .show-gy {
@@ -95,7 +51,7 @@
   justify-content: center;
   text-align: center;
   z-index: 5;
-  margin-top: clamp(18px, 20vh, 140px);
+  margin-top: clamp(14px, 20vh, 200px);
 }
 
 .hero-title-main {
@@ -109,6 +65,25 @@
   text-shadow: 0px 0px 20px rgba(139, 92, 246, 0.60);
   margin: 0;
   word-wrap: break-word;
+}
+
+@media (max-width: 480px) {
+  .hero-title-main,
+  .hero-title-sub {
+    white-space: nowrap;
+    word-wrap: normal;
+    overflow-wrap: normal;
+  }
+
+  .hero-title-main {
+    font-size: clamp(18px, 5.2vw, 24px);
+    letter-spacing: 0.5px;
+  }
+
+  .hero-title-sub {
+    font-size: clamp(14px, 4.4vw, 20px);
+    letter-spacing: 0.5px;
+  }
 }
 
 .hero-title-sub {
@@ -131,6 +106,7 @@
   position: relative;
   left: auto;
   top: auto;
+  margin-top: clamp(14px, 8vh, 60px);
   opacity: 0.90;
   text-align: center;
   display: flex;
@@ -195,8 +171,8 @@
 
 /* ----- Service Section ----- */
 :root{
-  --card-w: min(92vw, 360px);   /* 모바일 카드 폭 */
-  --card-h: 420px;              /* 모바일 높이(대충 고정) */
+  --card-w: min(92vw, 360px);
+  --card-h: 420px; 
 }
 
 @media (min-width: 768px){
@@ -365,8 +341,8 @@
 .how-to-use-container{
   width: min(1100px, 100%);
   margin: 0 auto;
+  margin-top: 150px;
   padding: 0 16px;
-
   position: relative;
   height: auto;
   display: flex;
@@ -464,7 +440,7 @@
   }
 
   .Home-carousel.is-mobile {
-    transform: none !important;     /* ✅ JS translateX 무시 */
+    transform: none !important;
     transition: none !important;
 
     gap: 12px;
@@ -593,8 +569,6 @@
     display: none;
   }
 }
-
-
 
 .prev-button,
 .next-button {
@@ -837,5 +811,39 @@
 @media (max-width: 480px) {
   .services {
     padding: 48px 0 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero{
+    min-height: 100svh;
+  }
+}
+
+@media (max-height: 760px){
+  .hero{
+    min-height: auto;
+    padding: 84px 16px 28px;
+    gap: 12px;
+  }
+
+  .hero-title{
+    margin-top: 16px;
+  }
+
+  .university-info{
+    margin-top: 14px;
+  }
+
+  .scroll-indicator{
+    margin-top: 10px;
+  }
+
+  .services{
+    padding-top: 36px;
+  }
+
+  .about{
+    padding-top: 44px;
   }
 }

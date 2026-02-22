@@ -29,13 +29,7 @@ function Header({
     requireAuth("/library", () => onSelectLibraryMenu?.(menu));
   };
 
-  {/*2차 가드: access token 존재 확인*/}
-  const hasAccessToken = () => {
-    const token = localStorage.getItem("access_token");
-    return !!token;
-  };
-
-  {/*공통 가드: 로그인(닉네임) + access token 둘 다 확인*/}
+  {/*공통 가드: 로그인(닉네임)만 확인 (토큰은 쿠키로 서버가 검증)*/}
   const requireAuth = (nextPath: string, onSuccess?: () => void) => {
     if (!userNickname) {
       console.warn("[AUTH] blocked: no user");
@@ -45,17 +39,6 @@ function Header({
       return;
     }
 
-    if (!hasAccessToken()) {
-      console.warn("[AUTH] blocked: no access token");
-      alert("세션이 만료되었어요. 다시 로그인 해주세요.");
-      // 깨끗하게 정리 (선택)
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("user");
-      window.dispatchEvent(new Event("userLogin")); // 헤더 즉시 갱신
-      navigate("/login");
-      setMobileOpen(false);
-      return;
-    }
     console.log("[AUTH] passed");
     onSuccess?.();
     navigate(nextPath);

@@ -103,7 +103,7 @@
 @media (max-width: 768px){
   /* 사이드바가 펼쳐져도 바깥 클릭을 막지 않게 */
   .library-sidebar.open{
-    pointer-events: auto; /* 사이드바 내부는 클릭 가능 */
+    pointer-events: auto;
   }
 
   /* 중요: 사이드바가 넓게 덮는 요소(예: overlay/backdrop)가 있으면 그걸 끈다 */
@@ -153,7 +153,6 @@
   display: flex;
   flex-direction: column;
   padding: 22px 0;
-  /* overflow-y: auto; */
   gap: 22px;
 
   margin-left: 0;
@@ -275,12 +274,10 @@
   font-weight: 700;
   font-family: 'Open Sans', sans-serif;
   text-transform: uppercase;
-  /* padding-right: 20px; */
 }
 
 .table-body {
   max-height: 600px;
-  /* overflow-y: auto; */
 }
 
 .table-row {
@@ -509,8 +506,7 @@
   border-radius: 50px;
   gap: 14px;
   box-sizing: border-box;
-
-  left: auto;             /* 혹시 이전 스타일 덮어쓰기 */
+  left: auto;
   top: auto;
   transform: none;
 }

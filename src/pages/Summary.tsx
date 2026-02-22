@@ -134,9 +134,6 @@ export default function Summary() {
   return (
     <Layout activeMenu="summary">
       <div className="summary-container">
-        <div className="noise-large"></div>
-        <div className="noise-small"></div>
-
         <div className="blob-purple"></div>
         <div className="blob-pink"></div>
         <div className="blob-cyan"></div>
@@ -164,7 +161,7 @@ export default function Summary() {
           </div>
         </div>
 
-        <div className="hero-title">
+        <div className="summary-hero-title">
           <p className="hero-title-main animate-reveal-left">안녕하세요, {userNickname}님</p>
           <p className="hero-title-sub animate-reveal-left">원하는 문서를 업로드 또는 작성해주세요.</p>
         </div>

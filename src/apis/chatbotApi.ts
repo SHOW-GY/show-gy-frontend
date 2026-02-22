@@ -185,6 +185,38 @@ export async function* backendChatbotCallAstream(
 }
 
 // -------------------------
+// Chatbot 메시지 전송 (통합 함수)
+// -------------------------
+export async function sendChatbotMessage(
+  message: string,
+  threadId: string,
+  actionType: string,
+  documentText: string,
+  topicId: string,
+  negativeId?: string
+): Promise<any> {
+  try {
+    const body: any = {
+      message: message || '',
+      thread_id: threadId,
+      action_type: actionType,
+      document_text: documentText,
+      topic_id: topicId,
+    };
+
+    if (negativeId) {
+      body.negative_id = negativeId;
+    }
+
+    const response = await backendChatbotCall(threadId, body);
+    return response || {};
+  } catch (error) {
+    console.error('sendChatbotMessage error:', error);
+    throw error;
+  }
+}
+
+// -------------------------
 // 8000 Backend - ban endpoints
 // -------------------------
 export async function getBanWordList(): Promise<BanWordListResponse> {

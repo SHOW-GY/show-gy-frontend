@@ -32,19 +32,18 @@
   z-index: 6;
 }
 
-.hero-title{
-  width: 100%;
-  max-width: 860px;
-  padding: 0 16px;
-  box-sizing: border-box;
+.summary-hero-title {
+  width: min(900px, 100%);
+  height: auto;
+  position: relative;
+  top: auto;
+  left : auto;
   text-align: center;
-
-  /* ✅ 제목 줄바꿈 안정화 */
-  word-break: keep-all;
-  overflow-wrap: normal;
-  line-break: strict;
-  white-space: normal;
-  text-wrap: balance;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  z-index: 5;
 }
 
 .summary-team-prompt{
