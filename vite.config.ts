@@ -12,7 +12,7 @@ export default defineConfig({
     include: ['quill-mention'],
   },
   build: {
-    outDir: 'dist',
+    outDir: 'docs',
     emptyOutDir: true,
     sourcemap: false,
   },
