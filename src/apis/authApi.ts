@@ -53,12 +53,16 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 
 // Logout
 export const logout = async (): Promise<void> => {
-  await apiClient.post('/api/v1/auth/logout');
-  
-  // Remove tokens
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('user');
-  window.dispatchEvent(new Event('userLogout'));
+  try {
+    await apiClient.post('/api/v1/auth/logout');
+  } catch (e) {
+    // 백엔드 꺼짐/네트워크 에러여도 로컬 로그아웃은 진행
+  } finally {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('userLogout')); // 있으면
+  }
 };
 
 // Refresh Token
