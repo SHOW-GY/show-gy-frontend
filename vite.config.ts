@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  base: '/show-gy-frontend/',
   server: { port: 5173 },
   css: {
     devSourcemap: false,
@@ -12,7 +12,7 @@ export default defineConfig({
     include: ['quill-mention'],
   },
   build: {
-    outDir: 'docs',
+    outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
   },
