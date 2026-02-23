@@ -1,4 +1,3 @@
-import Header from '../components/Layout';
 import '../styles/design.css';
 import '../styles/login.css';
 import { useState } from 'react';
@@ -45,11 +44,12 @@ export default function Login() {
 
   return (
     <Layout activeMenu="login">
-      <div className="login-container">
-        <div className="login-header">
-          <h1 className="login-title">로그인</h1>
-          <div className="login-underline"></div>
-        </div>
+      <div className="login-page">
+        <div className="login-container">
+          <div className="login-header">
+            <h1 className="login-title">로그인</h1>
+            <div className="login-underline"></div>
+          </div>
 
         <div className="login-form-group">
           <label className="login-label">아이디</label>
@@ -83,6 +83,7 @@ export default function Login() {
           <span className="login-link" onClick={() => navigate('/login/signup')} style={{ cursor: 'pointer' }}>
             회원가입
           </span>
+        </div>
         </div>
       </div>
     </Layout>

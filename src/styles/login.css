@@ -1,8 +1,17 @@
 /* ===== 로그인 페이지 ===== */
+/* 로그인 페이지에서만 footer를 바닥으로 밀어내는 래퍼 */
+.login-page {
+  min-height: calc(100vh - 56px - 70px); /* header - footer */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* 기존: margin: 120px auto 0;  -> 아래 여백까지 주면 가운데가 더 자연스럽게 잡힘 */
 .login-container {
   width: min(847px, 90%);
   min-height: 769px;
-  margin: 120px auto 0;
+  margin: 120px auto 40px; /* 아래도 여백 */
   position: relative;
 }
 

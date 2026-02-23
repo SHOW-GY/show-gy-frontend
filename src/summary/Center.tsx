@@ -358,6 +358,49 @@ export default function Center() {
     return () => window.removeEventListener("mousedown", onDown);
   }, [mathOpen]);
 
+  useEffect(() => {
+    if (!mathOpen) return;
+
+    let raf: number | null = null;
+
+    const updateMathPos = () => {
+      const el = mathTargetElRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+
+      setMathPos({
+        top: rect.bottom + 10,
+        left: rect.left,
+      });
+    };
+
+    const schedule = () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateMathPos);
+    };
+
+    schedule();
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+
+    const roTarget =
+      documentContainerRef.current ??
+      document.querySelector(".doc-pane") ??
+      document.querySelector(".center-split-root");
+
+    const ro = roTarget ? new ResizeObserver(schedule) : null;
+    if (ro && roTarget) ro.observe(roTarget);
+
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (ro) ro.disconnect();
+      if (raf !== null) cancelAnimationFrame(raf);
+    };
+  }, [mathOpen]);
+
   {/* 페이지 스크롤 시 패널 위치 업데이트. 스크롤 이벤트에 대한 디바운스 처리로 성능 최적화. 사용자가 페이지를 스크롤할 때마다 updatePositions 함수가 호출되어 패널의 top 위치를 조정하여 항상 화면 상단에서 일정 간격을 유지하도록 함. 컴포넌트가 언마운트될 때 이벤트 리스너와 타이머를 정리하여 메모리 누수 방지 */ }
   useEffect(() => {
     const onScroll = () => {
@@ -782,7 +825,7 @@ export default function Center() {
                   {mathOpen && createPortal(
                     <div
                       className="sg-math-editor"
-                      style={{ top: `${mathPos.top}px`, left: `${mathPos.left}px` }}
+                      style={{ top: `${mathPos.top}px`, left : `${mathPos.left}px` }}
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
                     >

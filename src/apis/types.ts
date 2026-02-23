@@ -1,4 +1,4 @@
-// Sign up
+{/* Sign up */}
 export interface CreateUserRequest {
   user_id: string;
   user_pw: string;
@@ -16,20 +16,25 @@ export interface User {
   created_at: string;
 }
 
-// Login
+{/* Login */}
 export interface LoginRequest {
   username: string;
   password: string;
 }
 
 export interface LoginResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  user: User;
+  status : string;
+  data : {
+    user_id : string;
+    nickname : string;
+    last_name : string;
+    first_name : string;
+    email : string;
+    register_date : string;
+  }
 }
 
-// Refresh Token
+{/* Refresh Token */}
 export interface RefreshTokenResponse {
   status: string;
   message: string;

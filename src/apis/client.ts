@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosHeaders } from 'axios';
 
 /* FastAPI Server URL */
-const BACKEND_URL = 'http://127.0.0.1:8000';
+const BACKEND_URL = 'http://localhost:8000';
 
 /* 로그인 페이지 이동 (HashRouter 대응) */
 const redirectToLogin = () => {
@@ -10,29 +10,31 @@ const redirectToLogin = () => {
 
 /* 강제 로그아웃 */
 const forceLogout = () => {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
-
   window.dispatchEvent(new Event('userLogout'));
-
   redirectToLogin();
 };
 
 /* Axios 인스턴스 생성 */
 const apiClient: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   timeout: 10000,
-  withCredentials: true, // ✅ 쿠키 인증
+  withCredentials: true,
 });
 
 /* 요청 인터셉터 */
 apiClient.interceptors.request.use(
   (config) => {
-    // 쿠키 인증이라 Authorization 헤더 안 씀
+    const method = (config.method ?? '').toLowerCase();
+    if (
+      method === 'post' || method === 'put' || method === 'patch'
+    ) {
+      const headers = AxiosHeaders.from(config.headers ?? {});
+      if (!headers.has('Content-Type')) {
+        headers.set('Content-Type', 'application/json');
+      }
+      config.headers = headers;
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -68,15 +70,15 @@ apiClient.interceptors.response.use(
       forceLogout();
       return Promise.reject(error);
     }
-    if (
-      isApiCall &&
-      status === 404 &&
-      !originalRequest._logoutHandled
-    ) {
-      originalRequest._logoutHandled = true;
-      forceLogout();
-      return Promise.reject(error);
-    }
+    // if (
+    //   isApiCall &&
+    //   status === 404 &&
+    //   !originalRequest._logoutHandled
+    // ) {
+    //   originalRequest._logoutHandled = true;
+    //   forceLogout();
+    //   return Promise.reject(error);
+    // }
     if (status === 401 && !originalRequest._retry) {
 
       if (isRefreshing) {
@@ -91,7 +93,6 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // refresh_token 쿠키로 재발급
         await apiClient.post('/api/v1/auth/refresh');
 
         processQueue(null);
@@ -114,5 +115,16 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const syncAuthFromMe = async () => {
+  const me = await apiClient.get('/api/v1/user/me');
+  const userInfo = me.data?.data;
+
+  if (!userInfo?.user_id) throw new Error('Invalid /me response');
+
+  localStorage.setItem('user', JSON.stringify(userInfo));
+  window.dispatchEvent(new Event('userLogin'));
+  return userInfo;
+};
 
 export default apiClient;
