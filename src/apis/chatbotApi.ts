@@ -27,8 +27,8 @@ import type {
  */
 
 // TODO: move to env (Vite): import.meta.env.VITE_AI_URL / VITE_BACKEND_URL
-const AI_URL = "http://127.0.0.1:7001";
-const BACKEND_URL = "http://127.0.0.1:8000";
+const AI_URL = "http://localhost:7001";
+const BACKEND_URL = "http://localhost:8000";
 
 // -------------------------
 // Axios instances

@@ -12,7 +12,7 @@ const redirectToLogin = () => {
 const forceLogout = () => {
   localStorage.removeItem('user');
   window.dispatchEvent(new Event('userLogout'));
-  redirectToLogin();
+  // redirectToLogin();
 };
 
 /* Axios 인스턴스 생성 */
@@ -116,15 +116,31 @@ apiClient.interceptors.response.use(
   }
 );
 
+// export const syncAuthFromMe = async () => {
+//   const me = await apiClient.get('/api/v1/user/me');
+//   const userInfo = me.data?.data;
+
+//   if (!userInfo?.user_id) throw new Error('Invalid /me response');
+
+//   localStorage.setItem('user', JSON.stringify(userInfo));
+//   window.dispatchEvent(new Event('userLogin'));
+//   return userInfo;
+// };
+
 export const syncAuthFromMe = async () => {
-  const me = await apiClient.get('/api/v1/user/me');
-  const userInfo = me.data?.data;
+  try {
+    const me = await apiClient.get('/api/v1/user/me');
+    const userInfo = me.data?.data;
 
-  if (!userInfo?.user_id) throw new Error('Invalid /me response');
+    if (!userInfo?.user_id) throw new Error('Invalid /me response');
 
-  localStorage.setItem('user', JSON.stringify(userInfo));
-  window.dispatchEvent(new Event('userLogin'));
-  return userInfo;
+    localStorage.setItem('user', JSON.stringify(userInfo));
+    window.dispatchEvent(new Event('userLogin'));
+    return userInfo;
+  } catch (e) {
+    forceLogout();
+    throw e;
+  }
 };
 
 export default apiClient;

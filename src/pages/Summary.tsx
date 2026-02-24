@@ -10,6 +10,7 @@ import showgy from '../assets/image/showgy.png';
 
 import Layout from '../components/Layout';
 import { getTeamInfo } from '../apis/cooperation';
+import { uploadDocument } from '../apis/documentApi';
 
 interface TeamOption {
   team_id: string;
@@ -59,8 +60,8 @@ export default function Summary() {
         const teams = Array.isArray(res.data) ? res.data : [];
         setTeamOptions(teams);
 
-        const saved = localStorage.getItem("team_id");
-        if (saved && (saved === "personal" || teams.some(t => t.team_id === saved))) {
+        const saved = localStorage.getItem("team_name");
+        if (saved && (saved === "personal" || teams.some(t => t.team_name === saved))) {
           setSelectedTeam(saved);
         } else {
           setSelectedTeam("personal");
@@ -77,11 +78,10 @@ export default function Summary() {
 
   {/*팀 선택 핸들러*/}
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTeamId = e.target.value;
-    setSelectedTeam(newTeamId);
-
-    if (newTeamId === "personal") localStorage.removeItem("team_id");
-    else localStorage.setItem("team_id", newTeamId);
+    const newTeamName = e.target.value;
+    setSelectedTeam(newTeamName);
+    if (newTeamName === "personal") localStorage.removeItem("team_name");
+    else localStorage.setItem("team_name", newTeamName);
   };
 
   {/*파일 관련 코드*/}  
@@ -112,17 +112,24 @@ export default function Summary() {
   };
 
   const handleSearch = async () => {
-    // TODO: 문서 업로드 및 요약 처리 로직 구현(Marker PDF 구현되면 코드 짤게요)
     if (!uploadedFile && !searchQuery.trim()) {
       setErrorMessage('파일을 업로드하거나 문서 내용을 입력해주세요.');
       return;
     }
-
     setIsUploading(true);
     setErrorMessage('');
-
     try {
       console.log('문서 업로드:', { uploadedFile, searchQuery, selectedTeam });
+      if (uploadedFile) {
+        const res = await uploadDocument({
+          team_name: selectedTeam,
+          file: uploadedFile
+        });
+        console.log('업로드 결과:', res);
+        localStorage.setItem('uploadedDocument', JSON.stringify(res));
+        
+        navigate('/summary/center');
+      }
     } catch (err) {
       console.error('문서 업로드 실패:', err);
       setErrorMessage('문서 업로드에 실패했습니다.');
@@ -153,7 +160,7 @@ export default function Summary() {
             >
               <option value="personal">개인용</option>
               {teamOptions.map((team) => (
-                <option key={team.team_id} value={team.team_id}>
+                <option key={team.team_id} value={team.team_name}>
                   {team.team_name}
                 </option>
               ))}

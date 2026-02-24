@@ -21,6 +21,7 @@ import { useQuillInit } from "./hooks/useQuillInit";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
+import type { UploadDocumentResponse } from '../apis/types';
 
 export default function Center() {
   const location = useLocation();
@@ -51,13 +52,23 @@ export default function Center() {
     feedback: null,
     reference: null,
   });
-  const draftText = (location.state as any)?.draftText as string | null;
-  const uploadData = (location.state as any)?.uploadData as
-    | { title?: string; text?: string; summary?: string }
-    | null;
   const uploadErrorMessage = (location.state as any)?.uploadErrorMessage as string | null;
+  
+  {/* localStorage에서 업로드된 문서 데이터를 한 번만 읽어서 상태로 관리 */}
+  const [uploadData, setUploadData] = useState<UploadDocumentResponse | null>(() => {
+    try {
+      const stored = localStorage.getItem('uploadedDocument');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      return null;
+    } catch (e) {
+      console.error('localStorage에서 업로드 데이터 읽기 실패:', e);
+      return null;
+    }
+  });
+  
   const [documentText, setDocumentText] = useState<string>("");
-
   const [showFloating, setShowFloating] = useState(false);
   const [floatingPos, setFloatingPos] = useState({ top: 0, left: 0 });
   const savedRangeRef = useRef<{ index: number; length: number } | null>(null);
@@ -84,16 +95,6 @@ export default function Center() {
   addCol?: (where: "left" | "right") => void;
   refresh?: () => void;
 }>({});
-
-  {/* 문서 텍스트가 변경될 때마다 챗봇 패널에 전달하여 최신 상태 유지 */}
-  useEffect(() => {
-    if (uploadData || uploadErrorMessage) return;
-    if (!draftText) return;
-    const quill = quillRef.current;
-    if (!quill) return;
-
-    void applyMarkdown(quill, draftText, suppressRef);
-  }, [draftText]);
 
   {/* 페이지 진입 시 draftText가 있으면 타이핑 애니메이션으로 입력 시작. 단, 이미 타이핑이 시작된 경우나 업로드 결과가 있는 경우에는 무시하여 중복 실행 방지 */ }
   useEffect(() => {
@@ -323,8 +324,12 @@ export default function Center() {
     }
 
     const title = normalizeTitle(uploadData?.title);
-    const text = uploadData?.text || uploadData?.summary || "";
+    const text = uploadData?.extracted_data?.text || uploadData?.extracted_data?.summary || "";
     void applyMarkdown(quill, buildMarkdownWithTitle(title, text), suppressRef);
+    
+    // 데이터 적용 후 localStorage 정리 및 uploadData 초기화하여 재실행 방지
+    localStorage.removeItem('uploadedDocument');
+    setUploadData(null);
   }, [uploadData, uploadErrorMessage]);
 
   {/* 에디터 내에서 마우스 다운 이벤트를 감지하여 포맷팅 툴바나 수학식 편집기 등 특정 UI 요소가 열려 있을 때 외부 클릭을 감지하여 해당 요소들을 닫는 기능 구현. 예를 들어, showFloating이 true인 경우에만 이벤트 리스너가 활성화되어 툴바 외부 클릭 시 툴바가 닫히도록 함. mathOpen이 true인 경우에도 수학식 편집기 외부 클릭 시 편집기가 닫히도록 구현. 컴포넌트가 언마운트될 때 이벤트 리스너를 정리하여 메모리 누수 방지 */ }

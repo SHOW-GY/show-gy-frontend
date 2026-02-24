@@ -34,6 +34,7 @@
 
 .summary-hero-title {
   width: min(900px, 100%);
+  margin-top : 50px;
   height: auto;
   position: relative;
   top: auto;
@@ -125,11 +126,14 @@
 .summary-university-info{
   width: 100%;
   max-width: 720px;
-  margin: 28px auto 0;
+  margin: 0 auto;
   padding: 0 16px;
   box-sizing: border-box;
 
-  position: relative;
+  position: absolute;
+  left : 0;
+  right : 0;
+  bottom : 40px;
   opacity: 0.90;
   text-align: center;
 
@@ -152,7 +156,7 @@
   z-index: 5;
 }
 
-.summary-input-area{
+/* .summary-input-area{
   display: block;
   position: relative;
   width: 100%;
@@ -161,10 +165,25 @@
   padding: 0 16px;
   box-sizing: border-box;
   z-index: 10;
+} */
+
+.summary-input-area{
+  display: flex;                 /* ✅ block -> flex */
+  flex-direction: column;        /* ✅ 위(프리뷰) -> 아래(입력칸) */
+  align-items: flex-start;
+  gap: 12px;                     /* ✅ 프리뷰와 입력칸 간격 */
+  position: relative;
+  width: 100%;
+  max-width: 942px;
+  margin: 0 auto;
+  margin-top: 100px;             /* ✅ 입력칸 내려주는 역할을 여기로 이동 */
+  padding: 0 16px;
+  box-sizing: border-box;
+  z-index: 10;
 }
 
 /* 업로드 프리뷰 */
-.uploaded-file-preview{
+/* .uploaded-file-preview{
   display: flex;
   align-items: center;
   gap: 12px;
@@ -180,6 +199,25 @@
   position: absolute;
   top: -70px;
   left: 0;
+} */
+
+/* 업로드 프리뷰 */
+.uploaded-file-preview{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  width: fit-content;
+
+  position: relative;            /* ✅ absolute 제거 */
+  top: auto;                     /* ✅ 무력화 */
+  left: auto;                    /* ✅ 무력화 */
 }
 
 .file-icon{
@@ -233,10 +271,28 @@
   color: #1f2937;
 }
 
+/* .summary-input-shell{
+  position: relative;
+  width: 100%;
+  margin-top : 100px;
+  background: #FFF7F7;
+  border-radius: 50px;
+  border: 1px #0D0101 solid;
+
+  box-sizing: border-box;
+  z-index: 5;
+
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px 18px;
+} */
+
 .summary-input-shell{
   position: relative;
   width: 100%;
-
+  margin-top: 0px;               /* ✅ 100px 제거 */
   background: #FFF7F7;
   border-radius: 50px;
   border: 1px #0D0101 solid;
@@ -521,7 +577,7 @@
    SHOW-GY Slash Command Menu (quill-mention)
 ========================= */
 .ql-mention-list-container{
-  z-index: 20000; /* 네 floating-toolbar/모달 위로 */
+  z-index: 20000;
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 14px;
   overflow: hidden;
@@ -534,7 +590,7 @@
 }
 
 .ql-mention-list-item{
-  padding: 0 !important; /* 내부 커스텀 ui 쓰니까 */
+  padding: 0 !important;
   border-radius: 12px;
 }
 
@@ -544,7 +600,7 @@
 
 .sg-slash-item{
   display: flex;
-  flex-direction: column; /* ✅ Column 형태 */
+  flex-direction: column;
   gap: 4px;
   padding: 10px 12px;
   border-radius: 12px;
@@ -675,7 +731,7 @@
 }
 .doc-pane-inner{
   display: flex;
-  justify-content: center; /* ✅ center-document 가운데 */
+  justify-content: center;
 }
 
 /* RIGHT PANE */
@@ -713,7 +769,6 @@
   border-radius: 2px;
 }
 
-/* ✅ right pane body는 flex column */
 .right-pane-body{
   flex: 1;
   min-height: 0;
@@ -735,7 +790,6 @@
   transform: translateX(-50%);
   z-index: 9999;
 
-  /* ✅ 너비 제한 + 2줄 래핑 */
   width: 280px;
   max-width: 560px;
 
@@ -745,7 +799,7 @@
 
   gap: 10px;
   row-gap: 8px;
-  flex-wrap: wrap;      /* ✅ 한 줄 고정 */
+  flex-wrap: wrap;
   white-space: normal;
 
   padding: 10px 14px;
@@ -1064,16 +1118,13 @@ body.sg-table-resizing-row { cursor: row-resize !important; user-select: none !i
   }
 
   .summary-university-info{
-    margin-top: 12px;
     font-size: 14px;
     letter-spacing: 1.2px;
     line-height: 1.4;
+    bottom: 18px;
   }
 
   .uploaded-file-preview{
-    position: relative;
-    top: auto;
-    left: auto;
     margin-bottom: 10px;
     max-width: 100%;
   }

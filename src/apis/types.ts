@@ -16,7 +16,7 @@ export interface User {
   created_at: string;
 }
 
-{/* Login */}
+{/* 로그인 */}
 export interface LoginRequest {
   username: string;
   password: string;
@@ -51,7 +51,7 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-// Check User Id (중복 확인)
+{/* 중복 확인 */}
 export interface CheckUserIdRequest {
   user_id: string;
 }
@@ -60,7 +60,7 @@ export interface CheckUserIdResponse {
   message: string;
 }
 
-// Email Verification
+{/* 이메일 인증 */}
 export interface RequestEmailVerificationRequest {
   type: boolean;
   user_id: string;
@@ -82,7 +82,7 @@ export interface VerifyEmailCodeResponse {
   success?: boolean;
 }
 
-// Generate Team
+{/* 팀 생성 */}
 export interface GenerateTeamRequest{
   team_name: string;
 }
@@ -123,4 +123,113 @@ export interface TeamInfoResponse {
     team_code : string;
     team_owner : boolean;
   }
+}
+
+{/* 문서 관련 */}
+
+{/* 모든 문서를 가져옴 */}
+export interface GetDocumentsResponse {
+  status: string;
+  data :{
+    title: string;
+    file_path: string;
+    team_id: string;
+    team_leader: string;
+    access_at : string;
+  }
+}
+
+{/* 문서를 완전히 삭제 */}
+export interface DeleteDocumentResponse {
+  status: string;
+}
+
+{/* 휴지통 문서 리스트 */}
+export interface GetDeletedDocumentsResponse {
+  status: string;
+  data: {
+    title: string;
+    file_path: string;
+    team_id: string;
+    team_leader: string;
+    access_at : string;
+  }
+}
+
+{/* 최근 문서 리스트 */}
+export interface GetRecentDocumentsResponse {
+  status: string;
+  data: {
+    title: string;
+    file_path: string;
+    team_id: string;
+    team_leader: string;
+    access_at : string;
+  }
+}
+
+{/* 문서 업로드 */}
+export interface UploadDocumentRequest {
+  team_name: string;
+  file: File;
+}
+
+export interface ExtractedData {
+  text: string;
+  summary: string;
+  total_pages: number;
+  common_fonts: string[];
+  structure: PageStructure[];
+  has_text: boolean;
+}
+
+export interface PageStructure {
+  page_number: number;
+  width: number;
+  height: number;
+  margins: {
+    top: number;
+    left: number;
+    bottom: number;
+    right: number;
+  };
+  fonts: string[];
+}
+
+export interface UploadDocumentResponse {
+  id: number;
+  extension: string;
+  status: string;
+  is_delete: boolean;
+  title: string;
+  file_path: string;
+  extracted_data: ExtractedData;
+  register_date: string;
+}
+
+{/* 문서 휴지통으로 이동 */}
+export interface MoveToTrashRequest {
+  document_id: string;
+}
+
+export interface MoveToTrashResponse {
+  status: string;
+  document_id: string;
+}
+
+{/* 문서 편집 상태*/}
+export interface EditDocumentRequest {
+  document_id: string;
+}
+
+export interface EditDocumentResponse {
+  status: string;
+}
+
+export interface RealeaseEditingRequest {
+  document_id: string;
+}
+
+export interface RealeaseEditingResponse {
+  status: string;
 }

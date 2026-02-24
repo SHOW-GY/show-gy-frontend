@@ -45,22 +45,22 @@ export const logout = async (): Promise<void> => {
 };
 
 {/* Refresh Token */}
-export const refreshToken = async (): Promise<string> => {
-  const refreshToken = localStorage.getItem('refresh_token');
+// export const refreshToken = async (): Promise<string> => {
+//   const refreshToken = localStorage.getItem('refresh_token');
   
-  if (!refreshToken) {
-    throw new Error('Refresh token not found');
-  }
+//   if (!refreshToken) {
+//     throw new Error('Refresh token not found');
+//   }
   
-  const response = await apiClient.post<RefreshTokenResponse>('/api/v1/auth/refresh');
+//   const response = await apiClient.post<RefreshTokenResponse>('/api/v1/auth/refresh');
   
-  if (response.data.data?.access_token) {
-    localStorage.setItem('access_token', response.data.data.access_token);
-    return response.data.data.access_token;
-  }
+//   if (response.data.data?.access_token) {
+//     localStorage.setItem('access_token', response.data.data.access_token);
+//     return response.data.data.access_token;
+//   }
   
-  throw new Error('Failed to refresh token');
-};
+//   throw new Error('Failed to refresh token');
+// };
 
 // Request Email Verification
 export const requestEmailVerification = async (
