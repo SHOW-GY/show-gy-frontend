@@ -240,6 +240,62 @@ export function useQuillInit({
 
     {/* quill에서 포커스 변경, 텍스트 변경 감지하는 로직 */}
     quill.root.addEventListener("click", onRootClick);
+    
+    {/* 브라우저 네이티브 selectionchange로 추가 감지 */}
+    const handleNativeSelectionChange = () => {
+      const nativeSelection = window.getSelection();
+      const nativeText = nativeSelection?.toString() || "";
+      
+      if (nativeText.length > 0) {
+        const quillRange = quill.getSelection();
+        
+        // Quill이 선택을 놓친 경우 직접 처리
+        if (!quillRange || quillRange.length === 0) {
+          
+          if (mathOpenRef.current) return;
+          if (!nativeSelection || nativeSelection.rangeCount === 0) return;
+          
+          const nativeRange = nativeSelection.getRangeAt(0);
+          const rect = nativeRange.getBoundingClientRect();
+          const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
+          const editorEl = editorRef.current;
+          
+          if (!anchorEl || !editorEl) return;
+          
+          const anchorRect = anchorEl.getBoundingClientRect();
+          const editorRect = editorEl.getBoundingClientRect();
+          
+          // 에디터 기준 상대 좌표로 변환
+          const finalBounds = {
+            top: rect.top - editorRect.top,
+            left: rect.left - editorRect.left,
+            bottom: rect.bottom - editorRect.top,
+            right: rect.right - editorRect.left,
+            width: rect.width,
+            height: rect.height,
+          };
+          
+          const editorOffsetTop = editorRect.top - anchorRect.top;
+          const editorOffsetLeft = editorRect.left - anchorRect.left;
+          const GAP = 10;
+          const top = editorOffsetTop + finalBounds.bottom + GAP;
+          const left = editorOffsetLeft + finalBounds.left + finalBounds.width / 2;
+          const toolbarW = 280;
+          let clampedLeft = left;
+          clampedLeft = Math.max(toolbarW / 2 + 12, clampedLeft);
+          clampedLeft = Math.min(anchorEl.clientWidth - toolbarW / 2 - 12, clampedLeft);
+          
+          setFloatingPos({ top, left: clampedLeft });
+          setShowFloating(true);
+          
+          // savedRange는 대략적으로 설정 (정확한 Quill index 없음)
+          savedRangeRef.current = { index: 0, length: nativeText.length };
+        }
+      }
+    };
+    
+    document.addEventListener("selectionchange", handleNativeSelectionChange);
+    
     quill.on("selection-change", (range: any) => {
       if (mathOpenRef.current) return;
 
@@ -279,15 +335,39 @@ export function useQuillInit({
       const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
       const editorEl = editorRef.current;
 
-      if (!anchorEl || !editorEl || !bounds) return;
+      if (!anchorEl || !editorEl) return;
+
+      {/* bounds가 null이면 window.getSelection()으로 폴백 */}
+      let finalBounds = bounds;
+      if (!finalBounds) {
+        const nativeSelection = window.getSelection();
+        if (nativeSelection && nativeSelection.rangeCount > 0) {
+          const nativeRange = nativeSelection.getRangeAt(0);
+          const rect = nativeRange.getBoundingClientRect();
+          const editorRect = editorEl.getBoundingClientRect();
+          
+          {/* Quill bounds 형식으로 변환 (에디터 기준 상대 좌표) */}
+          finalBounds = {
+            top: rect.top - editorRect.top,
+            left: rect.left - editorRect.left,
+            bottom: rect.bottom - editorRect.top,
+            right: rect.right - editorRect.left,
+            width: rect.width,
+            height: rect.height,
+          };
+        }
+      }
+
+      {/* 여전히 bounds를 구할 수 없으면 종료 */}
+      if (!finalBounds) return;
 
       const anchorRect = anchorEl.getBoundingClientRect();
       const editorRect = editorEl.getBoundingClientRect();
       const editorOffsetTop = editorRect.top - anchorRect.top;
       const editorOffsetLeft = editorRect.left - anchorRect.left;
       const GAP = 10;
-      const top = editorOffsetTop + bounds.bottom + GAP;
-      const left = editorOffsetLeft + bounds.left + bounds.width / 2;
+      const top = editorOffsetTop + finalBounds.bottom + GAP;
+      const left = editorOffsetLeft + finalBounds.left + finalBounds.width / 2;
       const toolbarW = 280;
       let clampedLeft = left;
       clampedLeft = Math.max(toolbarW / 2 + 12, clampedLeft);
@@ -306,11 +386,22 @@ export function useQuillInit({
       div.innerHTML = html;
       const text = (div.textContent || div.innerText || "").trim();
       setDocumentText(text);
+
+      {/* 텍스트 삭제 시 편집기 자동 숨김 처리 */}
+      if (savedRangeRef.current) {
+        const currentRange = quill.getSelection();
+        if (!currentRange || currentRange.length === 0) {
+          setShowFloating(false);
+          savedRangeRef.current = null;
+          setFtMenu(null);
+        }
+      }
     });
 
     return () => {
       detachTable();
       quill.root.removeEventListener("click", onRootClick);
+      document.removeEventListener("selectionchange", handleNativeSelectionChange);
       quillRef.current = null;
     };
   }, []);
