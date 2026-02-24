@@ -35,7 +35,7 @@ export async function runSlashCommand(
 
   if (cmd === "code") {
     q.insertText(insertAt, "\n", "user");
-    q.formatLine(insertAt, 1, "code-block", true, "user");
+    q.formatLine(insertAt + 1, 1, "code-block", "plain", "user");
     q.setSelection(insertAt + 1, 0, "silent");
     return;
   }

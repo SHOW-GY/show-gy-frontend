@@ -248,14 +248,21 @@ export function useQuillInit({
       
       if (nativeText.length > 0) {
         const quillRange = quill.getSelection();
-        
-        // Quill이 선택을 놓친 경우 직접 처리
         if (!quillRange || quillRange.length === 0) {
           
           if (mathOpenRef.current) return;
           if (!nativeSelection || nativeSelection.rangeCount === 0) return;
           
           const nativeRange = nativeSelection.getRangeAt(0);
+          const container = nativeRange.commonAncestorContainer;
+          const parentElement = container.nodeType === Node.TEXT_NODE 
+            ? container.parentElement 
+            : container as HTMLElement;
+          
+          if (parentElement?.closest('.sg-math-block')) return;
+          if (parentElement?.closest('table')) return;
+          if (parentElement?.closest('.ql-code-block-container')) return;
+          if (parentElement?.closest('pre')) return;
           const rect = nativeRange.getBoundingClientRect();
           const anchorEl = document.querySelector(".center-document") as HTMLElement | null;
           const editorEl = editorRef.current;
@@ -264,8 +271,6 @@ export function useQuillInit({
           
           const anchorRect = anchorEl.getBoundingClientRect();
           const editorRect = editorEl.getBoundingClientRect();
-          
-          // 에디터 기준 상대 좌표로 변환
           const finalBounds = {
             top: rect.top - editorRect.top,
             left: rect.left - editorRect.left,
@@ -287,8 +292,6 @@ export function useQuillInit({
           
           setFloatingPos({ top, left: clampedLeft });
           setShowFloating(true);
-          
-          // savedRange는 대략적으로 설정 (정확한 Quill index 없음)
           savedRangeRef.current = { index: 0, length: nativeText.length };
         }
       }
@@ -325,6 +328,19 @@ export function useQuillInit({
         const f = (quill.getFormat(range).font as string | undefined) ?? "";
         setFontLabel(f);
         return;
+      }
+      const nativeSelection = window.getSelection();
+      if (nativeSelection && nativeSelection.rangeCount > 0) {
+        const nativeRange = nativeSelection.getRangeAt(0);
+        const container = nativeRange.commonAncestorContainer;
+        const parentElement = container.nodeType === Node.TEXT_NODE 
+          ? container.parentElement 
+          : container as HTMLElement;
+        
+        if (parentElement?.closest('.sg-math-block')) return;
+        if (parentElement?.closest('table')) return;
+        if (parentElement?.closest('.ql-code-block-container')) return;
+        if (parentElement?.closest('pre')) return;
       }
 
       savedRangeRef.current = { index: range.index, length: range.length };
