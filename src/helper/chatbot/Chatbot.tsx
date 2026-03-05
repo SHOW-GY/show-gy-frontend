@@ -1,10 +1,6 @@
-/**
- * Chatbot 메인 컨테이너
- * ⚠️ 기존 상태/로직/API 호출 순서를 1도 변경하지 않음
- */
-
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { sendChatbotMessage } from '../../apis/chatbotApi';
+import { createBlockChat, insertBanWord } from '../../apis/chatbotApi';
 import { ChatbotProps, ChatMessage } from './chatbot.types';
 import { INITIAL_MESSAGE, DEFAULT_THREAD_ID } from './chatbot.constants';
 import { parseResponseToMessage } from './chatbot.parsers';
@@ -14,16 +10,85 @@ import { ChatInputBar } from './parts/ChatInputBar';
 import '../../styles/chatbot.css';
 
 export default function Chatbot({ documentText, topicId }: ChatbotProps) {
+  console.log('🔵 [Chatbot.tsx] Props 수신:', { 
+    documentTextLength: documentText?.length,
+    documentPreview: documentText?.substring(0, 100),
+    topicId 
+  });
+
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [responseData, setResponseData] = useState<any>(null);
   const [threadId, setThreadId] = useState(DEFAULT_THREAD_ID);
+  const [lastInitializedDoc, setLastInitializedDoc] = useState<string>('');
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // 메시지가 추가될 때마다 스크롤을 아래로 이동
   useAutoScroll({ chatContainerRef, messages, isLoading });
 
+  // 1. 문서 내용이 있고 변경되었을 때 자동 초기화
+  useEffect(() => {
+    const initializeChatbot = async () => {
+      // documentText가 비어있거나, topicId가 없거나, 이미 이 문서로 초기화했으면 스킵
+      if (!documentText || documentText.trim().length === 0) {
+        console.log('❌ 문서 내용 없음:', { documentText, length: documentText?.length });
+        return;
+      }
+      
+      if (!topicId || topicId.trim().length === 0) {
+        console.log('❌ topicId 없음:', { topicId });
+        return;
+      }
+
+      if (lastInitializedDoc === documentText) {
+        console.log('✅ 이미 초기화됨');
+        return;
+      }
+
+      console.log('🚀 챗봇 초기화 시작:', { 
+        docLength: documentText.length, 
+        topicId,
+        preview: documentText.substring(0, 100)
+      });
+
+      setIsLoading(true);
+      try {
+        const response = await sendChatbotMessage(
+          '문서 분석을 시작합니다.',
+          threadId,
+          'first',
+          documentText,
+          topicId
+        );
+
+        console.log('✅ 챗봇 응답 받음:', response);
+
+        // thread_id 업데이트
+        if (response.thread_id) {
+          setThreadId(response.thread_id);
+        }
+
+        // 봇 응답 추가
+        const botMessage = parseResponseToMessage(response);
+        setMessages(prev => [...prev, botMessage]);
+        setResponseData(response.data);
+        setLastInitializedDoc(documentText);
+      } catch (error) {
+        console.error('❌ 챗봇 초기화 오류:', error);
+        setMessages(prev => [...prev, {
+          role: 'bot',
+          content: '죄송합니다. 문서 분석 중 오류가 발생했습니다.'
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeChatbot();
+  }, [documentText, topicId]);
+
+  // 3. 사용자 메시지 전송 시 ban word 체크 후 전송
   const handleSendMessage = async () => {
     if (!chatInput.trim() || isLoading) return;
 
@@ -34,6 +99,34 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
     setIsLoading(true);
 
     try {
+      // 3-1. Ban word 체크
+      try {
+        await insertBanWord({
+          ban_word_list: [userMessage],
+          ban_context: '사용자 입력 검증'
+        });
+      } catch (banError: any) {
+        // ban word가 감지되면 에러 응답
+        if (banError.response?.status === 400 || banError.response?.data?.success === false) {
+          setMessages(prev => [...prev, {
+            role: 'bot',
+            content: '금지된 단어가 포함되어 있습니다. 다른 표현을 사용해주세요.'
+          }]);
+          setIsLoading(false);
+          return;
+        }
+        // 그 외 에러는 무시하고 진행
+      }
+
+      // 3-2. 정상 메시지 전송
+      console.log('💬 [handleSendMessage] 메시지 전송:', {
+        userMessage,
+        documentTextLength: documentText?.length,
+        documentPreview: documentText?.substring(0, 100),
+        topicId,
+        threadId
+      });
+
       const response = await sendChatbotMessage(
         userMessage,
         threadId,
@@ -52,7 +145,6 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
       setMessages(prev => [...prev, botMessage]);
       setResponseData(response.data);
     } catch (error) {
-      console.error('챗봇 API 오류:', error);
       setMessages(prev => [...prev, { 
         role: 'bot', 
         content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.' 
@@ -140,7 +232,6 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
         }]);
       }
     } catch (error) {
-      console.error('[Chatbot] 삭제 처리 오류:', error);
       setMessages(prev => [...prev, {
         role: 'bot',
         content: '죄송합니다. 오류가 발생했습니다.'
@@ -150,12 +241,14 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
     }
   };
 
+  // 2. 선택지 클릭 시 /api/v1/chatbot/call 사용
   const handleSelectionClick = async (keyId: string, sentence: string) => {
     // 선택 메시지 추가
     setMessages(prev => [...prev, { role: 'user', content: sentence }]);
     setIsLoading(true);
 
     try {
+      // /api/v1/chatbot/call 엔드포인트 사용
       const response = await sendChatbotMessage(
         sentence,
         threadId,
@@ -210,7 +303,6 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
       }
       setResponseData(response.data);
     } catch (error) {
-      console.error('[Chatbot] 선택 처리 오류:', error);
       setMessages(prev => [...prev, {
         role: 'bot',
         content: '죄송합니다. 오류가 발생했습니다.'

@@ -6,7 +6,9 @@ export const EDGE = 12;
 
 {/* 커서의 위치파악 로직 */}
 export function getActiveTableEl(q: any): HTMLTableElement | null {
-  const range = q.getSelection(true);
+  // ❌ getSelection(true): Quill에 강제 포커스
+  // ✅ getSelection(): 현재 선택만 조회 (포커스 강탈 없음)
+  const range = q.getSelection();
   if (!range) return null;
 
   const [leaf] = q.getLeaf(range.index);

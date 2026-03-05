@@ -1,108 +1,57 @@
-// src/apis/chatbot_types.ts
-
-/**
- * Chatbot + Ban API Types
- * - 7001 (AI Server): /api/v1/chatbot/request, /api/v1/chatbot/request/astream
- * - 8000 (Backend):  /api/v1/chatbot/call, /api/v1/chatbot/call/astream
- * - 8000 (Backend):  /api/v1/ban/ban_word_list, /api/v1/ban/ban_word_list/ban_word
- *
- * NOTE:
- * - Response shape is intentionally loose (`any`) where unknown.
- * - Fill TODOs later with your real backend/AI response schemas.
- */
-
-// =========================
-// Common
-// =========================
-export type ApiStatus = "success" | "error" | string;
-
-// =========================
-// 7001 AI Server - request
-// =========================
-export type AiChatbotAction =
-  | "first"
-  | "selection_main_topic"
-  | "selection_negative_topic"
-  | string;
-
-export interface AiChatbotRequest {
+{/* 처음 챗봇과 대화할때 */}
+export interface FirstChatRequest {
   thread_id: string;
-  action: AiChatbotAction;
+  action: 'first';
   query: string;
   document: string;
-  json_document?: any; // TODO: define real JSON doc structure if used
-  topic_id?: string | null;
-  negative_id?: string | null;
+  json_document: Array<{ additionalProp1: any }>;
+  topic_id: string;
+  negative_id: string;
 }
 
-export interface AiChatbotResponse {
-  session?: string; // TODO: confirm existence/meaning
-  status?: ApiStatus;
-  response_type?: string;
-  message?: string | null;
-  title?: string | null;
-  thread_id?: string;
-  data?: any; // TODO: define per response_type
+export interface FirstChatResponse {
+  thread_id: string;
 }
 
-// =========================
-// 8000 Backend - call
-// =========================
-/**
- * Backend call endpoints likely wrap/bridge AI server + do auth/session/DB.
- * Request/Response schemas below are placeholders.
- */
-
-export interface BackendChatbotCallAstreamRequest {
-  query: string;
-  document: string; // TODO: confirm actual field name & format (HTML? plain text?)
-  // TODO: if backend expects json_document or others, add later
+{/* 이후 챗봇과 대화할때 */}
+export interface SecondChatRequest {
+  action: 'selection_main_topic';
+  topic_id: string;
+  negative_id: string;
 }
 
-/**
- * SSE stream events can vary.
- * Keep as `string` line chunks; parse on client if needed.
- */
-export type SseLine = string;
-
-export interface BackendChatbotCallRequest {
-  action: "selection_main_topic" | "selection_negative_topic" | string;
-  topic_id?: string | null;
-  negative_id?: string | null;
-  // TODO: confirm actual request payload fields
+export interface SecondChatResponse {
+  thread_id: string;
 }
 
-export interface BackendChatbotCallResponse {
-  status?: ApiStatus;
-  response_type?: string;
-  data?: any; // TODO: define per response_type
-  message?: string | null;
-  title?: string | null;
-  thread_id?: string; // TODO: confirm if backend returns this or only session_id
-  session_id?: string; // TODO: confirm naming (session? session_id?)
+{/* 사용자가 금지된 말을 했을때 차단 */}
+export interface CreateBlockChatRequest {
+  ban_word_list: [string];
+  ban_context: string;
 }
 
-// =========================
-// 8000 Backend - ban
-// =========================
-export interface BanWordItem {
-  // TODO: fill real fields (id, word, created_at, etc.)
-  [key: string]: any;
+export interface CreateBlockChatResponse {
+  success: boolean;
+  ban_list: [string];
+  ban_context: string;
+  msg: string;
 }
 
-export interface BanWordListResponse {
-  status?: ApiStatus;
-  data?: BanWordItem[]; // TODO: confirm structure
-  message?: string | null;
+export interface PatchBlockChatRequest {
+  ban_word_list: [string];
 }
 
-export interface BanWordUpsertRequest {
-  // TODO: confirm backend schema (word? ban_word? etc.)
-  word: string;
+export interface PatchBlockChatResponse {
+  success: boolean;
+  update_ban_word: [string];
 }
 
-export interface BanWordUpsertResponse {
-  status?: ApiStatus;
-  data?: any; // TODO: confirm structure
-  message?: string | null;
+export interface InsertionBanWordRequest {
+  ban_word_list: [string];
+  ban_context: string;
+}
+
+export interface InsertionBanWordResponse {
+  success: boolean;
+  ban_word_list: [string];
 }

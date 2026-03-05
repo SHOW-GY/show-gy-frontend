@@ -401,6 +401,10 @@ export function useQuillInit({
       const div = document.createElement("div");
       div.innerHTML = html;
       const text = (div.textContent || div.innerText || "").trim();
+      console.log('📝 [useQuillInit] 문서 텍스트 업데이트:', { 
+        textLength: text.length,
+        preview: text.substring(0, 100) 
+      });
       setDocumentText(text);
 
       {/* 텍스트 삭제 시 편집기 자동 숨김 처리 */}

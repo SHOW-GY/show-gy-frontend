@@ -1,233 +1,154 @@
-// src/apis/chatbotApi.ts
-
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance } from 'axios';
 import type {
-  AiChatbotRequest,
-  AiChatbotResponse,
-  BackendChatbotCallAstreamRequest,
-  BackendChatbotCallRequest,
-  BackendChatbotCallResponse,
-  SseLine,
-  BanWordListResponse,
-  BanWordUpsertRequest,
-  BanWordUpsertResponse,
-} from "./chatbot_types";
+  FirstChatRequest,
+  FirstChatResponse,
+  SecondChatRequest,
+  SecondChatResponse,
+  CreateBlockChatRequest,
+  CreateBlockChatResponse,
+  PatchBlockChatRequest,
+  PatchBlockChatResponse,
+  InsertionBanWordRequest,
+  InsertionBanWordResponse,
+} from './chatbot_types';
 
-/**
- * Endpoints summary
- * 7001 (AI):
- * - POST /api/v1/chatbot/request
- * - POST /api/v1/chatbot/request/astream (SSE)
- *
- * 8000 (Backend):
- * - POST /api/v1/chatbot/call
- * - POST /api/v1/chatbot/call/astream (SSE)
- * - GET  /api/v1/ban/ban_word_list
- * - POST /api/v1/ban/ban_word_list/ban_word
- */
+const BACKEND_URL = 'http://localhost:8000';
 
-// TODO: move to env (Vite): import.meta.env.VITE_AI_URL / VITE_BACKEND_URL
-const AI_URL = "http://localhost:7001";
-const BACKEND_URL = "http://localhost:8000";
-
-// -------------------------
-// Axios instances
-// -------------------------
-const aiClient: AxiosInstance = axios.create({
-  baseURL: AI_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30_000,
-});
-
-const backendClient: AxiosInstance = axios.create({
+const chatbotClient: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: { 'Content-Type': 'application/json' },
   timeout: 30_000,
+  withCredentials: true,
 });
 
-// TODO: If backend requires JWT, attach Authorization here (interceptor or per request).
-// backendClient.interceptors.request.use((config) => {
-//   const token = localStorage.getItem("access_token");
-//   if (token) config.headers.Authorization = `Bearer ${token}`;
-//   return config;
-// });
+type ChatAction = 'first' | 'selection_main_topic' | 'selection_negative_topic';
 
-// -------------------------
-// 7001 AI - request
-// -------------------------
-export async function aiChatbotRequest(body: AiChatbotRequest): Promise<AiChatbotResponse> {
-  const res = await aiClient.post<AiChatbotResponse>("/api/v1/chatbot/request", body);
-  return res.data;
+interface SelectionNegativeTopicRequest {
+  action: 'selection_negative_topic';
+  topic_id: string;
+  negative_id: string;
 }
 
-/**
- * 7001 AI - request/astream (SSE)
- * - This returns streamed text/event-stream.
- * - We keep it generic: you get raw SSE lines; you decide parsing.
- *
- * Usage:
- *   const controller = new AbortController();
- *   for await (const line of aiChatbotRequestAstream(body, controller.signal)) { ... }
- */
-export async function* aiChatbotRequestAstream(
-  body: AiChatbotRequest,
-  signal?: AbortSignal
-): AsyncGenerator<SseLine, void, void> {
-  const res = await fetch(`${AI_URL}/api/v1/chatbot/request/astream`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal,
+export interface ChatbotMessageResponse {
+  thread_id?: string;
+  response_type?: string;
+  data?: {
+    final_response?: any;
+    [key: string]: unknown;
+  };
+  message?: string;
+  session?: string;
+  [key: string]: unknown;
+}
+
+type ChatbotCallRequest =
+  | FirstChatRequest
+  | SecondChatRequest
+  | SelectionNegativeTopicRequest;
+
+const CHATBOT_CALL_PATH = '/api/v1/chatbot/call';
+const CHATBOT_FIRST_CALL_PATH = '/api/v1/chatbot/call/astream';
+
+function buildJsonDocument(documentText: string): FirstChatRequest['json_document'] {
+  console.log('🔨 [buildJsonDocument] 문서 변환:', {
+    docLength: documentText?.length,
+    preview: documentText?.substring(0, 100)
   });
-
-  // TODO: handle non-200 responses more strictly if needed
-  if (!res.ok || !res.body) {
-    throw new Error(`AI astream failed: ${res.status} ${res.statusText}`);
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    // SSE는 보통 \n\n 단위로 이벤트가 끊김
-    let idx: number;
-    while ((idx = buffer.indexOf("\n\n")) !== -1) {
-      const chunk = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 2);
-
-      // chunk는 "data: {...}" 형태가 많음. 일단 raw로 넘김
-      yield chunk;
-    }
-  }
-
-  if (buffer.trim().length > 0) {
-    yield buffer;
-  }
+  return [{ additionalProp1: documentText ? { text: documentText } : {} }];
 }
 
-// -------------------------
-// 8000 Backend - call
-// -------------------------
-/**
- * 8000 Backend - /chatbot/call
- * session_id를 query로 받는 구조일 가능성이 있음(네가 말한 흐름 기반).
- * TODO: 네 백엔드 실제 파라미터명(session_id 등) 확정 후 타입 강화.
- */
-export async function backendChatbotCall(
-  sessionId: string,
-  body: BackendChatbotCallRequest
-): Promise<BackendChatbotCallResponse> {
-  const res = await backendClient.post<BackendChatbotCallResponse>(
-    "/api/v1/chatbot/call",
-    body,
-    { params: { session_id: sessionId } } // TODO: confirm param key
-  );
+async function postChatbotCall<TResponse>(body: ChatbotCallRequest): Promise<TResponse> {
+  const res = await chatbotClient.post<TResponse>(CHATBOT_CALL_PATH, body);
   return res.data;
 }
 
-/**
- * 8000 Backend - /chatbot/call/astream (SSE)
- * - session_id가 query로 올 수도 있고, request body에 포함될 수도 있음.
- * - 여기선 "body + optional sessionId query" 패턴으로 둠.
- */
-export async function* backendChatbotCallAstream(
-  body: BackendChatbotCallAstreamRequest,
-  sessionId?: string,
-  signal?: AbortSignal
-): AsyncGenerator<SseLine, void, void> {
-  const url = new URL(`${BACKEND_URL}/api/v1/chatbot/call/astream`);
-  if (sessionId) url.searchParams.set("session_id", sessionId); // TODO: confirm param key
-
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-
-  // TODO: attach JWT if needed
-  // const token = localStorage.getItem("access_token");
-  // if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(url.toString(), {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-    signal,
-  });
-
-  if (!res.ok || !res.body) {
-    throw new Error(`Backend astream failed: ${res.status} ${res.statusText}`);
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    let idx: number;
-    while ((idx = buffer.indexOf("\n\n")) !== -1) {
-      const chunk = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 2);
-      yield chunk;
-    }
-  }
-
-  if (buffer.trim().length > 0) {
-    yield buffer;
-  }
-}
-
-// -------------------------
-// Chatbot 메시지 전송 (통합 함수)
-// -------------------------
-export async function sendChatbotMessage(
-  message: string,
-  threadId: string,
-  actionType: string,
-  documentText: string,
-  topicId: string,
-  negativeId?: string
-): Promise<any> {
-  try {
-    const body: any = {
-      message: message || '',
-      thread_id: threadId,
-      action_type: actionType,
-      document_text: documentText,
-      topic_id: topicId,
-    };
-
-    if (negativeId) {
-      body.negative_id = negativeId;
-    }
-
-    const response = await backendChatbotCall(threadId, body);
-    return response || {};
-  } catch (error) {
-    console.error('sendChatbotMessage error:', error);
-    throw error;
-  }
-}
-
-// -------------------------
-// 8000 Backend - ban endpoints
-// -------------------------
-export async function getBanWordList(): Promise<BanWordListResponse> {
-  const res = await backendClient.get<BanWordListResponse>("/api/v1/ban/ban_word_list");
+async function postFirstChatCall<TResponse>(body: FirstChatRequest): Promise<TResponse> {
+  const res = await chatbotClient.post<TResponse>(CHATBOT_FIRST_CALL_PATH, body);
   return res.data;
 }
 
-export async function upsertBanWord(body: BanWordUpsertRequest): Promise<BanWordUpsertResponse> {
-  const res = await backendClient.post<BanWordUpsertResponse>(
-    "/api/v1/ban/ban_word_list/ban_word",
+// 처음 챗봇과 대화
+export async function firstChat(body: FirstChatRequest): Promise<FirstChatResponse> {
+  return postFirstChatCall<FirstChatResponse>(body);
+}
+
+// 이후 챗봇과 대화(메인 주제 선택)
+export async function secondChat(body: SecondChatRequest): Promise<SecondChatResponse> {
+  return postChatbotCall<SecondChatResponse>(body);
+}
+
+// 금칙어 차단 목록 생성
+export async function createBlockChat(
+  body: CreateBlockChatRequest
+): Promise<CreateBlockChatResponse> {
+  const res = await chatbotClient.post<CreateBlockChatResponse>('/api/v1/ban/ban_word_list', body);
+  return res.data;
+}
+
+// 금칙어 차단 목록 수정
+export async function patchBlockChat(body: PatchBlockChatRequest): Promise<PatchBlockChatResponse> {
+  const res = await chatbotClient.patch<PatchBlockChatResponse>('/api/v1/ban/ban_word/list', body);
+  return res.data;
+}
+
+// 금칙어 단어 추가
+export async function insertBanWord(
+  body: InsertionBanWordRequest
+): Promise<InsertionBanWordResponse> {
+  const res = await chatbotClient.post<InsertionBanWordResponse>(
+    '/api/v1/ban/ban_word_list/ban_word',
     body
   );
   return res.data;
+}
+
+// Chatbot.tsx 사용을 위한 통합 함수
+export async function sendChatbotMessage(
+  message: string,
+  threadId: string,
+  actionType: ChatAction,
+  documentText: string,
+  topicId: string,
+  negativeId?: string
+): Promise<ChatbotMessageResponse> {
+  console.log('📤 [sendChatbotMessage] 호출:', {
+    actionType,
+    messageLength: message.length,
+    documentTextLength: documentText?.length,
+    topicId,
+    threadId
+  });
+
+  if (actionType === 'first') {
+    const body: FirstChatRequest = {
+      thread_id: threadId,
+      action: 'first',
+      query: message,
+      document: documentText,
+      json_document: buildJsonDocument(documentText),
+      topic_id: topicId,
+      negative_id: negativeId ?? '',
+    };
+
+    console.log('📦 [sendChatbotMessage] First Chat Body:', body);
+    return postFirstChatCall<ChatbotMessageResponse>(body);
+  }
+
+  if (actionType === 'selection_main_topic') {
+    const body: SecondChatRequest = {
+      action: 'selection_main_topic',
+      topic_id: topicId,
+      negative_id: negativeId ?? '',
+    };
+
+    return postChatbotCall<ChatbotMessageResponse>(body);
+  }
+
+  const body: SelectionNegativeTopicRequest = {
+    action: 'selection_negative_topic',
+    topic_id: topicId,
+    negative_id: negativeId ?? '',
+  };
+
+  return postChatbotCall<ChatbotMessageResponse>(body);
 }

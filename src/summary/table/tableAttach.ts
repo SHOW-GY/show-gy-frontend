@@ -128,6 +128,12 @@ export function attachTableInteractions({
   const showPlusIfCursorInTable = () => {
     if (mathOpenRef.current) return;
 
+    // ✅ Quill이 포커스가 아닐 때는 절대 selection 기반 동작하지 않음
+    if (!quill.hasFocus()) {
+      if (!hoveredTableRef.current) hideTablePlus();
+      return;
+    }
+
     const table = getActiveTableEl(quill);
     if (!table) {
       if (!hoveredTableRef.current) hideTablePlus();

@@ -42,7 +42,7 @@ export default function Summary() {
         const user = JSON.parse(userStr);
         setUserNickname(user.nickname || user.name || '사용자');
       } catch (e) {
-        console.error('사용자 정보 파싱 실패:', e);
+        setUserNickname('사용자');
       }
     }
   }, []);
@@ -119,19 +119,15 @@ export default function Summary() {
     setIsUploading(true);
     setErrorMessage('');
     try {
-      console.log('문서 업로드:', { uploadedFile, searchQuery, selectedTeam });
       if (uploadedFile) {
         const res = await uploadDocument({
           team_name: selectedTeam,
           file: uploadedFile
         });
-        console.log('업로드 결과:', res);
         localStorage.setItem('uploadedDocument', JSON.stringify(res));
-        
         navigate('/summary/center');
       }
     } catch (err) {
-      console.error('문서 업로드 실패:', err);
       setErrorMessage('문서 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
