@@ -278,10 +278,6 @@ export default function Center() {
       div.innerHTML = html;
       const text = (div.textContent || div.innerText || "").trim();
       if (text !== documentText) {
-        console.log('📝 [Center.tsx] 문서 텍스트 강제 업데이트:', {
-          textLength: text.length,
-          preview: text.substring(0, 100)
-        });
         setDocumentText(text);
       }
     };
@@ -516,13 +512,6 @@ export default function Center() {
       }
       
       const topicId = extractTopicFromHtml(quill?.root?.innerHTML || "");
-      
-      console.log('🔍 [Center.tsx] Chatbot에 전달:', { 
-        documentText: currentDocumentText?.substring(0, 100), 
-        docLength: currentDocumentText?.length,
-        topicId,
-        stateDocLength: documentText?.length
-      });
       
       return <Chatbot documentText={currentDocumentText} topicId={topicId} />;
     }

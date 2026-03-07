@@ -6,17 +6,43 @@ export const EDGE = 12;
 
 {/* 커서의 위치파악 로직 */}
 export function getActiveTableEl(q: any): HTMLTableElement | null {
-  // ❌ getSelection(true): Quill에 강제 포커스
-  // ✅ getSelection(): 현재 선택만 조회 (포커스 강탈 없음)
   const range = q.getSelection();
   if (!range) return null;
 
+  // 1단계: 현재 index에서 leaf 확인
   const [leaf] = q.getLeaf(range.index);
   const dom: HTMLElement | null = leaf?.domNode ?? null;
-  if (!dom || !(dom instanceof HTMLElement)) return null;
-  if (typeof dom.closest !== "function") return null;
+  if (dom && dom instanceof HTMLElement && typeof dom.closest === "function") {
+    const table = dom.closest("table") as HTMLTableElement | null;
+    if (table) return table;
+  }
 
-  return dom.closest("table") as HTMLTableElement | null;
+  // 2단계: 이전 index에서 leaf 확인 (경계 케이스 처리)
+  if (range.index > 0) {
+    const [prevLeaf] = q.getLeaf(range.index - 1);
+    const prevDom: HTMLElement | null = prevLeaf?.domNode ?? null;
+    if (prevDom && prevDom instanceof HTMLElement && typeof prevDom.closest === "function") {
+      const table = prevDom.closest("table") as HTMLTableElement | null;
+      if (table) return table;
+    }
+  }
+
+  // 3단계: 네이티브 selection 폴백 (window.getSelection())
+  const nativeSelection = window.getSelection();
+  if (nativeSelection && nativeSelection.rangeCount > 0) {
+    const nativeRange = nativeSelection.getRangeAt(0);
+    const container = nativeRange.commonAncestorContainer;
+    let element = container.nodeType === Node.TEXT_NODE 
+      ? container.parentElement 
+      : container as HTMLElement;
+    
+    if (element && typeof element.closest === "function") {
+      const table = element.closest("table") as HTMLTableElement | null;
+      if (table) return table;
+    }
+  }
+
+  return null;
 }
 
 {/* 표의 행과 열의 개수 파악하는 로직 */}
@@ -46,6 +72,100 @@ export function ensureColGroup(table: HTMLTableElement) {
   table.style.tableLayout = "fixed";
   table.style.width = table.style.width || "100%";
   return cg as HTMLTableColElement;
+}
+
+{ /*표 안에 커서가 있는지 감지하는 로직 */}
+export function isCursorInTable(q: any): boolean {
+  const table = getActiveTableEl(q);
+  return !!table;
+}
+
+{ /*코드블럭 안에 커서가 있는지 감지하는 로직 */}
+export function isCursorInCodeBlock(q: any): boolean {
+  const range = q.getSelection();
+  if (!range) return false;
+
+  // 1단계: 현재 index에서 leaf 확인
+  const [leaf] = q.getLeaf(range.index);
+  const dom: HTMLElement | null = leaf?.domNode ?? null;
+  if (dom && dom instanceof HTMLElement && typeof dom.closest === "function") {
+    if (dom.closest(".ql-code-block-container") || dom.closest(".ql-code-block") || dom.closest("pre") || dom.closest("code")) {
+      return true;
+    }
+  }
+
+  // 2단계: 이전 index에서 leaf 확인
+  if (range.index > 0) {
+    const [prevLeaf] = q.getLeaf(range.index - 1);
+    const prevDom: HTMLElement | null = prevLeaf?.domNode ?? null;
+    if (prevDom && prevDom instanceof HTMLElement && typeof prevDom.closest === "function") {
+      if (prevDom.closest(".ql-code-block-container") || prevDom.closest(".ql-code-block") || prevDom.closest("pre") || prevDom.closest("code")) {
+        return true;
+      }
+    }
+  }
+
+  // 3단계: 네이티브 selection 폴백
+  const nativeSelection = window.getSelection();
+  if (nativeSelection && nativeSelection.rangeCount > 0) {
+    const nativeRange = nativeSelection.getRangeAt(0);
+    const container = nativeRange.commonAncestorContainer;
+    let element = container.nodeType === Node.TEXT_NODE 
+      ? container.parentElement 
+      : container as HTMLElement;
+    
+    if (element && typeof element.closest === "function") {
+      if (element.closest(".ql-code-block-container") || element.closest(".ql-code-block") || element.closest("pre") || element.closest("code")) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+{ /*텍스트블록(blockquote) 안에 커서가 있는지 감지하는 로직 */}
+export function isCursorInTextBlock(q: any): boolean {
+  const range = q.getSelection();
+  if (!range) return false;
+
+  // 1단계: 현재 index에서 leaf 확인
+  const [leaf] = q.getLeaf(range.index);
+  const dom: HTMLElement | null = leaf?.domNode ?? null;
+  if (dom && dom instanceof HTMLElement && typeof dom.closest === "function") {
+    if (dom.closest("blockquote")) {
+      return true;
+    }
+  }
+
+  // 2단계: 이전 index에서 leaf 확인
+  if (range.index > 0) {
+    const [prevLeaf] = q.getLeaf(range.index - 1);
+    const prevDom: HTMLElement | null = prevLeaf?.domNode ?? null;
+    if (prevDom && prevDom instanceof HTMLElement && typeof prevDom.closest === "function") {
+      if (prevDom.closest("blockquote")) {
+        return true;
+      }
+    }
+  }
+
+  // 3단계: 네이티브 selection 폴백
+  const nativeSelection = window.getSelection();
+  if (nativeSelection && nativeSelection.rangeCount > 0) {
+    const nativeRange = nativeSelection.getRangeAt(0);
+    const container = nativeRange.commonAncestorContainer;
+    let element = container.nodeType === Node.TEXT_NODE 
+      ? container.parentElement 
+      : container as HTMLElement;
+    
+    if (element && typeof element.closest === "function") {
+      if (element.closest("blockquote")) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 { /*표의 행과 열 사이의 경계에 커서가 있는지 감지하는 로직 */}

@@ -38,8 +38,6 @@ function Header({
       setMobileOpen(false);
       return;
     }
-
-    console.log("[AUTH] passed");
     onSuccess?.();
     navigate(nextPath);
     setMobileOpen(false);

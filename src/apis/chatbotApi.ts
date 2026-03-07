@@ -50,10 +50,6 @@ const CHATBOT_CALL_PATH = '/api/v1/chatbot/call';
 const CHATBOT_FIRST_CALL_PATH = '/api/v1/chatbot/call/astream';
 
 function buildJsonDocument(documentText: string): FirstChatRequest['json_document'] {
-  console.log('🔨 [buildJsonDocument] 문서 변환:', {
-    docLength: documentText?.length,
-    preview: documentText?.substring(0, 100)
-  });
   return [{ additionalProp1: documentText ? { text: documentText } : {} }];
 }
 
@@ -111,14 +107,6 @@ export async function sendChatbotMessage(
   topicId: string,
   negativeId?: string
 ): Promise<ChatbotMessageResponse> {
-  console.log('📤 [sendChatbotMessage] 호출:', {
-    actionType,
-    messageLength: message.length,
-    documentTextLength: documentText?.length,
-    topicId,
-    threadId
-  });
-
   if (actionType === 'first') {
     const body: FirstChatRequest = {
       thread_id: threadId,
@@ -130,7 +118,6 @@ export async function sendChatbotMessage(
       negative_id: negativeId ?? '',
     };
 
-    console.log('📦 [sendChatbotMessage] First Chat Body:', body);
     return postFirstChatCall<ChatbotMessageResponse>(body);
   }
 

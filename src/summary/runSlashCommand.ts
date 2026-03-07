@@ -1,5 +1,6 @@
 import type Quill from "quill";
 import type { SlashItemId } from "./slashItems";
+import { isCursorInTable, isCursorInCodeBlock, isCursorInTextBlock } from "./table/tableHelpers";
 
 {/*슬래시 명령어 실행하는 로직 */ }
 export type SlashCommandHelpers = {
@@ -14,6 +15,9 @@ export async function runSlashCommand(
   cmd: SlashItemId | string,
   helpers: SlashCommandHelpers
 ) {
+  // 표, 코드블록, 텍스트블록 안에서는 명령어 실행 불가
+  if (isCursorInTable(q) || isCursorInCodeBlock(q) || isCursorInTextBlock(q)) return;
+
   const range = q.getSelection(true);
   if (!range) return;
 

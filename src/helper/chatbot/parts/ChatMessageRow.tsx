@@ -1,8 +1,3 @@
-/**
- * ChatMessageRow - 개별 메시지 행 렌더링
- * ⚠️ 기존 렌더링 결과를 동일하게 유지
- */
-
 import React from 'react';
 import showgy from '../../../assets/image/showgy.png';
 import { ChatMessage } from '../chatbot.types';

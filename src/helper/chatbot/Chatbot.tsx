@@ -10,12 +10,6 @@ import { ChatInputBar } from './parts/ChatInputBar';
 import '../../styles/chatbot.css';
 
 export default function Chatbot({ documentText, topicId }: ChatbotProps) {
-  console.log('🔵 [Chatbot.tsx] Props 수신:', { 
-    documentTextLength: documentText?.length,
-    documentPreview: documentText?.substring(0, 100),
-    topicId 
-  });
-
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,25 +26,16 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
     const initializeChatbot = async () => {
       // documentText가 비어있거나, topicId가 없거나, 이미 이 문서로 초기화했으면 스킵
       if (!documentText || documentText.trim().length === 0) {
-        console.log('❌ 문서 내용 없음:', { documentText, length: documentText?.length });
         return;
       }
       
       if (!topicId || topicId.trim().length === 0) {
-        console.log('❌ topicId 없음:', { topicId });
         return;
       }
 
       if (lastInitializedDoc === documentText) {
-        console.log('✅ 이미 초기화됨');
         return;
       }
-
-      console.log('🚀 챗봇 초기화 시작:', { 
-        docLength: documentText.length, 
-        topicId,
-        preview: documentText.substring(0, 100)
-      });
 
       setIsLoading(true);
       try {
@@ -61,8 +46,6 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
           documentText,
           topicId
         );
-
-        console.log('✅ 챗봇 응답 받음:', response);
 
         // thread_id 업데이트
         if (response.thread_id) {
@@ -119,14 +102,6 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
       }
 
       // 3-2. 정상 메시지 전송
-      console.log('💬 [handleSendMessage] 메시지 전송:', {
-        userMessage,
-        documentTextLength: documentText?.length,
-        documentPreview: documentText?.substring(0, 100),
-        topicId,
-        threadId
-      });
-
       const response = await sendChatbotMessage(
         userMessage,
         threadId,

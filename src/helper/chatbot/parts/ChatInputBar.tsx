@@ -1,8 +1,3 @@
-/**
- * ChatInputBar - 채팅 입력창 UI
- * ⚠️ 기존 렌더링 결과를 동일하게 유지 (인라인 스타일 제거)
- */
-
 import React from 'react';
 import fileupload from '../../../assets/icons/fileupload.png';
 import search from '../../../assets/icons/search.png';

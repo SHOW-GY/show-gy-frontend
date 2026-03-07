@@ -6,6 +6,7 @@ import { Q } from "../setupQuill";
 import { SLASH_ITEMS } from "../slashItems";
 import { runSlashCommand } from "../runSlashCommand";
 import { attachTableInteractions } from "../table/tableAttach";
+import { isCursorInTable, isCursorInCodeBlock, isCursorInTextBlock } from "../table/tableHelpers";
 
 type TableModule = {
   insertTable: (rows: number, cols: number) => void;
@@ -123,6 +124,12 @@ export function useQuillInit({
             positioningStrategy: "fixed",
 
             source: (searchTerm: string, renderList: any) => {
+              // 표, 코드블록, 텍스트블록 안에서는 드롭다운 미표시
+              if (isCursorInTable(quill) || isCursorInCodeBlock(quill) || isCursorInTextBlock(quill)) {
+                renderList([], searchTerm);
+                return;
+              }
+
               const term = (searchTerm || "").toLowerCase();
               const list = SLASH_ITEMS
                 .filter((it) => it.id.startsWith(term) || it.value.includes(searchTerm))
@@ -401,10 +408,6 @@ export function useQuillInit({
       const div = document.createElement("div");
       div.innerHTML = html;
       const text = (div.textContent || div.innerText || "").trim();
-      console.log('📝 [useQuillInit] 문서 텍스트 업데이트:', { 
-        textLength: text.length,
-        preview: text.substring(0, 100) 
-      });
       setDocumentText(text);
 
       {/* 텍스트 삭제 시 편집기 자동 숨김 처리 */}

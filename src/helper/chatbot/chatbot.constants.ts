@@ -1,7 +1,3 @@
-/**
- * Chatbot 관련 상수
- */
-
 import { ChatMessage } from './chatbot.types';
 
 export const INITIAL_MESSAGE: ChatMessage = {

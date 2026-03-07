@@ -21,14 +21,11 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
   });
-  console.log('authApi 로그인 응답 전체:', response.data);
   const me = await apiClient.get('/api/v1/user/me');
   if (me.data?.data) {
     localStorage.setItem('user', JSON.stringify(me.data.data));
-    console.log('사용자 정보 저장됨(/me):', me.data.data);
     window.dispatchEvent(new Event('userLogin'));
   } else {
-    console.warn('/me에서 사용자 정보를 찾을 수 없음:', me.data);
   }
   return response.data;
 };

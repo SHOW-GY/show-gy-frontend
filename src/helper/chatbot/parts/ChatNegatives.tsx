@@ -1,8 +1,3 @@
-/**
- * ChatNegatives - 삭제 제안 목록 렌더링
- * ⚠️ 기존 렌더링 결과를 동일하게 유지 (인라인 스타일 -> CSS 클래스로 변환)
- */
-
 import React from 'react';
 
 interface Negative {
