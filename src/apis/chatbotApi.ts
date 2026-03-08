@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import apiClient, { BACKEND_URL } from './client';
 import type {
   FirstChatRequest,
   FirstChatResponse,
@@ -12,21 +12,14 @@ import type {
   InsertionBanWordResponse,
 } from './chatbot_types';
 
-const BACKEND_URL = 'http://localhost:8000';
-
-const chatbotClient: AxiosInstance = axios.create({
-  baseURL: BACKEND_URL,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 30_000,
-  withCredentials: true,
-});
-
 type ChatAction = 'first' | 'selection_main_topic' | 'selection_negative_topic';
 
 interface SelectionNegativeTopicRequest {
   action: 'selection_negative_topic';
   topic_id: string;
   negative_id: string;
+  thread_id?: string;
+  session_id?: string;
 }
 
 export interface ChatbotMessageResponse {
@@ -54,13 +47,40 @@ function buildJsonDocument(documentText: string): FirstChatRequest['json_documen
 }
 
 async function postChatbotCall<TResponse>(body: ChatbotCallRequest): Promise<TResponse> {
-  const res = await chatbotClient.post<TResponse>(CHATBOT_CALL_PATH, body);
+  const res = await apiClient.post<TResponse>(CHATBOT_CALL_PATH, body);
   return res.data;
 }
 
 async function postFirstChatCall<TResponse>(body: FirstChatRequest): Promise<TResponse> {
-  const res = await chatbotClient.post<TResponse>(CHATBOT_FIRST_CALL_PATH, body);
+  const res = await apiClient.post<TResponse>(CHATBOT_FIRST_CALL_PATH, body);
   return res.data;
+}
+
+export async function postFirstChatAstream(params: {
+  threadId: string;
+  documentText: string;
+  topicId: string;
+  query?: string;
+  negativeId?: string;
+}): Promise<Response> {
+  const body: FirstChatRequest = {
+    thread_id: params.threadId,
+    action: 'first',
+    query: params.query ?? '문서 분석을 시작합니다.',
+    document: params.documentText,
+    json_document: buildJsonDocument(params.documentText),
+    topic_id: params.topicId,
+    negative_id: params.negativeId ?? '',
+  };
+
+  return fetch(`${BACKEND_URL}${CHATBOT_FIRST_CALL_PATH}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
 }
 
 // 처음 챗봇과 대화
@@ -77,13 +97,13 @@ export async function secondChat(body: SecondChatRequest): Promise<SecondChatRes
 export async function createBlockChat(
   body: CreateBlockChatRequest
 ): Promise<CreateBlockChatResponse> {
-  const res = await chatbotClient.post<CreateBlockChatResponse>('/api/v1/ban/ban_word_list', body);
+  const res = await apiClient.post<CreateBlockChatResponse>('/api/v1/ban/ban_word_list', body);
   return res.data;
 }
 
 // 금칙어 차단 목록 수정
 export async function patchBlockChat(body: PatchBlockChatRequest): Promise<PatchBlockChatResponse> {
-  const res = await chatbotClient.patch<PatchBlockChatResponse>('/api/v1/ban/ban_word/list', body);
+  const res = await apiClient.patch<PatchBlockChatResponse>('/api/v1/ban/ban_word/list', body);
   return res.data;
 }
 
@@ -91,7 +111,7 @@ export async function patchBlockChat(body: PatchBlockChatRequest): Promise<Patch
 export async function insertBanWord(
   body: InsertionBanWordRequest
 ): Promise<InsertionBanWordResponse> {
-  const res = await chatbotClient.post<InsertionBanWordResponse>(
+  const res = await apiClient.post<InsertionBanWordResponse>(
     '/api/v1/ban/ban_word_list/ban_word',
     body
   );
@@ -105,7 +125,8 @@ export async function sendChatbotMessage(
   actionType: ChatAction,
   documentText: string,
   topicId: string,
-  negativeId?: string
+  negativeId?: string,
+  sessionId?: string
 ): Promise<ChatbotMessageResponse> {
   if (actionType === 'first') {
     const body: FirstChatRequest = {
@@ -122,10 +143,12 @@ export async function sendChatbotMessage(
   }
 
   if (actionType === 'selection_main_topic') {
-    const body: SecondChatRequest = {
+    const body: SecondChatRequest & { thread_id?: string; session_id?: string } = {
       action: 'selection_main_topic',
       topic_id: topicId,
       negative_id: negativeId ?? '',
+      thread_id: threadId || undefined,
+      session_id: sessionId || undefined,
     };
 
     return postChatbotCall<ChatbotMessageResponse>(body);
@@ -135,6 +158,8 @@ export async function sendChatbotMessage(
     action: 'selection_negative_topic',
     topic_id: topicId,
     negative_id: negativeId ?? '',
+    thread_id: threadId || undefined,
+    session_id: sessionId || undefined,
   };
 
   return postChatbotCall<ChatbotMessageResponse>(body);

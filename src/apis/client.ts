@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosError, AxiosHeaders } from 'axios';
 
 /* FastAPI Server URL */
-const BACKEND_URL = 'http://localhost:8000';
+export const BACKEND_URL = 'http://localhost:7001';
 
-/* 로그인 페이지 이동 (HashRouter 대응) */
+/* 로그인 페이지 이동 */
 const redirectToLogin = () => {
   window.location.replace('/#/login');
 };
@@ -70,15 +70,6 @@ apiClient.interceptors.response.use(
       forceLogout();
       return Promise.reject(error);
     }
-    // if (
-    //   isApiCall &&
-    //   status === 404 &&
-    //   !originalRequest._logoutHandled
-    // ) {
-    //   originalRequest._logoutHandled = true;
-    //   forceLogout();
-    //   return Promise.reject(error);
-    // }
     if (status === 401 && !originalRequest._retry) {
 
       if (isRefreshing) {
@@ -115,17 +106,6 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// export const syncAuthFromMe = async () => {
-//   const me = await apiClient.get('/api/v1/user/me');
-//   const userInfo = me.data?.data;
-
-//   if (!userInfo?.user_id) throw new Error('Invalid /me response');
-
-//   localStorage.setItem('user', JSON.stringify(userInfo));
-//   window.dispatchEvent(new Event('userLogin'));
-//   return userInfo;
-// };
 
 export const syncAuthFromMe = async () => {
   try {
