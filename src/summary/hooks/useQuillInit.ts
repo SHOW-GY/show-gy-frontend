@@ -7,6 +7,7 @@ import { SLASH_ITEMS } from "../slashItems";
 import { runSlashCommand } from "../runSlashCommand";
 import { attachTableInteractions } from "../table/tableAttach";
 import { isCursorInTable, isCursorInCodeBlock, isCursorInTextBlock } from "../table/tableHelpers";
+import { detectAndConvertTableSyntax, detectAndConvertMathSyntax } from "../table/parseTableSyntax";
 
 type TableModule = {
   insertTable: (rows: number, cols: number) => void;
@@ -401,7 +402,7 @@ export function useQuillInit({
     });
 
     {/* quill에서 텍스트 변경 감지하는 로직 */}
-    quill.on("text-change", () => {
+    quill.on("text-change", (delta: any, oldDelta: any, source: any) => {
       if (suppressRef.current) return;
 
       const html = quill.root.innerHTML;
@@ -409,6 +410,12 @@ export function useQuillInit({
       div.innerHTML = html;
       const text = (div.textContent || div.innerText || "").trim();
       setDocumentText(text);
+
+      {/* ::table 구문 자동 감지 및 변환 */}
+      if (source === 'user') {
+        detectAndConvertTableSyntax(quill);
+        detectAndConvertMathSyntax(quill);
+      }
 
       {/* 텍스트 삭제 시 편집기 자동 숨김 처리 */}
       if (savedRangeRef.current) {
