@@ -29,12 +29,12 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
     };
   } 
   // negative_sentence_list가 있는 경우 - 삭제 제안
-  else if (typeof finalResponse === 'object' && finalResponse?.negative_sentence_list) {
-    const negatives = finalResponse.negative_sentence_list.map(
+  else if (typeof finalResponse === 'object' && finalResponse !== null && 'negative_sentence_list' in finalResponse) {
+    const negatives = (finalResponse.negative_sentence_list as string[]).map(
       (sentence: string, idx: number) => ({
         sentence,
-        reason: finalResponse.negative_sentence_reason?.[idx] || '삭제 제안',
-        negativeId: finalResponse.negative_id_list?.[idx] || idx,
+        reason: (finalResponse.negative_sentence_reason as string[])?.[idx] || '삭제 제안',
+        negativeId: (finalResponse.negative_id_list as number[])?.[idx] || idx,
       })
     );
     return {
@@ -52,9 +52,9 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
       responseType: responseType
     };
   } 
-  // message 또는 session 사용
+  // message 사용
   else {
-    const botResponse = response.message || response.session || '응답을 받았습니다.';
+    const botResponse = response.message || '응답을 받았습니다.';
     return {
       role: 'bot',
       content: botResponse,

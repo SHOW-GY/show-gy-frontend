@@ -2,10 +2,6 @@ import type Quill from "quill";
 
 const MAX_COLS = 10;
 
-// 변환 중복 방지 플래그
-let isConvertingTable = false;
-let isConvertingMath = false;
-
 export function parseTableSyntax(text: string): { rows: string[][]; success: boolean } {
   const match = text.match(/::table\s*([\s\S]*?)\s*::endtable/);
   if (!match) {
@@ -39,12 +35,9 @@ export function parseTableSyntax(text: string): { rows: string[][]; success: boo
 }
 
 {/* Quill 에 표 삽입하는 로직 */}
-export function insertParsedTable(quill: Quill, rows: string[][], startIndex: number, matchLength: number) {
+export function insertParsedTable(quill: Quill, rows: string[][], startIndex: number, endIndex: number) {
   if (rows.length === 0) return;
-  
-  isConvertingTable = true;
-  
-  quill.deleteText(startIndex, matchLength, 'silent'); // 정확한 길이로 삭제
+  quill.deleteText(startIndex, endIndex - startIndex, 'user'); // 기존 ::table...::endtable 텍스트 삭제
   const cols = rows[0].length;
   const tableModule = quill.getModule('table') as any;
   
@@ -72,7 +65,6 @@ export function insertParsedTable(quill: Quill, rows: string[][], startIndex: nu
 
         if (!table) {
           console.warn('표를 찾을 수 없습니다');
-          isConvertingTable = false;
           return;
         }
 
@@ -88,33 +80,26 @@ export function insertParsedTable(quill: Quill, rows: string[][], startIndex: nu
             cellIndex++;
           }
         }
-        
-        isConvertingTable = false;
       });
     });
-  } else {
-    isConvertingTable = false;
   }
 }
 
 {/* 텍스트 변경 시 ::table 구문을 감지하고 표로 변환 */}
 export function detectAndConvertTableSyntax(quill: Quill) {
-  // 변환 중이면 스킵
-  if (isConvertingTable) return;
-  
-  // 전체 문서에서 첫 번째 ::table...::endtable 찾기
-  const fullText = quill.getText();
-  const match = fullText.match(/::table\s*([\s\S]*?)\s*::endtable/);
+  const range = quill.getSelection(true);
+  if (!range) return;
+  const checkLength = Math.min(range.index, 2000);
+  const text = quill.getText(range.index - checkLength, checkLength + 100);
+  const match = text.match(/::table\s*([\s\S]*?)\s*::endtable/);
   if (!match) return;
-
-  const { rows, success } = parseTableSyntax(fullText);
+  const { rows, success } = parseTableSyntax(text);
   if (!success || rows.length === 0) return;
-
-  // 정확한 위치와 길이 계산
-  const matchStart = fullText.indexOf('::table');
-  const matchLength = match[0].length;
-
-  insertParsedTable(quill, rows, matchStart, matchLength);
+  const matchStart = text.indexOf('::table');
+  const matchEnd = matchStart + match[0].length;
+  const actualStart = range.index - checkLength + matchStart;
+  const actualEnd = range.index - checkLength + matchEnd;
+  insertParsedTable(quill, rows, actualStart, actualEnd);
 }
 
 {/* Math 구문 파싱: ::math tex content ::endmath */}
@@ -133,42 +118,37 @@ export function parseMathSyntax(text: string): { tex: string; success: boolean }
 }
 
 {/* Quill에 Math 블록 삽입하는 로직 */}
-export function insertParsedMath(quill: Quill, tex: string, startIndex: number, matchLength: number) {
+export function insertParsedMath(quill: Quill, tex: string, startIndex: number, endIndex: number) {
   if (!tex) return;
 
-  isConvertingMath = true;
-
-  // 기존 ::math...::endmath 텍스트 완전히 삭제
-  quill.deleteText(startIndex, matchLength, 'silent');
+  // 기존 ::math...::endmath 텍스트 삭제
+  quill.deleteText(startIndex, endIndex - startIndex, 'user');
 
   // math 블록 삽입
   const insertAt = startIndex;
-  quill.insertEmbed(insertAt, 'sg-math-block', { tex }, 'silent');
-  quill.insertText(insertAt + 1, '\n', 'silent');
+  quill.insertEmbed(insertAt, 'sg-math-block', { tex }, 'user');
+  quill.insertText(insertAt + 1, '\n', 'user');
   quill.setSelection(insertAt + 2, 0, 'silent');
-  
-  // 약간의 지연 후 플래그 해제
-  setTimeout(() => {
-    isConvertingMath = false;
-  }, 100);
 }
 
 {/* 텍스트 변경 시 ::math 구문을 감지하고 수식 블록으로 변환 */}
 export function detectAndConvertMathSyntax(quill: Quill) {
-  // 변환 중이면 스킵
-  if (isConvertingMath) return;
-  
-  // 전체 문서에서 첫 번째 ::math...::endmath 찾기
-  const fullText = quill.getText();
-  const match = fullText.match(/::math\s*([\s\S]*?)\s*::endmath/);
+  const range = quill.getSelection(true);
+  if (!range) return;
+
+  const checkLength = Math.min(range.index, 2000);
+  const text = quill.getText(range.index - checkLength, checkLength + 100);
+
+  const match = text.match(/::math\s*([\s\S]*?)\s*::endmath/);
   if (!match) return;
 
-  const { tex, success } = parseMathSyntax(fullText);
+  const { tex, success } = parseMathSyntax(text);
   if (!success || !tex) return;
 
-  // 정확한 위치와 길이 계산
-  const matchStart = fullText.indexOf('::math');
-  const matchLength = match[0].length;
+  const matchStart = text.indexOf('::math');
+  const matchEnd = matchStart + match[0].length;
+  const actualStart = range.index - checkLength + matchStart;
+  const actualEnd = range.index - checkLength + matchEnd;
 
-  insertParsedMath(quill, tex, matchStart, matchLength);
+  insertParsedMath(quill, tex, actualStart, actualEnd);
 }
