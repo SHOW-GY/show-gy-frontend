@@ -5,19 +5,21 @@
 import type { ChatbotResponse } from '../../apis/chatbot_types';
 
 export interface ChatbotProps {
-  documentText?: string;
+  deltaDocument?: { ops: any[] };
   topicId?: string;
+  onDocumentEdit?: (delta: { ops: any[] }) => void;
 }
 
 export interface ChatMessage {
   role: 'user' | 'bot';
   content: string;
   selections?: Array<{ key_id: string; main_topic_sentence: string }>;
-  negatives?: Array<{ 
-    sentence: string; 
-    reason: string; 
+  negatives?: Array<{
+    sentence: string;
+    reason: string;
     negativeId: number;
   }>;
+  delta?: { ops: any[] };
   responseType?: string;
 }
 

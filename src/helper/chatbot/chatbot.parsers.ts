@@ -14,6 +14,7 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
   const responseType = response.response_type || '';
   const finalResponse = response.data?.final_response;
 
+
   // TODO: finalResponse 타입 후보
   // - Array<{ key_id: string; main_topic_sentence: string }> (선택지)
   // - { negative_sentence_list?: string[]; negative_sentence_reason?: string[]; negative_id_list?: number[] } (삭제 제안)
@@ -30,7 +31,16 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
   } 
   // negative_sentence_list가 있는 경우 - 삭제 제안
   else if (typeof finalResponse === 'object' && finalResponse !== null && 'negative_sentence_list' in finalResponse) {
-    const negatives = (finalResponse.negative_sentence_list as string[]).map(
+    const rawList = finalResponse.negative_sentence_list as string[];
+    // 부정문이 0개면 "수정할 문장 없음" 메시지
+    if (!rawList || rawList.length === 0) {
+      return {
+        role: 'bot',
+        content: '문서를 검토한 결과, 주제와 맞지 않는 문장이 없습니다. 수정 없이 진행합니다.',
+        responseType: responseType
+      };
+    }
+    const negatives = rawList.map(
       (sentence: string, idx: number) => ({
         sentence,
         reason: (finalResponse.negative_sentence_reason as string[])?.[idx] || '삭제 제안',
@@ -43,7 +53,16 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
       negatives,
       responseType: responseType
     };
-  } 
+  }
+  // Delta 형식 응답 (final_edit) — ops 배열이 있는 객체
+  else if (typeof finalResponse === 'object' && finalResponse !== null && 'ops' in finalResponse) {
+    return {
+      role: 'bot',
+      content: '문서 편집이 완료되었습니다.',
+      delta: finalResponse as { ops: any[] },
+      responseType: responseType
+    };
+  }
   // final_response가 문자열인 경우
   else if (typeof finalResponse === 'string') {
     return {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type Quill from 'quill';
 import { useLocation } from 'react-router-dom';
@@ -497,23 +497,25 @@ export default function Center() {
     return (heading?.textContent || "").trim();
   };
 
+  // 에디터에 Delta를 반영하는 안정적인 콜백
+  const handleDocumentEdit = useCallback((delta: { ops: any[] }) => {
+    const quill = quillRef.current;
+    if (quill) {
+      quill.setContents(delta as any);
+    }
+  }, []);
+
   {/* 패널 콘텐츠 렌더링 */ }
   const renderPanelContent = () => {
     if (activeTab === 'chat') {
       const quill = quillRef.current;
-      
-      // Quill 에디터에서 직접 텍스트 읽기
-      let currentDocumentText = documentText;
-      if (quill && (!currentDocumentText || currentDocumentText.trim().length === 0)) {
-        const html = quill.root.innerHTML;
-        const div = document.createElement("div");
-        div.innerHTML = html;
-        currentDocumentText = (div.textContent || div.innerText || "").trim();
-      }
-      
+
+      // Quill 에디터에서 Delta 가져오기
+      const deltaDocument = quill ? quill.getContents() : undefined;
+
       const topicId = extractTopicFromHtml(quill?.root?.innerHTML || "");
-      
-      return <Chatbot documentText={currentDocumentText} topicId={topicId} />;
+
+      return <Chatbot deltaDocument={deltaDocument} topicId={topicId} onDocumentEdit={handleDocumentEdit} />;
     }
 
     if (activeTab === 'feedback') return <Feedback />;
