@@ -641,266 +641,220 @@
 
   /* ===== 1st Card 모바일 요소 조절 ===== */
   .card-upload-title {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: 250px !important;
-    top: 20px !important;
+    left: 35px !important;
+    top: 35px !important;
     font-size: 16px;
     margin-bottom: 12px;
+    line-height: 23px;
+
   }
 
   .card-upload-subtitle {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 14px;
-    text-align: center;
+    left: 35px !important;
+    top: 85px !important;
+    font-size: 12px;
     margin-bottom: 12px;
   }
 
-  .card-upload-button {
-    position: static !important;
-    width: 80px !important;
-    height: 32px !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 0 auto 12px;
-  }
-
-  .card-upload-button-text {
-    position: absolute !important;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%);
-    width: auto !important;
-    height: auto !important;
-    font-size: 11px;
-  }
-
   .card-upload-info-box {
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    left: auto !important;
-    top: auto !important;
+    width: 290px !important;
+    height: 90px !important;
+    left: 30px !important;
+    top: 300px !important;
     padding: 12px 14px !important;
     margin-bottom: 12px;
   }
 
   .card-upload-info-text {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 13px;
-    text-align: center;
+    left: 30px !important;
+    top: 12px !important;
+    font-size: 11.5px;
+    line-height: 23px;
   }
 
   .card-upload-img-1 {
-    position: static !important;
-    width: 160px !important;
-    height: 65px !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 0 auto 8px;
-    display: block !important;
+    width: 130px !important;
+    height: 80px !important;
+    left: 30px !important;
+    top: 125px !important;
   }
 
-  .card-upload-img-2 {
-    position: static !important;
-    width: 60px !important;
-    height: 48px !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 0 auto 8px;
-    display: block !important;
-  }
-
+  .card-upload-img-1 img {
+  width: 100%;
+  height: 100%;
+}
+  
   .card-upload-img-3 {
-    position: static !important;
-    width: 120px !important;
-    height: 93px !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 0 auto 8px;
-    display: block !important;
+    width: 130px !important;
+    height: 80px !important;
+    left: 190px !important;
+    top: 125px !important;
   }
+
+  .card-upload-img-3 img {
+  width: 100%;
+  height: 100%;
+}
 
   .card-upload-img-4 {
-    position: static !important;
-    width: 135px !important;
-    height: 93px !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 0 auto;
-    display: block !important;
+    width: 150px !important;
+    height: 80px !important;
+    left: 170px !important;
+    top: 212px !important;
   }
 
-  /* ===== 2nd Card 모바일 요소 조절 ===== */
+   .card-upload-img-4 img {
+  width: 100%;
+  height: 100%;
+}
+
+ /* ===== 2nd Card 모바일 요소 조절 ===== */
   .card-team-title {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 18px;
-    text-align: center;
+    left: 38px !important;
+    top: 56px !important;
+    font-size: 16px;
     margin-bottom: 10px;
   }
 
   .card-team-subtitle {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 14px;
-    text-align: center;
+    left: 38px !important;
+    top: 83px !important;
+    font-size: 12px;
     margin-bottom: 12px;
   }
 
   .card-team-info-box {
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    left: auto !important;
-    top: auto !important;
+    width: 260px !important;
+    height: 70px !important;
+    left: 35px !important;
+    top: 120px !important;
     padding: 12px 14px !important;
     margin-bottom: 12px;
   }
 
   .card-team-info-text {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 13px;
-    text-align: center;
-    line-height: 24px;
+    left: 23px !important;
+    top: 15px !important;
+    font-size: 11.5px;
+    line-height: 21.5px;
   }
 
   .card-team-image-1 {
-    position: static !important;
-    width: 200px !important;
-    height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 8px auto 0;
-    display: block !important;
+    width: 290px !important;
+    height: 160px !important;
+    left: 33px !important;
+    top: 215px !important;
   }
 
-  /* ===== 3rd Card 모바일 요소 조절 ===== */
+  .card-team-image-1 img {
+  width: 100%;
+  height: 100%;
+}
+
+ /* ===== 3rd Card 모바일 요소 조절 ===== */
   .card-chatbot-title {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 18px;
-    text-align: center;
-    margin-bottom: 10px;
+    left: 35px !important;
+    top: 50px !important;
+    font-size: 15px;
   }
 
   .card-chatbot-subtitle {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 12px;
+    left: 35px !important;
+    top: 80px !important;
+    font-size: 12px;
   }
 
   .card-chatbot-info-box {
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    padding: 12px 14px !important;
-    margin-bottom: 12px;
+    width: 285px !important;
+    height: 70px !important;
+    left: 30px !important;
+    top: 120px !important;
   }
 
   .card-chatbot-info-text {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 13px;
-    text-align: center;
-    line-height: 24px;
+    left: 26px !important;
+    top: 14px !important;
+    font-size: 11.5px;
+    line-height: 21.5px;
   }
 
   .card-chatbot-image {
-    position: static !important;
-    width: 220px !important;
+    width: 280px !important;
     height: auto !important;
     left: auto !important;
-    top: auto !important;
-    margin: 8px auto 0;
-    display: block !important;
+    left: 35px !important;
+    top: 210px !important;
   }
 
-  /* ===== 4th Card 모바일 요소 조절 ===== */
+  .card-chatbot-image img {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== 4th Card 모바일 요소 조절 ===== */
   .card-tech-title {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 18px;
-    text-align: center;
-    margin-bottom: 10px;
+    left: 38px !important;
+    top: 58px !important;
+    font-size: 15px;
+    line-height: 22px;
   }
 
   .card-tech-subtitle {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 12px;
+    left: 38px !important;
+    top: 108px !important;
+    font-size: 12px;
   }
 
   .card-tech-info-box {
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    padding: 12px 14px !important;
-    margin-bottom: 12px;
+    width: 280px !important;
+    height: 70px !important;
+    left: 30px !important;
+    top: 145px !important;
   }
 
   .card-tech-info-text {
-    position: static !important;
     width: 100% !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    font-size: 13px;
-    text-align: center;
-    line-height: 24px;
+    left: 25px !important;
+    top: 16px !important;
+    font-size: 11.5px;
+    line-height: 20px;
   }
 
   .card-tech-main-image {
-    position: static !important;
-    width: 240px !important;
+    width: 315px !important;
     height: auto !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 8px auto 0;
-    display: block !important;
+    left: 10px !important;
+    top: 230px !important;
   }
+
+  .card-tech-main-image img {
+  width: 100%;
+  height: 100%;
+}
+
 
   /* 버튼은 모바일에서 숨김 */
   .carousel-controls {
