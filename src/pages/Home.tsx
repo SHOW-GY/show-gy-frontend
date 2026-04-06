@@ -4,17 +4,15 @@ import Layout from '../components/Layout';
 import '../styles/design.css';
 import '../styles/animations.css';
 import '../styles/home.css';
-import folder from '../assets/icons/folder.png';
-import pen from '../assets/icons/pen.png';
-import desktop from '../assets/image/desktop.png';
-import folder_to_desktop from '../assets/image/folder_to_desktop.png';
-import balloon from '../assets/icons/balloon.png';
-import robot from '../assets/image/robot.png';
-import garbage from '../assets/icons/Garbage.png';
-import collection from '../assets/image/collection.png';
+import card1_1 from '../assets/image/card1_1.png';
+import card1_2 from '../assets/image/card1_2.png';
+import card1_3 from '../assets/image/card1_3.png';  
+import card1_4 from '../assets/image/card1_4.png';
+import card2 from '../assets/image/card2_team.png';
+import card3 from '../assets/image/card3.png';
+import card4 from '../assets/image/card4.png';
 import erica from '../assets/image/erica.jpg';
 import lotte from '../assets/image/Lotteinovate.jpeg';
-import showgy_stand from '../assets/image/showgy_stand.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -133,83 +131,102 @@ export default function Home() {
               <div className={`Home-carousel ${isMobile ? "is-mobile" : ""}`} ref={trackRef}>
                 
                 {/* 1st Card */}
-                <div className={`service-card-bg ${getPosClass(0)}`}>
-                  <div className="service-card-main-text">
+                <div className={`service-card-bg service-card-upload ${getPosClass(0)}`}>
+                  <div className="card-upload-title">
                     어떤 문서든,<br/>원하는 방식으로
                   </div>
-                  <div className="service-card-gradient"></div>
-                  <div className="service-features-box">
-                    <div className="service-feature-icon"><img src={folder} alt="Folder Icon" /></div>
-                    <div className="service-feature-item service-feature-item-1">
-                      파일 업로드 요약<br/>PDF, DOCX 등 파일 업로드
-                    </div>
-                    <div className="service-pen-icon"><img src={pen} alt="Pen Icon" /></div>
-                    <div className="service-feature-item service-feature-item-2">
-                      직접 핵심 요약<br/>텍스트 입력 즉시 요약
+                  
+                  <div className="card-upload-subtitle">
+                    문서를 업로드하여 요약을 시작합니다.
+                  </div>
+
+                  <div className="card-upload-info-box">
+                    <div className="card-upload-info-text">
+                      ① 문서를 업로드하면 OCR로 문서를 읽습니다. <br/>
+                      ② 수식, 표, 코드, 이미지를 완벽하게 읽습니다.<br/>
+                      ③ 마크다운 언어로 편집이 가능합니다.
                     </div>
                   </div>
-                  <div className="service-description">
-                    AI가 문서의 핵심을 자동으로 요약합니다.
+
+                  <div className="card-upload-button">
+                    <span className="card-upload-button-text">UPLOAD</span>
                   </div>
-                  <div className="service-desktop-img"><img src={desktop} alt="Desktop Icon" /></div>
+
+                  <div className="card-upload-image-placeholder-1 card-upload-img-1">
+                    <img src={card1_1} alt="Card 1 Image 1" />
+                  </div>
+                  <div className="card-upload-image-placeholder-2 card-upload-img-2">
+                    <img src={card1_2} alt="Card 1 Image 2" />
+                  </div>
+                  <div className="card-upload-image-placeholder-3 card-upload-img-3">
+                    <img src={card1_3} alt="Card 1 Image 3" />
+                  </div>
+                  <div className="card-upload-image-placeholder-4 card-upload-img-4">
+                    <img src={card1_4} alt="Card 1 Image 4" />
+                  </div>
+
                 </div>
 
                 {/* 2nd Card */}
-                <div className={`service-card-bg ${getPosClass(1)}`}>
-                  <div className="service-card-main-text">
-                    AI 스마트 요약
+                <div className={`service-card-bg service-card-team ${getPosClass(1)}`}>
+                  <div className="card-team-title">
+                     AI 기반 팀 협업 솔루션
                   </div>
-                  <div className="service-card-gradient"></div>
-                  <div className="service-features-box">
-                    <div className="service-feature-icon"><img src={pen} alt="Pen Icon" /></div>
-                    <div className="service-feature-item service-feature-item-1">
-                      핵심 문장 추출<br/>불필요한 내용 제거
-                    </div>
-                    <div className="service-pen-icon"><img src={pen} alt="Pen Icon" /></div>
-                    <div className="service-feature-item service-feature-item-2">
-                      문단 구조 유지<br/>텍스트 맥락 유지 요약
+                  <div className="card-team-subtitle">
+                    팀 협업이 가능하고 팀원간의 스타일을 AI가 파악합니다.
+                  </div>
+                  <div className="card-team-info-box">
+                    <div className="card-team-info-text">
+                      ① 프로젝트 추가 시 팀 협업이 가능합니다. <br/>
+                      ② 팀원간의 스타일을 AI가 파악합니다.
                     </div>
                   </div>
-                  <div className="service-desktop-img"><img src={folder_to_desktop} alt="Folder to Desktop Icon" /></div>
+                  <div className="card-team-image-1"><img src={card2} alt="Card 2 Image 1" />
+                  </div>
                 </div>
 
                 {/* 3rd Card */}
-                <div className={`service-card-bg ${getPosClass(2)}`}>
-                  <div className="service-card-main-text">
-                    요약을 대화로 완성
+                <div className={`service-card-bg service-card-chatbot ${getPosClass(2)}`}>
+                  <div className="card-chatbot-title">
+                    챗봇이 피드백부터 요약까지
                   </div>
-                  <div className="service-card-gradient"></div>
-                  <div className="service-balloon-box">
-                    <div className="service-feature-icon"><img src={balloon} alt="Balloon Icon" /></div>
-                    <div className="service-feature-item service-feature-item-1">
-                      챗봇에게 요청해 요약 수정<br/>더 쉽게/더 짧게/결론 중심
+                  <div className="card-chatbot-subtitle">
+                    원하는 스타일로 챗봇 조절이 가능합니다.
+                  </div>
+                  <div className="card-chatbot-info-box">
+                    <div className="card-chatbot-info-text">
+                      ① 챗봇과 대화로 요약에 대한 피드백을 받습니다.
+                      <br />
+                      ② 검색 엔진을 통한 참고자료를 제공합니다.
                     </div>
                   </div>
-                  <div className="service-desktop-img"><img src={robot} alt="Robot Icon" /></div>
+                  <div className="card-chatbot-image">
+                    <img src={card3} alt="Card 3 Chatbot Illustration" />
+                  </div>
                 </div>
 
                 {/* 4th Card */}
-                <div className={`service-card-bg ${getPosClass(3)}`}>
-                  <div className="service-card-main-text">
-                    요약한 문서,<br/> 자동으로 정리
+                <div className={`service-card-bg service-card-tech ${getPosClass(3)}`}>
+                  <div className="card-tech-title">
+                    AI 기술스택과<br />강력한 요약구조
                   </div>
-                  <div className="service-card-gradient"></div>
-                  <div className="service-features-box">
-                    <div className="service-feature-icon"><img src={balloon} alt="Balloon Icon" /></div>
-                    <div className="service-feature-item service-feature-item-1">
-                      문서 보관함<br/>내 드라이브/최근/중요 문서
-                    </div>
-                    <div className="service-pen-icon"><img src={garbage} alt="Garbage Icon" /></div>
-                    <div className="service-feature-item service-feature-item-2">
-                      휴지통
+                  <div className="card-tech-subtitle">
+                    고도화된 AI 기술스택을 활용합니다.
+                  </div>
+                  <div className="card-tech-info-box">
+                    <div className="card-tech-info-text">
+                      ① 고도화된 AI 기술스택을 활용합니다.
+                      <br/>
+                      ② 랭체인과 랭그래프로 요약 구조를 강화합니다.
                     </div>
                   </div>
-                  <div className="service-desktop-img"><img src={collection} alt="Collection Icon" /></div>
+                  <div className="card-tech-main-image"><img src={card4} alt="AI Tech Stack" />
+                  </div>
                 </div>
               </div>
-            </div>  
+            </div>
           </div>
-        
+
           {/* Carousel Controls */}
           <div className="carousel-controls">
             <div
