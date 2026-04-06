@@ -248,10 +248,10 @@
 }
 
 .card-upload-button {
-  width: 101px;
+  width: 95px;
   height: 31px;
   left: 180px;
-  top: 423px;
+  top: 415px;
   position: absolute;
   background: rgba(139, 92, 246, 0.08);
   border-radius: 8px;
@@ -261,16 +261,11 @@
   border: none;
 }
 
-.card-upload-button:hover {
-  background: rgba(139, 92, 246, 0.15);
-  outline-color: rgba(139, 92, 246, 0.50);
-}
-
 .card-upload-button-text {
   width: 60px;
   height: 17px;
   position: absolute;
-  left: 22px;
+  left: 25px;
   top: 7px;
   color: #E2E8F0;
   font-size: 12px;

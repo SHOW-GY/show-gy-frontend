@@ -148,9 +148,9 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <button className="card-upload-button" onClick={() => navigate('/summary')}>
+                  <div className="card-upload-button">
                     <span className="card-upload-button-text">UPLOAD</span>
-                  </button>
+                  </div>
 
                   <div className="card-upload-image-placeholder-1 card-upload-img-1">
                     <img src={card1_1} alt="Card 1 Image 1" />
