@@ -124,8 +124,9 @@ export default function Summary() {
           team_name: selectedTeam,
           file: uploadedFile
         });
-        localStorage.setItem('uploadedDocument', JSON.stringify(res));
-        navigate('/summary/center');
+        // 이전 업로드 잔존 데이터 제거
+        localStorage.removeItem('uploadedDocument');
+        navigate(`/summary/center/${res.id}`);
       }
     } catch (err) {
       setErrorMessage('문서 업로드에 실패했습니다.');

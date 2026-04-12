@@ -36,49 +36,56 @@ export interface NegativeSentenceResponse {
   negative_sentence_list: string[];
   negative_id_list: number[];
   negative_sentence_reason: string[];
-  highlighted_delta: DeltaDocument;
+  highlighted_html?: string;
+  highlighted_delta?: DeltaDocument;
 }
 
 export interface ChatbotResponse {
   status: 'success' | 'error';
-  response_type: 'selection_main_topic' | 'selection_negative_sentence' | 'final_edit' | 'exception';
+  response_type: 'selection_main_topic' | 'negative_selection' | 'final_edit' | 'exception';
   data?: {
     final_response?: ChatbotMainTopic[] | NegativeSentenceResponse | DeltaDocument | string;
     exception_final_response?: string;
+    session_id?: string;
+    negative_sentence_list?: string[];
+    negative_id_list?: number[];
+    negative_sentence_reason?: string[];
+    highlighted_delta?: DeltaDocument;
     [key: string]: any;
   };
   message?: string | null;
   title?: string;
+  session_id?: string;
 }
 
 {/* 사용자가 금지된 말을 했을때 차단 */}
 export interface CreateBlockChatRequest {
-  ban_word_list: [string];
+  ban_word_list: string[];
   ban_context: string;
 }
 
 export interface CreateBlockChatResponse {
   success: boolean;
-  ban_list: [string];
+  ban_list: string[];
   ban_context: string;
   msg: string;
 }
 
 export interface PatchBlockChatRequest {
-  ban_word_list: [string];
+  ban_word_list: string[];
 }
 
 export interface PatchBlockChatResponse {
   success: boolean;
-  update_ban_word: [string];
+  update_ban_word: string[];
 }
 
 export interface InsertionBanWordRequest {
-  ban_word_list: [string];
+  ban_word_list: string[];
   ban_context: string;
 }
 
 export interface InsertionBanWordResponse {
   success: boolean;
-  ban_word_list: [string];
+  ban_word_list: string[];
 }

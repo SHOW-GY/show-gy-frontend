@@ -18,7 +18,7 @@ const forceLogout = () => {
 /* Axios 인스턴스 생성 */
 const apiClient: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
-  timeout: 10000,
+  timeout: 120000,
   withCredentials: true,
 });
 

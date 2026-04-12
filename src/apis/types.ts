@@ -128,15 +128,18 @@ export interface TeamInfoResponse {
 {/* 문서 관련 */}
 
 {/* 모든 문서를 가져옴 */}
+export interface DocumentListItem {
+  id: number;
+  title: string;
+  file_path: string;
+  team_id: string;
+  team_leader: string;
+  access_at: string;
+}
+
 export interface GetDocumentsResponse {
   status: string;
-  data :{
-    title: string;
-    file_path: string;
-    team_id: string;
-    team_leader: string;
-    access_at : string;
-  }
+  data: DocumentListItem[];
 }
 
 {/* 문서를 완전히 삭제 */}
@@ -147,25 +150,13 @@ export interface DeleteDocumentResponse {
 {/* 휴지통 문서 리스트 */}
 export interface GetDeletedDocumentsResponse {
   status: string;
-  data: {
-    title: string;
-    file_path: string;
-    team_id: string;
-    team_leader: string;
-    access_at : string;
-  }
+  data: DocumentListItem[];
 }
 
 {/* 최근 문서 리스트 */}
 export interface GetRecentDocumentsResponse {
   status: string;
-  data: {
-    title: string;
-    file_path: string;
-    team_id: string;
-    team_leader: string;
-    access_at : string;
-  }
+  data: DocumentListItem[];
 }
 
 {/* 문서 업로드 */}
@@ -224,6 +215,12 @@ export interface EditDocumentRequest {
 
 export interface EditDocumentResponse {
   status: string;
+  message?: string;
+  data?: {
+    copy_document_id: number;
+    source_document_id: number;
+    file_path: string;
+  };
 }
 
 export interface RealeaseEditingRequest {

@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { sendChatbotMessage } from '../../apis/chatbotApi';
-import { insertBanWord } from '../../apis/chatbotApi';
 import { ChatbotProps, ChatMessage } from './chatbot.types';
 import { INITIAL_MESSAGE } from './chatbot.constants';
 import { parseResponseToMessage } from './chatbot.parsers';
@@ -9,75 +8,103 @@ import { ChatMessages } from './parts/ChatMessages';
 import { ChatInputBar } from './parts/ChatInputBar';
 import '../../styles/chatbot.css';
 
-interface TopicOption {
-  key_id: string;
-  main_topic_sentence: string;
-  sources: any[];
-}
-
-export default function Chatbot({ documentText, topicId }: ChatbotProps) {
+export default function Chatbot({
+  documentId,
+  documentText,
+  topicId,
+  deltaDocument,
+  onFinalEdit,
+  onHighlight,
+  onClearHighlight,
+  onFeedback,
+  onReferences,
+}: ChatbotProps) {
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
-  const [responseData, setResponseData] = useState<any>(null);
-  
-  // UI 상태 관리
-  const [topicOptions, setTopicOptions] = useState<TopicOption[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
-  
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // 메시지가 추가될 때마다 스크롤을 아래로 이동
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   useAutoScroll({ chatContainerRef, messages, isLoading });
 
-  // 사용자 메시지 전송 시 ban word 체크 후 전송
+  // 공통: 응답 처리 (session_id 저장 + 메시지 추가 + final_edit/highlight 콜백)
+  const handleResponse = (response: any) => {
+    // session_id 저장
+    const sid = response.data?.session_id || response.session_id;
+    if (sid) setSessionId(sid);
+
+    // final_edit → Quill 에디터에 적용
+    if (response.response_type === 'final_edit') {
+      // 하이라이트 해제
+      onClearHighlight?.();
+
+      const removed: string[] = response.data?.removed_sentences || [];
+      const edited: Array<{ original: string; edited_sentence: string }> = response.data?.edited_sentences || [];
+      // 팀장 스타일 적용 트리거 시 백엔드가 주입하는 hint들
+      const formatHints = response.data?.format_hints || undefined;
+      const pdfStyleHint = response.data?.pdf_style_hint || undefined;
+
+      if (removed.length > 0 || edited.length > 0) {
+        // surgical 편집: 삭제/수정할 문장 정보를 전달
+        onFinalEdit?.({ ops: [] }, removed, edited, formatHints, pdfStyleHint);
+      } else if (response.data?.final_response?.ops) {
+        // fallback: 전체 Delta 교체
+        onFinalEdit?.(response.data.final_response, undefined, undefined, formatHints, pdfStyleHint);
+      } else if (formatHints || pdfStyleHint) {
+        // 텍스트 변경은 없지만 format hint만 있는 경우 (드물지만 안전망)
+        onFinalEdit?.({ ops: [] }, undefined, undefined, formatHints, pdfStyleHint);
+      }
+    }
+
+    // negative_selection → 부정문 문장 리스트로 에디터 하이라이트 + 피드백 탭에 사유 push
+    if (response.response_type === 'negative_selection' && response.data?.negative_sentence_list) {
+      const sentences: string[] = response.data.negative_sentence_list;
+      const reasons: string[] = response.data.negative_sentence_reason || [];
+      onHighlight?.(sentences);
+      // 피드백 탭에 sentence/reason 페어 push
+      const feedbackItems = sentences.map((s, idx) => ({
+        sentence: s,
+        reason: reasons[idx] || '사유가 제공되지 않았습니다.',
+      }));
+      onFeedback?.(feedbackItems);
+    }
+
+    // selection_main_topic 또는 임의 응답에 reference_sources가 있으면 참고자료 탭에 push
+    const refs = response.data?.reference_sources;
+    if (Array.isArray(refs) && refs.length > 0) {
+      onReferences?.(refs);
+    }
+
+    // 챗봇 메시지 추가
+    const botMessage = parseResponseToMessage(response);
+    setMessages(prev => [...prev, botMessage]);
+  };
+
+  // 사용자 메시지 전송
   const handleSendMessage = async () => {
     if (!chatInput.trim() || isLoading) return;
 
     const userMessage = chatInput.trim();
-    
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setChatInput('');
     setIsLoading(true);
 
     try {
-      // Ban word 체크
-      try {
-        await insertBanWord({
-          ban_word_list: [userMessage],
-          ban_context: '사용자 입력 검증'
-        });
-      } catch (banError: any) {
-        // ban word가 감지되면 에러 응답
-        if (banError.response?.status === 400 || banError.response?.data?.success === false) {
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            content: '금지된 단어가 포함되어 있습니다. 다른 표현을 사용해주세요.'
-          }]);
-          setIsLoading(false);
-          return;
-        }
-        // 그 외 에러는 무시하고 진행
-      }
-
-      // 사용자 입력에 대해 챗봇이 응답 (action: 'first')
       const response = await sendChatbotMessage(
-        topicId || '',
+        documentId ? String(documentId) : '',
         'first',
         userMessage,
+        deltaDocument,
+        selectedTopicId || undefined,
         undefined,
-        selectedTopicId || topicId || ''
+        sessionId || undefined
       );
-      
-      // 봇 응답 추가
-      const botMessage = parseResponseToMessage(response);
-      setMessages(prev => [...prev, botMessage]);
-      setResponseData(response.data);
+      handleResponse(response);
     } catch (error) {
-      setMessages(prev => [...prev, { 
-        role: 'bot', 
-        content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.' 
+      setMessages(prev => [...prev, {
+        role: 'bot',
+        content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.'
       }]);
     } finally {
       setIsLoading(false);
@@ -91,83 +118,23 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
     }
   };
 
-  const handleNegativeClick = async (negativeId: number, action: 'delete' | 'keep') => {
+  // 주제문 선택
+  const handleSelectionClick = async (keyId: string, sentence: string) => {
+    setMessages(prev => [...prev, { role: 'user', content: sentence }]);
     setIsLoading(true);
+    setSelectedTopicId(keyId);
 
     try {
-      if (action === 'delete') {
-        const topicIdForNegative = selectedTopicId || topicId || '';
-
-        if (!topicIdForNegative) {
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            content: '주제 정보가 없어 삭제 요청을 진행할 수 없습니다. 먼저 주제를 선택해주세요.'
-          }]);
-          return;
-        }
-
-        // 삭제 선택 시 negative_id를 보냄
-        const response = await sendChatbotMessage(
-          topicId || '',
-          'selection_negative_topic',
-          undefined,
-          undefined,
-          topicIdForNegative,
-          String(negativeId),
-          sessionId
-        );
-
-        // 사용자 동작 표시
-        setMessages(prev => [...prev, {
-          role: 'user',
-          content: `삭제됨`
-        }]);
-
-        // 봇 응답
-        const responseType = response.response_type || '';
-        const finalResponse = response.data?.final_response;
-
-        if (typeof finalResponse === 'string') {
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            content: finalResponse,
-            responseType: responseType
-          }]);
-        } else if (typeof finalResponse === 'object' && finalResponse !== null && 'negative_sentence_list' in finalResponse) {
-          // 다음 삭제 제안이 있는 경우
-          const negatives = (finalResponse.negative_sentence_list as string[]).map(
-            (sentence: string, idx: number) => ({
-              sentence,
-              reason: (finalResponse.negative_sentence_reason as string[])?.[idx] || '삭제 제안',
-              negativeId: (finalResponse.negative_id_list as number[])?.[idx] || idx,
-            })
-          );
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            content: '다음 문장들을 삭제하시겠습니까?',
-            negatives,
-            responseType: responseType
-          }]);
-        } else {
-          const botResponse = response.message || '처리되었습니다.';
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            content: botResponse,
-            responseType: responseType
-          }]);
-        }
-        setResponseData(response.data);
-      } else {
-        // 보관 선택 시
-        setMessages(prev => [...prev, {
-          role: 'user',
-          content: '보관'
-        }]);
-        setMessages(prev => [...prev, {
-          role: 'bot',
-          content: '문장이 보관되었습니다.'
-        }]);
-      }
+      const response = await sendChatbotMessage(
+        documentId ? String(documentId) : '',
+        'selection_main_topic',
+        sentence,
+        undefined,
+        keyId,
+        undefined,
+        sessionId
+      );
+      handleResponse(response);
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'bot',
@@ -178,67 +145,40 @@ export default function Chatbot({ documentText, topicId }: ChatbotProps) {
     }
   };
 
-  // 선택지 클릭 시 chatbot 엔드포인트 사용
-  const handleSelectionClick = async (keyId: string, sentence: string) => {
-    // 선택 메시지 추가
-    setMessages(prev => [...prev, { role: 'user', content: sentence }]);
+  // 부정문 삭제/보관
+  const handleNegativeClick = async (negativeId: number, action: 'delete' | 'keep') => {
     setIsLoading(true);
-    
-    // 선택 완료
-    setSelectedTopicId(keyId);
 
     try {
-      // 새로운 chatbot 엔드포인트 사용
-      const response = await sendChatbotMessage(
-        topicId || '',
-        'selection_main_topic',
-        sentence,
-        undefined,
-        keyId,
-        undefined,
-        sessionId
-      );
+      if (action === 'delete') {
+        const topicIdForNegative = selectedTopicId || '';
+        if (!topicIdForNegative) {
+          setMessages(prev => [...prev, {
+            role: 'bot',
+            content: '주제 정보가 없어 삭제 요청을 진행할 수 없습니다. 먼저 주제를 선택해주세요.'
+          }]);
+          return;
+        }
 
-      const responseType = response.response_type || '';
-      const finalResponse = response.data?.final_response;
+        setMessages(prev => [...prev, { role: 'user', content: '삭제' }]);
 
-      if (Array.isArray(finalResponse)) {
-        setMessages(prev => [...prev, {
-          role: 'bot',
-          content: '다음 중에서 선택해주세요:',
-          selections: finalResponse,
-          responseType: responseType
-        }]);
-      } else if (typeof finalResponse === 'object' && finalResponse !== null && 'negative_sentence_list' in finalResponse) {
-        // negative_sentence_list가 있는 경우 - 삭제 제안
-        const negatives = (finalResponse.negative_sentence_list as string[]).map(
-          (sentence: string, idx: number) => ({
-            sentence,
-            reason: (finalResponse.negative_sentence_reason as string[])?.[idx] || '삭제 제안',
-            negativeId: (finalResponse.negative_id_list as number[])?.[idx] || idx,
-          })
+        const response = await sendChatbotMessage(
+          documentId ? String(documentId) : '',
+          'selection_negative_topic',
+          undefined,
+          undefined,
+          topicIdForNegative,
+          String(negativeId),
+          sessionId
         );
-        setMessages(prev => [...prev, {
-          role: 'bot',
-          content: '다음 문장들을 삭제하시겠습니까?',
-          negatives,
-          responseType: responseType
-        }]);
-      } else if (typeof finalResponse === 'string') {
-        setMessages(prev => [...prev, {
-          role: 'bot',
-          content: finalResponse,
-          responseType: responseType
-        }]);
+        handleResponse(response);
       } else {
-        const botResponse = response.message || '응답을 받았습니다.';
-        setMessages(prev => [...prev, {
-          role: 'bot',
-          content: botResponse,
-          responseType: responseType
-        }]);
+        setMessages(prev => [
+          ...prev,
+          { role: 'user', content: '보관' },
+          { role: 'bot', content: '문장이 보관되었습니다.' },
+        ]);
       }
-      setResponseData(response.data);
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'bot',

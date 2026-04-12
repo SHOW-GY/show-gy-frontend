@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type Quill from 'quill';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { Group, Panel, Separator } from "react-resizable-panels";
 import saveIcon from "../assets/icons/save.png";
 import settingsIcon from "../assets/icons/settings.png";
@@ -21,10 +21,18 @@ import { useQuillInit } from "./hooks/useQuillInit";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
-import { UploadDocumentResponse } from '../apis/types';
+import { getDocumentById, saveDocumentContent, editDocument, releaseEditing, getApprovedDocuments, evaluateDocument, getLeaderStyle } from '../apis/documentApi';
+import type { LeaderStyleResponse } from '../apis/documentApi';
+import type {
+  FormatHints,
+  PdfStyleHint,
+  ChatbotFeedbackItem,
+  ChatbotReferenceSource,
+} from '../helper/chatbot/chatbot.types';
 
 export default function Center() {
   const location = useLocation();
+  const { documentId: paramDocumentId } = useParams<{ documentId: string }>();
   const [fontSize] = useState(13);
   const [selectedFont, setSelectedFont] = useState('sans-serif');
   const [panelTop, setPanelTop] = useState(70);
@@ -54,21 +62,31 @@ export default function Center() {
   });
   const draftText = (location.state as any)?.draftText as string | null;
   
-  {/* localStorage에서 uploadData 읽기 */}
-  const [uploadData] = useState<UploadDocumentResponse | null>(() => {
-    try {
-      const stored = localStorage.getItem('uploadedDocument');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error('localStorage에서 uploadData 읽기 실패:', e);
-    }
-    return null;
-  });
-  
   const uploadErrorMessage = (location.state as any)?.uploadErrorMessage as string | null;
+  const [documentId, setDocumentId] = useState<number | undefined>(
+    paramDocumentId ? Number(paramDocumentId) : undefined
+  );
   const [documentText, setDocumentText] = useState<string>("");
+  const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(!!paramDocumentId);
+  const [loadError, setLoadError] = useState<string>('');
+  const saveTimerRef = useRef<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 팀장(승인자) 누적 스타일 — 문서 로드 시 한 번 가져와서 PDF 내보내기에 사용
+  const [leaderStyle, setLeaderStyle] = useState<LeaderStyleResponse["data"]>(null);
+  // 사용자가 마진을 직접 조정했는지 — 조정했으면 leader style로 덮어쓰지 않음
+  const userOverrodeMarginsRef = useRef(false);
+
+  // 챗봇이 push하는 사이드 패널 데이터 (탭 전환에도 보존)
+  const [feedbackItems, setFeedbackItems] = useState<ChatbotFeedbackItem[]>([]);
+  const [referenceSources, setReferenceSources] = useState<ChatbotReferenceSource[]>([]);
+
+  // 평가 관련 state
+  const [showEvalModal, setShowEvalModal] = useState(false);
+  const [approvedDocs, setApprovedDocs] = useState<Array<{ id: number; title: string; approver_id: string; register_date: string | null }>>([]);
+  const [selectedRefId, setSelectedRefId] = useState<number | undefined>();
+  const [evalResult, setEvalResult] = useState<any>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
   const [showFloating, setShowFloating] = useState(false);
   const [floatingPos, setFloatingPos] = useState({ top: 0, left: 0 });
@@ -97,9 +115,94 @@ export default function Center() {
   refresh?: () => void;
 }>({});
 
-  {/* 문서 텍스트가 변경될 때마다 챗봇 패널에 전달하여 최신 상태 유지 */}
+  {/* 에디터 떠날 때 편집 상태 해제 */}
   useEffect(() => {
-    if (uploadData || uploadErrorMessage) return;
+    return () => {
+      if (documentId) {
+        releaseEditing({ document_id: String(documentId) }).catch(() => {});
+      }
+    };
+  }, [documentId]);
+
+  {/* URL 파라미터로 문서 로드 (업로드/Library 모두 동일한 흐름) */}
+  useEffect(() => {
+    if (!paramDocumentId) return;
+    let cancelled = false;
+
+    const applyDocToEditor = (doc: any) => {
+      const quill = quillRef.current;
+      if (!quill) return;
+
+      // delta_document가 있으면 우선 사용 (편집 서식 보존)
+      if (doc.extracted_data?.delta_document?.ops) {
+        quill.setContents(doc.extracted_data.delta_document);
+      } else if (doc.extracted_data?.text) {
+        suppressRef.current = true;
+        void applyMarkdown(quill, doc.extracted_data.text, suppressRef);
+      }
+    };
+
+    const waitForExtraction = async (id: number, maxAttempts = 120): Promise<any> => {
+      // 추출이 끝날 때까지 polling (max 2분, 1.5초 간격)
+      // 학술 논문 OCR은 시간이 오래 걸림 (수식 30+개 × OCR 1초 ≈ 30~60초)
+      for (let i = 0; i < maxAttempts; i++) {
+        const res = await getDocumentById(id);
+        const status = res.data?.status;
+        const hasText = !!res.data?.extracted_data?.text;
+        if ((status === 'completed' || status === 'editing' || status === 'approved') && hasText) {
+          return res;
+        }
+        if (status === 'failed' || status === 'ocr_process') {
+          return res;
+        }
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      // 마지막 시도
+      return await getDocumentById(id);
+    };
+
+    const loadDocument = async () => {
+      setIsLoadingDoc(true);
+      setLoadError('');
+      try {
+        // 1. 추출 완료 대기
+        const initialRes = await waitForExtraction(Number(paramDocumentId));
+        if (cancelled) return;
+
+        // 2. start-editing (복사본 생성)
+        let targetId = Number(paramDocumentId);
+        try {
+          const editRes = await editDocument({ document_id: paramDocumentId! });
+          if (editRes?.data?.copy_document_id) {
+            targetId = editRes.data.copy_document_id;
+            const copyRes = await getDocumentById(targetId);
+            if (cancelled) return;
+            setDocumentId(copyRes.data.id);
+            applyDocToEditor(copyRes.data);
+          } else {
+            setDocumentId(initialRes.data.id);
+            applyDocToEditor(initialRes.data);
+          }
+        } catch (editErr) {
+          // start-editing 실패해도 원본은 로드
+          setDocumentId(initialRes.data.id);
+          applyDocToEditor(initialRes.data);
+        }
+      } catch (e) {
+        console.error('문서 로드 실패:', e);
+        setLoadError('문서를 불러올 수 없습니다.');
+      } finally {
+        if (!cancelled) setIsLoadingDoc(false);
+      }
+    };
+
+    loadDocument();
+    return () => { cancelled = true; };
+  }, [paramDocumentId]);
+
+  {/* draftText 처리 */}
+  useEffect(() => {
+    if (paramDocumentId || uploadErrorMessage) return;
     if (!draftText) return;
     const quill = quillRef.current;
     if (!quill) return;
@@ -107,10 +210,32 @@ export default function Center() {
     void applyMarkdown(quill, draftText, suppressRef);
   }, [draftText]);
 
+  {/* 팀장(승인자) 누적 스타일 자동 로드 — PDF 내보내기 / 챗봇 hint에 사용 */}
+  useEffect(() => {
+    if (!documentId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getLeaderStyle(documentId);
+        if (cancelled) return;
+        if (res.has_data && res.data) {
+          setLeaderStyle(res.data);
+          // 사용자가 마진을 직접 조정하지 않았으면 팀장 마진으로 자동 적용
+          if (!userOverrodeMarginsRef.current && res.data.margins) {
+            setMargins(res.data.margins);
+          }
+        }
+      } catch (err) {
+        // 누적 데이터 없음 (404 등) — 사용자 기본값 유지
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [documentId]);
+
   {/* 타이핑 상태 초기화 */ }
   useEffect(() => {
     if (hasTypingStartedRef.current) return;
-    if (uploadData || uploadErrorMessage) return;
+    if (paramDocumentId || uploadErrorMessage) return;
 
     const stateDraft = (location.state as any)?.draftText;
     const draft = stateDraft || localStorage.getItem('draft_document');
@@ -332,22 +457,25 @@ export default function Center() {
     };
   }, [activeTab]);
 
-  {/* 업로드 데이터나 오류 메시지가 변경될 때마다 에디터 내용 업데이트 */ }
+  {/* 탭 전환 후 chat으로 돌아올 때 스크롤 복구 (display:none → block reflow 문제) */ }
   useEffect(() => {
-    if (!uploadData && !uploadErrorMessage) return;
+    if (activeTab !== 'chat') return;
+    // 다음 프레임에서 채팅 컨테이너의 스크롤을 맨 아래로
+    requestAnimationFrame(() => {
+      const chatContainer = document.querySelector('.panel-chat-container') as HTMLElement | null;
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    });
+  }, [activeTab]);
+
+  {/* 업로드 오류 메시지 표시 */ }
+  useEffect(() => {
+    if (!uploadErrorMessage) return;
     const quill = quillRef.current;
     if (!quill) return;
-
-    if (uploadErrorMessage) {
-      void applyMarkdown(quill, uploadErrorMessage, suppressRef);
-      return;
-    }
-
-    const title = normalizeTitle(uploadData?.title);
-    const extractedData = (uploadData as any)?.extracted_data;
-    const text = extractedData?.text || extractedData?.summary || "";
-    void applyMarkdown(quill, buildMarkdownWithTitle(title, text), suppressRef);
-  }, [uploadData, uploadErrorMessage]);
+    void applyMarkdown(quill, uploadErrorMessage, suppressRef);
+  }, [uploadErrorMessage]);
 
   {/* 외부 클릭 시 패널 닫기 */ }
   useEffect(() => {
@@ -436,6 +564,7 @@ export default function Center() {
 
   {/* 페이지 여백 설정 */ }
   const handleMarginChange = (side: 'top' | 'bottom' | 'left' | 'right', value: number) => {
+    userOverrodeMarginsRef.current = true;
     setMargins(prev => ({ ...prev, [side]: value }));
   };
   {/* 패널 위치 업데이트 */ }
@@ -489,6 +618,35 @@ export default function Center() {
     quill.focus();
   };
 
+  {/* 자동 저장 (5초 debounce) */}
+  useEffect(() => {
+    if (!documentId || !documentText) return;
+
+    if (saveTimerRef.current !== null) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = window.setTimeout(async () => {
+      const quill = quillRef.current;
+      if (!quill) return;
+      const delta = quill.getContents();
+      try {
+        setIsSaving(true);
+        await saveDocumentContent(documentId, delta);
+      } catch (e) {
+        console.error('자동 저장 실패:', e);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 5000);
+
+    return () => {
+      if (saveTimerRef.current !== null) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, [documentText, documentId]);
+
   {/* HTML에서 주제 추출 */ }
   const extractTopicFromHtml = (html: string) => {
     const div = document.createElement("div");
@@ -497,11 +655,12 @@ export default function Center() {
     return (heading?.textContent || "").trim();
   };
 
-  {/* 패널 콘텐츠 렌더링 */ }
+  {/* 패널 콘텐츠 렌더링 — 3개 모두 항상 mount하고 display로 토글
+       (탭 전환 시 챗봇 대화 내역 초기화 방지) */ }
   const renderPanelContent = () => {
-    if (activeTab === 'chat') {
+    {
       const quill = quillRef.current;
-      
+
       // Quill 에디터에서 직접 텍스트 읽기
       let currentDocumentText = documentText;
       if (quill && (!currentDocumentText || currentDocumentText.trim().length === 0)) {
@@ -510,21 +669,207 @@ export default function Center() {
         div.innerHTML = html;
         currentDocumentText = (div.textContent || div.innerText || "").trim();
       }
-      
-      const topicId = extractTopicFromHtml(quill?.root?.innerHTML || "");
-      
-      return <Chatbot documentText={currentDocumentText} topicId={topicId} />;
-    }
 
-    if (activeTab === 'feedback') return <Feedback />;
-    return <Search />;
+      const topicId = extractTopicFromHtml(quill?.root?.innerHTML || "");
+
+      const deltaDocument = quill ? quill.getContents() : undefined;
+
+      const handleFinalEdit = (
+        delta: { ops: any[] },
+        removedSentences?: string[],
+        editedSentences?: Array<{ original: string; edited_sentence: string }>,
+        formatHints?: FormatHints,
+        pdfStyleHint?: PdfStyleHint,
+      ) => {
+        if (!quill) return;
+
+        // surgical 편집: 삭제할 문장을 원본에서 찾아서 제거
+        if (removedSentences && removedSentences.length > 0) {
+          const fullText = quill.getText();
+          // 뒤에서부터 삭제해야 앞쪽 index가 밀리지 않음
+          const positions: Array<{ idx: number; len: number }> = [];
+          for (const sentence of removedSentences) {
+            const trimmed = sentence.trim();
+            if (!trimmed) continue;
+            const idx = fullText.indexOf(trimmed);
+            if (idx !== -1) {
+              positions.push({ idx, len: trimmed.length });
+            }
+          }
+          positions.sort((a, b) => b.idx - a.idx); // 뒤에서부터
+          for (const { idx, len } of positions) {
+            quill.deleteText(idx, len);
+          }
+
+          // 빈 줄 정리: 번호만 남은 줄("4. ", "8.") 또는 공백만 있는 줄 제거
+          let cleaned = quill.getText();
+          const lines = cleaned.split('\n');
+          const emptyLineIndices: Array<{ start: number; len: number }> = [];
+          let cursor = 0;
+          for (const line of lines) {
+            const stripped = line.trim();
+            // 빈 줄, 번호만 남은 줄 (예: "4.", "8. ", "10.")
+            if (stripped === '' || /^\d+\.\s*$/.test(stripped) || /^[-•]\s*$/.test(stripped)) {
+              emptyLineIndices.push({ start: cursor, len: line.length + 1 }); // +1 for \n
+            }
+            cursor += line.length + 1;
+          }
+          // 뒤에서부터 제거
+          for (let i = emptyLineIndices.length - 1; i >= 0; i--) {
+            const { start, len } = emptyLineIndices[i];
+            if (start < quill.getLength()) {
+              quill.deleteText(start, Math.min(len, quill.getLength() - start));
+            }
+          }
+        }
+
+        // surgical 편집: 수정할 문장을 원본에서 찾아서 교체
+        if (editedSentences && editedSentences.length > 0) {
+          for (const edit of editedSentences) {
+            const fullText = quill.getText();
+            const orig = edit.original?.trim();
+            const replacement = edit.edited_sentence?.trim();
+            if (!orig || !replacement) continue;
+            const idx = fullText.indexOf(orig);
+            if (idx !== -1) {
+              quill.deleteText(idx, orig.length);
+              quill.insertText(idx, replacement);
+            }
+          }
+        }
+
+        // fallback: surgical 정보 없으면 전체 Delta 교체
+        if ((!removedSentences || removedSentences.length === 0) &&
+            (!editedSentences || editedSentences.length === 0) &&
+            delta.ops.length > 0) {
+          quill.setContents(delta as any);
+        }
+
+        // 팀장 스타일 적용 트리거 — formatHints를 Quill 전체에 즉시 적용
+        if (formatHints && Object.keys(formatHints).length > 0) {
+          const length = quill.getLength();
+          if (length > 0) {
+            const attrs: Record<string, any> = {};
+            if (formatHints.font) attrs.font = formatHints.font;
+            // line-height/indent는 Quill 표준 attribute가 아니라 지원 폰트 한정
+            if (Object.keys(attrs).length > 0) {
+              quill.formatText(0, length, attrs);
+              // selectedFont state도 동기화 (툴바 라벨 갱신)
+              if (formatHints.font) {
+                setSelectedFont(formatHints.font);
+                setFontLabel(formatHints.font);
+              }
+            }
+          }
+        }
+
+        // PDF 스타일 hint — 마진/페이지 크기는 PDF 내보내기 시 자동 적용되도록
+        // leaderStyle state에 반영 (사용자가 마진을 override하지 않은 경우만)
+        if (pdfStyleHint && pdfStyleHint.margins && !userOverrodeMarginsRef.current) {
+          setMargins(pdfStyleHint.margins);
+        }
+      };
+
+      // 부정문 하이라이트: 원본 서식 유지 + 해당 문장만 빨간색/밑줄/볼드
+      const handleHighlight = (sentences: string[]) => {
+        if (!quill || !sentences.length) return;
+        const fullText = quill.getText();
+
+        for (const sentence of sentences) {
+          const trimmed = sentence.trim();
+          if (!trimmed) continue;
+
+          let searchFrom = 0;
+          while (searchFrom < fullText.length) {
+            const idx = fullText.indexOf(trimmed, searchFrom);
+            if (idx === -1) break;
+            quill.formatText(idx, trimmed.length, {
+              color: '#dc2626',
+              underline: true,
+              bold: true,
+            } as any);
+            searchFrom = idx + trimmed.length;
+          }
+        }
+      };
+
+      // 하이라이트 해제: 전체 텍스트에서 빨간색/밑줄/볼드 제거
+      const handleClearHighlight = () => {
+        if (!quill) return;
+        const length = quill.getLength();
+        quill.formatText(0, length, {
+          color: false,
+          underline: false,
+          bold: false,
+        } as any);
+      };
+
+      return (
+        <>
+          <div style={{
+            display: activeTab === 'chat' ? 'flex' : 'none',
+            flexDirection: 'column',
+            height: '100%',
+            overflow: 'hidden',
+          }}>
+            <Chatbot
+              documentId={documentId}
+              documentText={currentDocumentText}
+              topicId={topicId}
+              deltaDocument={deltaDocument}
+              onFinalEdit={handleFinalEdit}
+              onHighlight={handleHighlight}
+              onClearHighlight={handleClearHighlight}
+              onFeedback={setFeedbackItems}
+              onReferences={setReferenceSources}
+            />
+          </div>
+          <div style={{ display: activeTab === 'feedback' ? 'block' : 'none', height: '100%' }}>
+            <Feedback items={feedbackItems} />
+          </div>
+          <div style={{ display: activeTab === 'reference' ? 'block' : 'none', height: '100%' }}>
+            <Search sources={referenceSources} />
+          </div>
+        </>
+      );
+    }
   };
 
   {/* PDF 내보내기 */ }
   const handleExportPdf = async () => {
     const quill = quillRef.current;
     if (!quill) return;
-    await exportPdf(quill, margins, fontSize);
+    // 팀장 누적 폰트가 있으면 PDF에도 적용 (Quill 키 → CSS family는 pdf.ts에서 매핑)
+    const leaderFont = leaderStyle?.fontFamily || null;
+    await exportPdf(quill, margins, fontSize, leaderFont);
+  };
+
+  {/* 문서 평가하기 */ }
+  const handleOpenEval = async () => {
+    if (!documentId) return;
+    setShowEvalModal(true);
+    setEvalResult(null);
+    try {
+      const res = await getApprovedDocuments(documentId);
+      setApprovedDocs(res.data || []);
+      setSelectedRefId(res.default_ref_id || undefined);
+    } catch (e) {
+      console.error('승인 문서 목록 조회 실패:', e);
+      setApprovedDocs([]);
+    }
+  };
+
+  const handleEvaluate = async () => {
+    if (!documentId) return;
+    setIsEvaluating(true);
+    try {
+      const res = await evaluateDocument(documentId, selectedRefId);
+      setEvalResult(res);
+    } catch (e: any) {
+      setEvalResult({ status: 'error', message: e?.response?.data?.detail || '평가 요청 실패' });
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
   {/* 현재 선택된 글꼴 라벨 */ }
@@ -558,6 +903,17 @@ export default function Center() {
               >
                 <img src={settingsIcon} alt="settings" />
               </button>
+
+              {documentId && (
+                <button
+                  className="left-pane-btn"
+                  onClick={handleOpenEval}
+                  title="문서 평가"
+                  style={{ fontSize: '11px', fontWeight: 600, padding: '8px 4px' }}
+                >
+                  평가
+                </button>
+              )}
             </div>
           </Panel>
 
@@ -570,9 +926,35 @@ export default function Center() {
                   className="center-document"
                   style={{
                     padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`,
+                    position: 'relative',
                   }}
                 >
                   <div ref={editorRef} className="document-input" />
+                  {(isLoadingDoc || loadError) && (
+                    <div
+                      style={{
+                        position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.92)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 100, gap: 12,
+                      }}
+                    >
+                      {loadError ? (
+                        <p style={{ color: '#dc2626', fontSize: 14 }}>{loadError}</p>
+                      ) : (
+                        <>
+                          <div
+                            style={{
+                              width: 40, height: 40, border: '3px solid #e5e7eb',
+                              borderTop: '3px solid #4f46e5', borderRadius: '50%',
+                              animation: 'spin 0.8s linear infinite',
+                            }}
+                          />
+                          <p style={{ color: '#6b7280', fontSize: 13 }}>문서 불러오는 중...</p>
+                          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {tablePlus && (
                     <>
                       {/* 열 추가(오른쪽) */}
@@ -1057,6 +1439,101 @@ export default function Center() {
           </div>
         )}
       </div>
+
+      {/* 문서 평가 모달 */}
+      {showEvalModal && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.4)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+          }}
+          onClick={() => setShowEvalModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff', borderRadius: 12, padding: '28px 32px',
+              minWidth: 420, maxWidth: 520, boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 18px', fontSize: 18 }}>문서 평가</h3>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
+                레퍼런스 문서 (비교 기준)
+              </label>
+              {approvedDocs.length === 0 ? (
+                <p style={{ color: '#999', fontSize: 13 }}>팀에 승인된 문서가 없습니다.</p>
+              ) : (
+                <select
+                  value={selectedRefId || ''}
+                  onChange={(e) => setSelectedRefId(Number(e.target.value))}
+                  style={{
+                    width: '100%', padding: '8px 10px', borderRadius: 6,
+                    border: '1px solid #ddd', fontSize: 13,
+                  }}
+                >
+                  {approvedDocs.map((doc) => (
+                    <option key={doc.id} value={doc.id}>
+                      {doc.title} ({doc.register_date?.split('T')[0] || '날짜 없음'})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {approvedDocs.length > 0 && (
+                <p style={{ color: '#888', fontSize: 11, marginTop: 4 }}>
+                  기본값: 가장 최근 승인된 문서
+                </p>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+              <button
+                onClick={handleEvaluate}
+                disabled={isEvaluating || approvedDocs.length === 0}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8, border: 'none',
+                  background: approvedDocs.length === 0 ? '#ccc' : '#4f46e5',
+                  color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                {isEvaluating ? '평가 중...' : '평가 실행'}
+              </button>
+              <button
+                onClick={() => setShowEvalModal(false)}
+                style={{
+                  padding: '10px 20px', borderRadius: 8, border: '1px solid #ddd',
+                  background: '#fff', fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                닫기
+              </button>
+            </div>
+
+            {evalResult && (
+              <div style={{
+                background: evalResult.status === 'error' ? '#fef2f2' : '#f0fdf4',
+                borderRadius: 8, padding: '14px 16px', fontSize: 13,
+              }}>
+                {evalResult.status === 'error' ? (
+                  <p style={{ color: '#dc2626', margin: 0 }}>{evalResult.message}</p>
+                ) : (
+                  <>
+                    <p style={{ margin: '0 0 6px', fontWeight: 600, color: '#166534' }}>
+                      {evalResult.message || '평가 완료'}
+                    </p>
+                    <p style={{ margin: 0, color: '#555', fontSize: 12 }}>
+                      레퍼런스: 문서 #{evalResult.data?.ref_document_id} / 평가 대상: 문서 #{evalResult.data?.inp_document_id}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
     </Layout>
   );
 }

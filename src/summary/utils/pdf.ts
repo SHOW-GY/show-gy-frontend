@@ -1,11 +1,27 @@
 import type Quill from "quill";
 import { saveAs } from "file-saver";
 import html2pdf from "html2pdf.js";
+import { FONT_LIST } from "../fonts";
 
 type Margins = { top: number; bottom: number; left: number; right: number };
 
+/**
+ * Quill 폰트 키(예: "NanumGothic") → CSS font-family 문자열로 매핑.
+ * 미등록/null이면 에디터 디폴트(상속) 사용.
+ */
+function resolveFontFamily(fontKey?: string | null): string | null {
+  if (!fontKey) return null;
+  const found = FONT_LIST.find((f) => f.key === fontKey);
+  return found ? found.cssFamily : null;
+}
+
 {/*PDF로 내보내는 로직 */ }
-export async function exportPdf(quill: Quill, margins: Margins, fontSize: number) {
+export async function exportPdf(
+  quill: Quill,
+  margins: Margins,
+  fontSize: number,
+  fontFamilyKey?: string | null,
+) {
   const html = quill.root.innerHTML;
 
   const wrapper = document.createElement("div");
@@ -34,6 +50,12 @@ export async function exportPdf(quill: Quill, margins: Margins, fontSize: number
 
   editor.style.padding = `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px`;
   editor.style.fontSize = `${fontSize}px`;
+
+  // 팀장 폰트 자동 적용 (Quill 키 → CSS family)
+  const resolvedFamily = resolveFontFamily(fontFamilyKey);
+  if (resolvedFamily) {
+    editor.style.fontFamily = resolvedFamily;
+  }
 
   wrapper.appendChild(editor);
   document.body.appendChild(wrapper);
