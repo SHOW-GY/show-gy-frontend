@@ -1,9 +1,82 @@
 /**
  * Chatbot API Response 파싱 및 분기 판단 로직
- * ⚠️ 기존 로직을 1도 변경하지 않고 그대로 분리
  */
 
 import { ChatMessage, ChatbotApiResponse } from './chatbot.types';
+import { INITIAL_MESSAGE } from './chatbot.constants';
+
+
+// ─── 유틸리티 ───────────────────────────────────────────
+
+/** session_id 형태 "user_id:doc_id:uuid" → uuid 부분 추출 */
+export function extractShortSessionId(fullId: string): string {
+  const parts = fullId.split(':');
+  return parts.length >= 3 ? parts.slice(2).join(':') : fullId;
+}
+
+/** 문자열 끝부분만 미리보기 (변경점이 종결어미에 있을 때 유용) */
+export function getTailPreview(text: string, maxLen = 40): string {
+  const t = text.trim();
+  return t.length > maxLen ? '…' + t.slice(-maxLen) : t;
+}
+
+/** edited_sentences 변경 유형 분류 */
+export function classifyEditChanges(editedList: Array<{ original: string; edited_sentence: string }>) {
+  let toneCount = 0;
+  let formatCount = 0;
+  let otherCount = 0;
+  for (const e of editedList) {
+    const o = e.original || '';
+    const n = e.edited_sentence || '';
+    if (/(?:합니다|했습니다|됩니다)/.test(o) !== /(?:합니다|했습니다|됩니다)/.test(n) ||
+        o.endsWith('다.') !== n.endsWith('다.') ||
+        o.endsWith('함.') !== n.endsWith('함.') ||
+        o.endsWith('임.') !== n.endsWith('임.')) {
+      toneCount++;
+    } else if (/\d{4}년/.test(o) !== /\d{4}\./.test(n) || /\(\d\)/.test(o) !== /\d\./.test(n)) {
+      formatCount++;
+    } else {
+      otherCount++;
+    }
+  }
+  return { toneCount, formatCount, otherCount };
+}
+
+/** Redis 대화 내역 → ChatMessage[] 변환 */
+export function convertHistoryToMessages(
+  history: Array<{ role: string; content: any; response_type?: string; action?: string }>,
+): ChatMessage[] {
+  const restored: ChatMessage[] = [INITIAL_MESSAGE];
+  for (const item of history) {
+    if (item.role === 'user') {
+      const content = typeof item.content === 'string'
+        ? item.content
+        : (item.action || '메시지');
+      restored.push({ role: 'user', content });
+    } else if (item.role === 'assistant') {
+      const data = typeof item.content === 'string'
+        ? (() => { try { return JSON.parse(item.content); } catch { return {}; } })()
+        : (item.content || {});
+      const rt = item.response_type || '';
+      const fr = data.final_response;
+
+      let text = '';
+      if (rt === 'summary' || rt === 'qa' || rt === 'general_chat' || rt === 'exception') {
+        text = typeof fr === 'string' ? fr : (data.exception_final_response || '응답');
+      } else if (rt === 'selection_main_topic') {
+        text = '주제문이 생성되었습니다.';
+      } else if (rt === 'negative_selection') {
+        text = '부정문 분석이 완료되었습니다.';
+      } else if (rt === 'final_edit') {
+        text = '문서 편집이 적용되었습니다.';
+      } else {
+        text = typeof fr === 'string' ? fr : '응답을 받았습니다.';
+      }
+      restored.push({ role: 'bot', content: text, responseType: rt });
+    }
+  }
+  return restored;
+}
 
 /**
  * API response를 ChatMessage로 변환
@@ -62,18 +135,27 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
         lines.push('');
 
         if (Array.isArray(editedList) && editedList.length > 0) {
-          lines.push(`📝 변경된 문장: ${editedList.length}개`);
-          // 처음 3개만 미리보기
-          const preview = editedList.slice(0, 3);
+          const { toneCount, formatCount, otherCount } = classifyEditChanges(editedList);
+
+          lines.push(`📝 총 ${editedList.length}개 문장 변경:`);
+          if (toneCount > 0) lines.push(`  • 어조/종결어미 변경: ${toneCount}건`);
+          if (formatCount > 0) lines.push(`  • 서식 변경 (날짜/리스트): ${formatCount}건`);
+          if (otherCount > 0) lines.push(`  • 어휘/연결어 변경: ${otherCount}건`);
+          lines.push('');
+
+          const preview = editedList.slice(0, 5);
+          lines.push('주요 변경 예시:');
           for (let i = 0; i < preview.length; i++) {
             const e = preview[i];
-            const orig = (e.original || '').slice(0, 60);
-            const edited = (e.edited_sentence || '').slice(0, 60);
-            lines.push(`  ${i + 1}. "${orig}${e.original?.length > 60 ? '…' : ''}"`);
-            lines.push(`     → "${edited}${e.edited_sentence?.length > 60 ? '…' : ''}"`);
+            const oTail = getTailPreview(e.original || '');
+            const nTail = getTailPreview(e.edited_sentence || '');
+            if (oTail !== nTail) {
+              lines.push(`  ${i + 1}. "${oTail}"`);
+              lines.push(`     → "${nTail}"`);
+            }
           }
-          if (editedList.length > 3) {
-            lines.push(`  … 외 ${editedList.length - 3}건`);
+          if (editedList.length > 5) {
+            lines.push(`  … 외 ${editedList.length - 5}건`);
           }
           lines.push('');
         }

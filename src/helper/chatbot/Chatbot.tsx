@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
-import { sendChatbotMessage } from '../../apis/chatbotApi';
+import { useState, useRef, useEffect } from 'react';
+import { sendChatbotMessage, getChatSessions, getChatHistory } from '../../apis/chatbotApi';
 import { ChatbotProps, ChatMessage } from './chatbot.types';
 import { INITIAL_MESSAGE } from './chatbot.constants';
-import { parseResponseToMessage } from './chatbot.parsers';
+import { parseResponseToMessage, extractShortSessionId, convertHistoryToMessages } from './chatbot.parsers';
 import { useAutoScroll } from './hooks/useAutoScroll';
 import { ChatMessages } from './parts/ChatMessages';
 import { ChatInputBar } from './parts/ChatInputBar';
@@ -24,9 +24,38 @@ export default function Chatbot({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
+  const historyLoadedRef = useRef(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   useAutoScroll({ chatContainerRef, messages, isLoading });
+
+  // 대화 내역 복원 — 문서 로드 시 한 번만
+  useEffect(() => {
+    if (!documentId || historyLoadedRef.current) return;
+    historyLoadedRef.current = true;
+
+    (async () => {
+      try {
+        const sessRes = await getChatSessions(String(documentId));
+        const sessions = sessRes.data || [];
+        if (sessions.length === 0) return;
+
+        const shortId = extractShortSessionId(sessions[0].session_id);
+        setSessionId(shortId);
+
+        const histRes = await getChatHistory(String(documentId), shortId);
+        const history = histRes.data || [];
+        if (history.length === 0) return;
+
+        const restored = convertHistoryToMessages(history);
+        if (restored.length > 1) {
+          setMessages(restored);
+        }
+      } catch {
+        // 대화 내역 없음 — 기본 상태 유지
+      }
+    })();
+  }, [documentId]);
 
   // 공통: 응답 처리 (session_id 저장 + 메시지 추가 + final_edit/highlight 콜백)
   const handleResponse = (response: any) => {

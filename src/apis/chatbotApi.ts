@@ -55,6 +55,32 @@ export async function insertBanWord(
   return res.data;
 }
 
+/** 특정 문서의 모든 채팅 세션 목록 조회 */
+export async function getChatSessions(documentId: string): Promise<{
+  status: string;
+  data: Array<{ session_id: string; title: string; document_id: string }>;
+}> {
+  const res = await apiClient.get(`/api/v1/chatbot/sessions/${documentId}`);
+  return res.data;
+}
+
+/** 특정 세션의 대화 내역 조회 (Redis) */
+export async function getChatHistory(documentId: string, sessionId: string): Promise<{
+  status: string;
+  data: Array<{
+    role: 'user' | 'assistant';
+    content: any;
+    response_type?: string;
+    action?: string;
+    timestamp?: string;
+  }>;
+}> {
+  const res = await apiClient.get(`/api/v1/chatbot/history/${documentId}`, {
+    params: { session_id: sessionId },
+  });
+  return res.data;
+}
+
 export async function sendChatbotMessage(
   documentId: string,
   action: ChatbotCallRequest['action'],

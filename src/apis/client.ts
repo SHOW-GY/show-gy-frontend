@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, AxiosHeaders } from 'axios';
 
-/* FastAPI Server URL */
-export const BACKEND_URL = 'http://localhost:7001';
+/* FastAPI Server URL — 환경변수 또는 같은 호스트(nginx 프록시) */
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 /* 로그인 페이지 이동 */
 const redirectToLogin = () => {
