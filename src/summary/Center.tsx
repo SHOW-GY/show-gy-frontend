@@ -67,10 +67,12 @@ export default function Center() {
     paramDocumentId ? Number(paramDocumentId) : undefined
   );
   const [documentText, setDocumentText] = useState<string>("");
+  const [documentTitle, setDocumentTitle] = useState<string>("");
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(!!paramDocumentId);
   const [loadError, setLoadError] = useState<string>('');
   const saveTimerRef = useRef<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const titleInitializedRef = useRef(false);  // 첫 로드 시점의 title 세팅으로 인한 auto-save 트리거 방지
 
   // 팀장(승인자) 누적 스타일 — 문서 로드 시 한 번 가져와서 PDF 내보내기에 사용
   const [leaderStyle, setLeaderStyle] = useState<LeaderStyleResponse["data"]>(null);
@@ -136,7 +138,18 @@ export default function Center() {
       // delta_document가 있으면 우선 사용 (편집 서식 보존)
       if (doc.extracted_data?.delta_document?.ops) {
         quill.setContents(doc.extracted_data.delta_document);
-      } else if (doc.extracted_data?.text) {
+      }
+      // [DISABLED 2026-05-06] visual_html 분기 — 백엔드 비주얼 파이프라인 비활성화로 미사용.
+      // 재활성화 시 아래 블록 주석 해제 + 백엔드 run_extraction_pipeline의 2-b 블록도 함께 활성화.
+      // spec: docs/superpowers/specs/2026-05-06-pdf-visual-fidelity-design.md
+      //
+      // else if (typeof doc.extracted_data?.visual_html === 'string' && doc.extracted_data.visual_html.trim()) {
+      //   suppressRef.current = true;
+      //   quill.setText('');
+      //   quill.clipboard.dangerouslyPasteHTML(doc.extracted_data.visual_html);
+      //   setTimeout(() => (suppressRef.current = false), 0);
+      // }
+      else if (doc.extracted_data?.text) {
         suppressRef.current = true;
         void applyMarkdown(quill, doc.extracted_data.text, suppressRef);
       }
@@ -178,14 +191,20 @@ export default function Center() {
             const copyRes = await getDocumentById(targetId);
             if (cancelled) return;
             setDocumentId(copyRes.data.id);
+            setDocumentTitle(copyRes.data.title || '');
+            titleInitializedRef.current = true;
             applyDocToEditor(copyRes.data);
           } else {
             setDocumentId(initialRes.data.id);
+            setDocumentTitle(initialRes.data.title || '');
+            titleInitializedRef.current = true;
             applyDocToEditor(initialRes.data);
           }
         } catch (editErr) {
           // start-editing 실패해도 원본은 로드
           setDocumentId(initialRes.data.id);
+          setDocumentTitle(initialRes.data.title || '');
+          titleInitializedRef.current = true;
           applyDocToEditor(initialRes.data);
         }
       } catch (e) {
@@ -632,7 +651,7 @@ export default function Center() {
       const delta = quill.getContents();
       try {
         setIsSaving(true);
-        await saveDocumentContent(documentId, delta);
+        await saveDocumentContent(documentId, delta, documentTitle.trim() || undefined);
       } catch (e) {
         console.error('자동 저장 실패:', e);
       } finally {
@@ -645,7 +664,7 @@ export default function Center() {
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [documentText, documentId]);
+  }, [documentText, documentId, documentTitle]);
 
   {/* HTML에서 주제 추출 */ }
   const extractTopicFromHtml = (html: string) => {
@@ -841,7 +860,43 @@ export default function Center() {
     if (!quill) return;
     // 팀장 누적 폰트가 있으면 PDF에도 적용 (Quill 키 → CSS family는 pdf.ts에서 매핑)
     const leaderFont = leaderStyle?.fontFamily || null;
-    await exportPdf(quill, margins, fontSize, leaderFont);
+    // 기본 이름은 현재 문서 제목(확장자 제거)에서 가져오고, 사용자가 prompt로 수정 가능
+    const defaultName = (documentTitle || '').replace(/\.[a-zA-Z0-9]{1,8}$/, '').trim() || 'document';
+    const input = window.prompt('내보낼 PDF 파일 이름을 입력하세요 (.pdf 자동 추가)', defaultName);
+    if (input === null) return;  // 사용자 취소
+    const finalName = input.trim() || defaultName;
+    await exportPdf(quill, margins, fontSize, leaderFont, finalName);
+  };
+
+  {/* 명시적 저장 — 자동저장(5초 debounce)과 별개로 즉시 백엔드 반영. 보관함의 그 문서가 갱신됨. */}
+  const handleSaveNow = async () => {
+    if (!documentId) return;
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    // 진행 중이던 debounce 자동저장은 취소 (중복 PATCH 방지)
+    if (saveTimerRef.current !== null) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
+    const delta = quill.getContents();
+    const title = documentTitle.trim();
+    if (!title) {
+      alert('제목을 입력해주세요.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await saveDocumentContent(documentId, delta, title);
+      alert('저장되었습니다.');
+    } catch (e: any) {
+      console.error('저장 실패:', e);
+      const detail = e?.response?.data?.detail;
+      alert(typeof detail === 'string' ? detail : '저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   {/* 문서 평가하기 */ }
@@ -892,8 +947,20 @@ export default function Center() {
         <Group orientation="horizontal" className="center-split-group">
           <Panel defaultSize={18} minSize={14} maxSize={50} className="pane pane-left">
             <div className="left-pane">
-              <button className="left-pane-btn" onClick={handleExportPdf} title="저장(PDF)">
-                <img src={saveIcon} alt="save" />
+              {documentId && (
+                <button
+                  className="left-pane-btn"
+                  onClick={handleSaveNow}
+                  title="저장 (보관함에 즉시 반영)"
+                  disabled={isSaving}
+                  style={{ fontSize: '11px', fontWeight: 600, padding: '8px 4px' }}
+                >
+                  {isSaving ? '저장중' : '저장'}
+                </button>
+              )}
+
+              <button className="left-pane-btn" onClick={handleExportPdf} title="PDF 다운로드">
+                <img src={saveIcon} alt="PDF 다운로드" />
               </button>
 
               <button
@@ -921,6 +988,20 @@ export default function Center() {
 
           <Panel defaultSize={55} minSize={35} className="pane pane-center">
             <div className="doc-pane">
+              {/* 상단 툴바 — 제목 입력 전용 (액션 버튼은 좌측 패널) */}
+              {documentId && (
+                <div className="doc-toolbar">
+                  <input
+                    type="text"
+                    className="document-title-input"
+                    value={documentTitle}
+                    onChange={(e) => setDocumentTitle(e.target.value)}
+                    placeholder="문서 제목"
+                    spellCheck={false}
+                    maxLength={200}
+                  />
+                </div>
+              )}
               <div ref={documentContainerRef} className="doc-pane-inner">
                 <div
                   className="center-document"

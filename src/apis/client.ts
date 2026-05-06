@@ -18,7 +18,7 @@ const forceLogout = () => {
 /* Axios 인스턴스 생성 */
 const apiClient: AxiosInstance = axios.create({
   baseURL: BACKEND_URL,
-  timeout: 120000,
+  timeout: 300000,  // QA: 챗봇 LLM 다단계 처리 시간 보장. 운영 시 재검토.
   withCredentials: true,
 });
 

@@ -174,40 +174,43 @@ export default function Chatbot({
     }
   };
 
-  // 부정문 삭제/보관
-  const handleNegativeClick = async (negativeId: number, action: 'delete' | 'keep') => {
+  // 부정문 일괄 처리 — 단건 클릭마다 API 보내지 않고 사용자가 선택 완료 후 한 번에 전송.
+  // deleteIds 비어있으면 "전체 보관" 의미 (API 호출 없이 로컬 메시지만).
+  const handleNegativeBatchSubmit = async (deleteIds: number[]) => {
+    if (deleteIds.length === 0) {
+      setMessages(prev => [...prev,
+        { role: 'user', content: '전체 보관' },
+        { role: 'bot', content: '제안된 문장을 모두 보관했습니다.' },
+      ]);
+      return;
+    }
+
+    const topicIdForNegative = selectedTopicId || '';
+    if (!topicIdForNegative) {
+      setMessages(prev => [...prev, {
+        role: 'bot',
+        content: '주제 정보가 없어 삭제 요청을 진행할 수 없습니다. 먼저 주제를 선택해주세요.'
+      }]);
+      return;
+    }
+
     setIsLoading(true);
+    setMessages(prev => [...prev, {
+      role: 'user',
+      content: `선택한 ${deleteIds.length}개 문장 삭제 요청`,
+    }]);
 
     try {
-      if (action === 'delete') {
-        const topicIdForNegative = selectedTopicId || '';
-        if (!topicIdForNegative) {
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            content: '주제 정보가 없어 삭제 요청을 진행할 수 없습니다. 먼저 주제를 선택해주세요.'
-          }]);
-          return;
-        }
-
-        setMessages(prev => [...prev, { role: 'user', content: '삭제' }]);
-
-        const response = await sendChatbotMessage(
-          documentId ? String(documentId) : '',
-          'selection_negative_topic',
-          undefined,
-          undefined,
-          topicIdForNegative,
-          String(negativeId),
-          sessionId
-        );
-        handleResponse(response);
-      } else {
-        setMessages(prev => [
-          ...prev,
-          { role: 'user', content: '보관' },
-          { role: 'bot', content: '문장이 보관되었습니다.' },
-        ]);
-      }
+      const response = await sendChatbotMessage(
+        documentId ? String(documentId) : '',
+        'selection_negative_topic',
+        undefined,
+        undefined,
+        topicIdForNegative,
+        deleteIds.join(','),  // AI는 sevice.py:447-452에서 쉼표 분리 다중 ID 지원
+        sessionId
+      );
+      handleResponse(response);
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'bot',
@@ -225,7 +228,7 @@ export default function Chatbot({
         isLoading={isLoading}
         chatContainerRef={chatContainerRef}
         onSelectionClick={handleSelectionClick}
-        onNegativeClick={handleNegativeClick}
+        onNegativeSubmit={handleNegativeBatchSubmit}
       />
       <ChatInputBar
         chatInput={chatInput}

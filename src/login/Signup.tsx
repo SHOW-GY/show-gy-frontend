@@ -179,8 +179,10 @@ export default function Signup() {
                 className="form-input"
                 placeholder="아이디 입력(6~20자)"
                 value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                disabled={isIdChecked}
+                onChange={(e) => {
+                  setUserId(e.target.value);
+                  if (isIdChecked) setIsIdChecked(false);
+                }}
               />
               <button className="duplicate-check-btn" onClick={handleIdCheck} disabled={isIdChecked}>
                 {isIdChecked ? '확인완료' : '중복확인'}

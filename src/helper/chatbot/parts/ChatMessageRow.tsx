@@ -8,14 +8,14 @@ interface ChatMessageRowProps {
   message: ChatMessage;
   isLoading: boolean;
   onSelectionClick: (keyId: string, sentence: string) => void;
-  onNegativeClick: (negativeId: number, action: 'delete' | 'keep') => void;
+  onNegativeSubmit: (deleteIds: number[]) => void;
 }
 
 export function ChatMessageRow({
   message,
   isLoading,
   onSelectionClick,
-  onNegativeClick,
+  onNegativeSubmit,
 }: ChatMessageRowProps) {
   return (
     <div className={`panel-chat-row ${message.role === 'user' ? 'row-user' : 'row-bot'}`}>
@@ -33,7 +33,7 @@ export function ChatMessageRow({
           <ChatNegatives
             negatives={message.negatives}
             isLoading={isLoading}
-            onNegativeClick={onNegativeClick}
+            onSubmit={onNegativeSubmit}
           />
         )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDeletedDocuments, restoreDocument } from '../apis/documentApi';
+import { getDeletedDocuments, restoreDocument, deleteDocument } from '../apis/documentApi';
 
 interface TrashFile {
 	id: number;
@@ -44,6 +44,21 @@ export default function Trash() {
 		}
 	};
 
+	const handlePermanentDelete = async (fileId: number, fileName: string) => {
+		const ok = window.confirm(
+			`"${fileName}" 문서를 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`
+		);
+		if (!ok) return;
+		try {
+			await deleteDocument([fileId]);
+			setTrashFiles(prev => prev.filter(f => f.id !== fileId));
+		} catch (e: any) {
+			console.error('영구 삭제 실패:', e);
+			const detail = e?.response?.data?.detail;
+			alert(typeof detail === 'string' ? detail : '영구 삭제에 실패했습니다.');
+		}
+	};
+
 	return (
 		<section className="trash-page">
 			<div className="trash-header">
@@ -74,7 +89,7 @@ export default function Trash() {
 								<div className="files-table-cell">{file.date}</div>
 								<div className="files-table-cell">{file.teamName}</div>
 								<div className="files-table-cell">{file.teamLeader}</div>
-								<div className="files-table-cell">
+								<div className="files-table-cell" style={{ display: 'flex', gap: 6 }}>
 									<button
 										onClick={() => handleRestore(file.id)}
 										style={{
@@ -83,6 +98,15 @@ export default function Trash() {
 										}}
 									>
 										복구
+									</button>
+									<button
+										onClick={() => handlePermanentDelete(file.id, file.name)}
+										style={{
+											padding: '4px 12px', borderRadius: 4, border: '1px solid #EF4444',
+											background: '#fff', color: '#EF4444', cursor: 'pointer', fontSize: 12,
+										}}
+									>
+										삭제
 									</button>
 								</div>
 							</div>

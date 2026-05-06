@@ -23,11 +23,12 @@ export const getDocuments = async () => {
   return res.data;
 };
 
-{/* 문서 완전 삭제 */}
-export const deleteDocument = async () => {
+{/* 문서 완전 삭제 — 휴지통의 문서 영구 제거 */}
+export const deleteDocument = async (documentIds: Array<string | number>) => {
+  const ids = documentIds.map(id => String(id));
   const res = await apiClient.delete<DeleteDocumentResponse>(
     `/api/v1/document/trash`,
-    { withCredentials: true }
+    { data: ids, withCredentials: true }
   );
   return res.data;
 }
@@ -112,11 +113,17 @@ export const moveToTrash = async ({ document_id }: MoveToTrashRequest) => {
   return res.data;
 };
 
-{/* 문서 내용 저장 (Delta) */}
-export const saveDocumentContent = async (documentId: number, deltaDocument: any) => {
+{/* 문서 내용 저장 (Delta + 선택적 제목) */}
+export const saveDocumentContent = async (
+  documentId: number,
+  deltaDocument: any,
+  title?: string,
+) => {
+  const body: Record<string, any> = { delta_document: deltaDocument };
+  if (typeof title === 'string') body.title = title;
   const res = await apiClient.patch(
     `/api/v1/document/${documentId}/content`,
-    { delta_document: deltaDocument },
+    body,
     { withCredentials: true }
   );
   return res.data;
