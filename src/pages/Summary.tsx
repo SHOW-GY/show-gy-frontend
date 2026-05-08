@@ -84,13 +84,37 @@ export default function Summary() {
     else localStorage.setItem("team_name", newTeamName);
   };
 
-  {/*파일 관련 코드*/}  
+  {/*파일 관련 코드*/}
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
       setErrorMessage('');
     }
+  };
+
+  const isAcceptedFile = (file: File) => {
+    const allowed = ['.pdf', '.doc', '.docx', '.txt'];
+    const name = file.name.toLowerCase();
+    return allowed.some((ext) => name.endsWith(ext));
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!isAcceptedFile(file)) {
+      setErrorMessage('지원하지 않는 파일 형식입니다. (.pdf, .doc, .docx, .txt)');
+      return;
+    }
+    setUploadedFile(file);
+    setErrorMessage('');
   };
 
   {/*파일 제거 핸들러*/}
@@ -116,6 +140,10 @@ export default function Summary() {
       setErrorMessage('파일을 업로드하거나 문서 내용을 입력해주세요.');
       return;
     }
+    if (uploadedFile && selectedTeam === 'personal') {
+      setErrorMessage('소속된 팀이 없어 문서 업로드에 실패했습니다. 팀에 가입한 뒤 다시 시도해주세요.');
+      return;
+    }
     setIsUploading(true);
     setErrorMessage('');
     try {
@@ -124,11 +152,19 @@ export default function Summary() {
           team_name: selectedTeam,
           file: uploadedFile
         });
-        localStorage.setItem('uploadedDocument', JSON.stringify(res));
-        navigate('/summary/center');
+        // 이전 업로드 잔존 데이터 제거
+        localStorage.removeItem('uploadedDocument');
+        navigate(`/summary/center/${res.id}`);
       }
-    } catch (err) {
-      setErrorMessage('문서 업로드에 실패했습니다.');
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      if (err?.response?.status === 404 && typeof detail === 'string' && detail.includes('팀')) {
+        setErrorMessage('소속된 팀이 없어 문서 업로드에 실패했습니다. 팀에 가입한 뒤 다시 시도해주세요.');
+      } else if (typeof detail === 'string') {
+        setErrorMessage(detail);
+      } else {
+        setErrorMessage('문서 업로드에 실패했습니다.');
+      }
     } finally {
       setIsUploading(false);
     }
@@ -177,7 +213,11 @@ export default function Summary() {
               <button className="file-remove-btn" onClick={handleFileRemove}>×</button>
             </div>
           )}
-          <div className="summary-input-shell">
+          <div
+            className="summary-input-shell"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             <textarea
               className="summary-text-input"
               placeholder="문서 내용을 입력하세요."

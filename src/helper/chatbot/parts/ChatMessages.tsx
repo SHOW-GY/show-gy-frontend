@@ -8,7 +8,7 @@ interface ChatMessagesProps {
   isLoading: boolean;
   chatContainerRef: RefObject<HTMLDivElement>;
   onSelectionClick: (keyId: string, sentence: string) => void;
-  onNegativeClick: (negativeId: number, action: 'delete' | 'keep') => void;
+  onNegativeSubmit: (deleteIds: number[]) => void;
 }
 
 export function ChatMessages({
@@ -16,7 +16,7 @@ export function ChatMessages({
   isLoading,
   chatContainerRef,
   onSelectionClick,
-  onNegativeClick,
+  onNegativeSubmit,
 }: ChatMessagesProps) {
   return (
     <div className="panel-chat-container" ref={chatContainerRef}>
@@ -26,7 +26,7 @@ export function ChatMessages({
           message={msg}
           isLoading={isLoading}
           onSelectionClick={onSelectionClick}
-          onNegativeClick={onNegativeClick}
+          onNegativeSubmit={onNegativeSubmit}
         />
       ))}
       {isLoading && (

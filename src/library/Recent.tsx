@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getRecentDocuments } from '../apis/documentApi';
 import '../styles/carousel.css';
 
 interface RecentFile {
@@ -16,42 +18,48 @@ interface RecentProjectRow {
 	leader: string;
 }
 
-const recentFiles: RecentFile[] = [
-	{ id: 1, name: '별 헤는 밤', date: '2025-12-20', team: 'SHOW-GY' },
-	{ id: 2, name: '과제 리서치 노트', date: '2025-12-18', team: '컴퓨터비전' },
-	{ id: 3, name: '프로젝트 계획서', date: '2025-12-15', team: 'SHOW-GY' },
-	{ id: 4, name: '데이터 분석 보고서', date: '2025-12-14', team: '컴퓨터비전' },
-	{ id: 5, name: '마케팅 제안서', date: '2025-12-13', team: 'SHOW-GY' },
-	{ id: 6, name: '개발 문서', date: '2025-12-12', team: 'SHOW-GY' },
-	{ id: 7, name: '디자인 가이드', date: '2025-12-11', team: 'SHOW-GY' },
-	{ id: 8, name: '예산 계획서', date: '2025-12-10', team: 'SHOW-GY' },
-	{ id: 9, name: '사용자 피드백', date: '2025-12-09', team: 'SHOW-GY' },
-	{ id: 10, name: '월간 리포트', date: '2025-12-08', team: 'SHOW-GY' },
-	{ id: 11, name: '추가 문서', date: '2025-12-07', team: 'SHOW-GY' },
-];
-
-const recentProjects: RecentProjectRow[] = [
-	{ id: 1, projectName: '별 헤는 밤', updatedAt: '2025-10-25', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 2, projectName: '과제 리서치 노트', updatedAt: '2025-10-04', teamName: '컴퓨터비전', leader: '박성철' },
-	{ id: 3, projectName: '프로젝트 계획서', updatedAt: '2025-09-29', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 4, projectName: '데이터 분석 보고서', updatedAt: '2025-09-20', teamName: '컴퓨터비전', leader: '박성철' },
-	{ id: 5, projectName: '마케팅 제안서', updatedAt: '2025-09-15', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 6, projectName: '개발 문서', updatedAt: '2025-09-10', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 7, projectName: '디자인 가이드', updatedAt: '2025-09-05', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 8, projectName: '예산 계획서', updatedAt: '2025-08-30', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 9, projectName: '사용자 피드백', updatedAt: '2025-08-25', teamName: 'SHOW-GY', leader: '김용민' },
-	{ id: 10, projectName: '월간 리포트', updatedAt: '2025-08-20', teamName: 'SHOW-GY', leader: '김용민' },
-];
-
 export default function Recent() {
+	const navigate = useNavigate();
 	const gallRef = useRef<HTMLDivElement | null>(null);
 	const btnsRef = useRef<HTMLDivElement | null>(null);
 	const gallDegRef = useRef(0);
 	const posRef = useRef({ x: 0 });
 
+	const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+	const [recentProjects, setRecentProjects] = useState<RecentProjectRow[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchRecent = async () => {
+			try {
+				const res = await getRecentDocuments();
+				const docs = Array.isArray(res.data) ? res.data : [];
+				setRecentFiles(docs.map((doc: any) => ({
+					id: doc.id,
+					name: doc.title,
+					date: doc.access_at ? new Date(doc.access_at).toLocaleDateString('ko-KR') : '',
+					team: doc.team_id,
+				})));
+				setRecentProjects(docs.map((doc: any) => ({
+					id: doc.id,
+					projectName: doc.title,
+					updatedAt: doc.access_at ? new Date(doc.access_at).toLocaleDateString('ko-KR') : '',
+					teamName: doc.team_id,
+					leader: doc.team_leader,
+				})));
+			} catch (e) {
+				console.error('최근 문서 조회 실패:', e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchRecent();
+	}, []);
+
 	const top10 = recentFiles.slice(0, 10);
 
 	useEffect(() => {
+		if (top10.length === 0) return;
 		const $gall = gallRef.current;
 		if (!$gall) return;
 		const $btns = btnsRef.current;
@@ -149,16 +157,35 @@ export default function Recent() {
 		};
 	}, [top10.length]);
 
+	const handleDocumentClick = (docId: number) => {
+		navigate(`/summary/center/${docId}`);
+	};
+
+	if (isLoading) {
+		return <div className="carousel-root"><h1 className="carousel-title">로딩 중...</h1></div>;
+	}
+
+	if (recentFiles.length === 0) {
+		return (
+			<div className="carousel-root">
+				<h1 className="carousel-title">최근 작업한 문서가 없습니다</h1>
+			</div>
+		);
+	}
+
 	return (
 		<div className="carousel-root">
-			{/* 문구 */}
 			<h1 className="carousel-title">최근 작업한 문서를 빠르게 탐색하세요</h1>
 
-			{/* 3D 캐러셀 */}
 			<div id="scene">
 				<div id="gall" ref={gallRef}>
 					{top10.map((file, idx) => (
-						<div key={file.id} className="gall-item">
+						<div
+							key={file.id}
+							className="gall-item"
+							onClick={() => handleDocumentClick(file.id)}
+							style={{ cursor: 'pointer' }}
+						>
 							<div className="gall-card">
 								<div className="gall-index">{idx + 1}</div>
 								<div className="gall-title">{file.name}</div>
@@ -186,7 +213,12 @@ export default function Recent() {
 				</div>
 				<div className="recent-table-body">
 					{recentProjects.map((row) => (
-						<div key={row.id} className="recent-table-row">
+						<div
+							key={row.id}
+							className="recent-table-row"
+							onClick={() => handleDocumentClick(row.id)}
+							style={{ cursor: 'pointer' }}
+						>
 							<div className="recent-table-cell recent-table-project">{row.projectName}</div>
 							<div className="recent-table-cell">{row.updatedAt}</div>
 							<div className="recent-table-cell">{row.teamName}</div>

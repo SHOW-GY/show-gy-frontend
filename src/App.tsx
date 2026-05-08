@@ -55,6 +55,14 @@ export default function App() {
         }
       />
       <Route
+        path="/summary/center/:documentId"
+        element={
+          <ProtectedRoute>
+            <Center />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/mypage"
         element={
           <ProtectedRoute>

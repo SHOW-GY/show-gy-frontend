@@ -1,6 +1,121 @@
 /* =========================
   SUMMARY (Main)
 ========================= */
+
+/* ============ 문서 상단 툴바 (제목 입력 전용) ============ */
+/* 투명/반투명 유리(glass) 느낌 — 본문이 살짝 비치고 backdrop blur로 구분감만 줌 */
+.doc-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
+}
+
+.doc-toolbar .document-title-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  outline: none;
+  padding: 6px 8px;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+.doc-toolbar .document-title-input:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.doc-toolbar .document-title-input:focus {
+  background: rgba(255, 255, 255, 0.14);
+}
+.doc-toolbar .document-title-input::placeholder {
+  color: rgba(156, 163, 175, 0.85);
+  font-weight: 400;
+}
+
+/* ============ Quill 에디터 내부 테이블 (PDF 추출 결과) ============ */
+.ql-editor table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  width: auto;
+  max-width: 100%;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ql-editor table th,
+.ql-editor table td {
+  border: 1px solid #d1d5db;
+  padding: 4px 8px;
+  vertical-align: middle;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  min-width: 40px;
+}
+
+.ql-editor table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.ql-editor table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.ql-editor table tbody tr:hover {
+  background-color: #f0f9ff;
+}
+
+/* 좁은 셀들이 많은 표(예: 숫자 리스트)는 더 컴팩트하게 */
+.ql-editor table.compact th,
+.ql-editor table.compact td {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+/* 에디터 내부 코드 블록 */
+.ql-editor pre {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 12px 0;
+}
+
+.ql-editor pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* 에디터 내부 인라인 코드 */
+.ql-editor code:not(pre code) {
+  background-color: #f3f4f6;
+  color: #db2777;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+}
+
+/* mermaid SVG */
+.ql-editor img[alt="다이어그램"] {
+  display: block;
+  margin: 16px auto;
+  max-width: 100%;
+  height: auto;
+}
+
 .summary-container{
   position: relative;
   min-height: 100vh;

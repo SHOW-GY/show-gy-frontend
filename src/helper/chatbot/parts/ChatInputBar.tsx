@@ -25,7 +25,11 @@ export function ChatInputBar({
         onKeyPress={onKeyPress}
         rows={1}
       />
-      <img src={fileupload} alt="파일 업로드" className="panel-input-rect" />
+      <img 
+        src={fileupload} 
+        alt="파일 업로드" 
+        className="panel-input-rect"
+      />
       <img 
         src={search} 
         alt="검색" 
