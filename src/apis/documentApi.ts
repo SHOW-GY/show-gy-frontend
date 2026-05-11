@@ -14,6 +14,16 @@ import {
   RealeaseEditingResponse
 } from './types';
 
+// 단건 문서 응답 모듈 캐시 — 뒤로가기/재진입 시 네트워크 0번으로 즉시 표시.
+// mutation 직후 invalidateDocumentCache로 무효화한다.
+type DocumentCacheEntry = { data: any; ts: number };
+const documentCache = new Map<number, DocumentCacheEntry>();
+
+export const invalidateDocumentCache = (documentId?: number) => {
+  if (documentId == null) documentCache.clear();
+  else documentCache.delete(documentId);
+};
+
 {/* 문서 리스트 조회 */}
 export const getDocuments = async () => {
   const res = await apiClient.post<GetDocumentsResponse>(
@@ -30,6 +40,7 @@ export const deleteDocument = async (documentIds: Array<string | number>) => {
     `/api/v1/document/trash`,
     { data: ids, withCredentials: true }
   );
+  documentIds.forEach(id => invalidateDocumentCache(Number(id)));
   return res.data;
 }
 
@@ -40,6 +51,7 @@ export const restoreDocument = async (documentId: number) => {
     {},
     { withCredentials: true }
   );
+  invalidateDocumentCache(documentId);
   return res.data;
 };
 
@@ -79,8 +91,21 @@ export const uploadDocument = async ({ team_name, file }: UploadDocumentRequest)
   return res.data;
 };
 
-{/* 단건 문서 조회 */}
-export const getDocumentById = async (documentId: number) => {
+{/* 단건 문서 조회 — staleMs > 0 이고 캐시가 신선하면 네트워크 없이 반환 */}
+export const getDocumentById = async (
+  documentId: number,
+  options?: { staleMs?: number; force?: boolean },
+) => {
+  const staleMs = options?.staleMs ?? 0;
+  const force = options?.force ?? false;
+
+  if (!force && staleMs > 0) {
+    const cached = documentCache.get(documentId);
+    if (cached && Date.now() - cached.ts < staleMs) {
+      return cached.data;
+    }
+  }
+
   const res = await apiClient.get<{
     status: string;
     data: {
@@ -100,6 +125,7 @@ export const getDocumentById = async (documentId: number) => {
       source_document_id: number | null;
     };
   }>(`/api/v1/document/${documentId}`, { withCredentials: true });
+  documentCache.set(documentId, { data: res.data, ts: Date.now() });
   return res.data;
 };
 
@@ -110,6 +136,7 @@ export const moveToTrash = async ({ document_id }: MoveToTrashRequest) => {
     { document_id },
     { withCredentials: true }
   );
+  invalidateDocumentCache(Number(document_id));
   return res.data;
 };
 
@@ -126,6 +153,7 @@ export const saveDocumentContent = async (
     body,
     { withCredentials: true }
   );
+  invalidateDocumentCache(documentId);
   return res.data;
 };
 
@@ -151,6 +179,7 @@ export const evaluateDocument = async (documentId: number, refDocumentId?: numbe
     { ref_document_id: refDocumentId },
     { withCredentials: true }
   );
+  invalidateDocumentCache(documentId);
   return res.data;
 };
 
@@ -189,6 +218,9 @@ export const editDocument = async ({ document_id }: EditDocumentRequest) => {
     { document_id },
     { withCredentials: true }
   );
+  invalidateDocumentCache(Number(document_id));
+  const copyId = res.data?.data?.copy_document_id;
+  if (copyId != null) invalidateDocumentCache(Number(copyId));
   return res.data;
 };
 
@@ -201,5 +233,6 @@ export const releaseEditing = async (
     { status },
     { withCredentials: true }
   );
+  invalidateDocumentCache(Number(document_id));
   return res.data;
 };

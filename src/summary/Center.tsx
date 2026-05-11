@@ -155,23 +155,29 @@ export default function Center() {
       }
     };
 
+    // 종료 판정 헬퍼 — polling을 끊어도 되는 상태인지 검사
+    const isDoneStatus = (res: any): boolean => {
+      const status = res?.data?.status;
+      const hasText = !!res?.data?.extracted_data?.text;
+      if ((status === 'completed' || status === 'editing' || status === 'approved') && hasText) return true;
+      if (status === 'failed' || status === 'ocr_process') return true;
+      return false;
+    };
+
     const waitForExtraction = async (id: number, maxAttempts = 120): Promise<any> => {
-      // 추출이 끝날 때까지 polling (max 2분, 1.5초 간격)
-      // 학술 논문 OCR은 시간이 오래 걸림 (수식 30+개 × OCR 1초 ≈ 30~60초)
+      // 1) 캐시 hit 시 즉시 반환 — 뒤로가기/재진입 케이스에서 polling 0번
+      const firstRes = await getDocumentById(id, { staleMs: 60_000 });
+      if (isDoneStatus(firstRes)) return firstRes;
+
+      // 2) 미완료면 polling (max 2분, 1.5초 간격) — 학술 논문 OCR이 30~60초 걸려서 필요
       for (let i = 0; i < maxAttempts; i++) {
-        const res = await getDocumentById(id);
-        const status = res.data?.status;
-        const hasText = !!res.data?.extracted_data?.text;
-        if ((status === 'completed' || status === 'editing' || status === 'approved') && hasText) {
-          return res;
-        }
-        if (status === 'failed' || status === 'ocr_process') {
-          return res;
-        }
+        if (cancelled) throw new Error('cancelled');
+        const res = await getDocumentById(id, { force: true });
+        if (isDoneStatus(res)) return res;
         await new Promise(r => setTimeout(r, 1500));
       }
-      // 마지막 시도
-      return await getDocumentById(id);
+      if (cancelled) throw new Error('cancelled');
+      return await getDocumentById(id, { force: true });
     };
 
     const loadDocument = async () => {
@@ -208,6 +214,7 @@ export default function Center() {
           applyDocToEditor(initialRes.data);
         }
       } catch (e) {
+        if (cancelled) return;
         console.error('문서 로드 실패:', e);
         setLoadError('문서를 불러올 수 없습니다.');
       } finally {
