@@ -321,6 +321,31 @@
   box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
+.mypage-team-stack{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mypage-team-rule-card{
+  padding: 10px 14px;
+}
+
+.mypage-team-rule-btn{
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 92, 246, 0.55);
+  background: rgba(139, 92, 246, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mypage-team-rule-btn:hover{
+  background: rgba(139, 92, 246, 0.30);
+}
+
 .mypage-team-row{
   display: flex;
   justify-content: space-between;

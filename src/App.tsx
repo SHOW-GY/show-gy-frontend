@@ -9,6 +9,7 @@ import Library from "./pages/Library";
 import Center from "./summary/Center";
 import Mypage from "./pages/Mypage/index";
 import Showgy from "./pages/Showgy";
+import TeamRulePreview from "./pages/TeamRulePreview";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/login/signup" element={<Signup />} />
+      <Route path="/preview/team-rule" element={<TeamRulePreview />} />
 
       {/* 보호 라우트들 */}
       <Route

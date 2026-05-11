@@ -1,0 +1,235 @@
+.trm-modal {
+  width: min(720px, 92vw);
+  max-height: 86vh;
+  background: rgba(28, 22, 46, 0.98);
+  color: #ece9f7;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.trm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trm-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.trm-close {
+  background: transparent;
+  border: none;
+  color: #ece9f7;
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.trm-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.trm-loading {
+  text-align: center;
+  color: #b8b1d2;
+  padding: 40px 0;
+}
+
+.trm-readonly-banner {
+  background: rgba(255, 200, 80, 0.12);
+  border: 1px solid rgba(255, 200, 80, 0.4);
+  color: #ffd58a;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+.trm-error {
+  background: rgba(255, 100, 100, 0.12);
+  border: 1px solid rgba(255, 100, 100, 0.4);
+  color: #ffaaaa;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+.trm-section {
+  margin-bottom: 18px;
+}
+
+.trm-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c8c2e3;
+  margin-bottom: 8px;
+}
+
+.trm-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trm-radio-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+}
+
+.trm-radio-item.checked {
+  border-color: rgba(180, 150, 255, 0.55);
+  background: rgba(180, 150, 255, 0.08);
+}
+
+.trm-radio-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.trm-radio-item input[type="radio"] {
+  accent-color: #b496ff;
+}
+
+.trm-radio-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.trm-radio-example {
+  font-size: 0.8rem;
+  color: #a097c4;
+}
+
+.trm-ban-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.trm-ban-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ece9f7;
+  font-size: 0.88rem;
+}
+
+.trm-ban-input:focus {
+  outline: none;
+  border-color: rgba(180, 150, 255, 0.55);
+}
+
+.trm-ban-add {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(180, 150, 255, 0.55);
+  background: rgba(180, 150, 255, 0.16);
+  color: #ece9f7;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.trm-ban-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trm-ban-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trm-ban-empty {
+  color: #807a9c;
+  font-size: 0.82rem;
+}
+
+.trm-ban-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+
+.trm-ban-chip-x {
+  background: transparent;
+  border: none;
+  color: #ece9f7;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.trm-ban-context {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ece9f7;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.trm-ban-context:focus {
+  outline: none;
+  border-color: rgba(180, 150, 255, 0.55);
+}
+
+.trm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trm-footer-btn {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.trm-footer-btn.cancel {
+  background: transparent;
+  color: #ece9f7;
+}
+
+.trm-footer-btn.save {
+  background: rgba(180, 150, 255, 0.22);
+  border-color: rgba(180, 150, 255, 0.6);
+  color: #ece9f7;
+}
+
+.trm-footer-btn.save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

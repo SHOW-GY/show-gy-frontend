@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import ReactPaginate from 'react-paginate';
 import Team_make from '../../../components/Team_make';
 import Team_join from '../../../components/Team_join';
+import TeamRule_modal from '../../../components/TeamRule_modal';
 import { TeamCard } from '../types';
 
 // TODO: 팀 클릭 시 상세 페이지 이동 기능 구현 필요
@@ -33,6 +35,8 @@ export default function TeamSection({
   handleCreateTeam,
   handleJoinTeam,
 }: TeamSectionProps) {
+  const [ruleTarget, setRuleTarget] = useState<TeamCard | null>(null);
+
   return (
     <main className="mypage-main">
       <div className="mypage-right-panel">
@@ -82,23 +86,44 @@ export default function TeamSection({
         ) : (
           <div className="mypage-team-grid">
             {currentTeams.map((t) => (
-              <div key={t.team_code} className="mypage-team-card-simple">
-                <div className="mypage-team-row">
-                  <span className="mypage-team-label">팀명</span>
-                  <span className="mypage-team-value">{t.team_name}</span>
+              <div key={t.team_code} className="mypage-team-stack">
+                <div className="mypage-team-card-simple">
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">팀명</span>
+                    <span className="mypage-team-value">{t.team_name}</span>
+                  </div>
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">팀코드</span>
+                    <span className="mypage-team-value code">{t.team_code}</span>
+                  </div>
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">리더ID</span>
+                    <span className="mypage-team-value">{t.leader_id}</span>
+                  </div>
                 </div>
-                <div className="mypage-team-row">
-                  <span className="mypage-team-label">팀코드</span>
-                  <span className="mypage-team-value code">{t.team_code}</span>
-                </div>
-                <div className="mypage-team-row">
-                  <span className="mypage-team-label">리더ID</span>
-                  <span className="mypage-team-value">{t.leader_id}</span>
+                <div className="mypage-team-card-simple mypage-team-rule-card">
+                  <div className="mypage-team-row">
+                    <span className="mypage-team-label">규칙</span>
+                    <button
+                      type="button"
+                      className="mypage-team-rule-btn"
+                      onClick={() => setRuleTarget(t)}
+                    >
+                      규칙 정하기
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        <TeamRule_modal
+          open={!!ruleTarget}
+          onClose={() => setRuleTarget(null)}
+          teamId={ruleTarget?.team_code ?? ''}
+          teamName={ruleTarget?.team_name ?? ''}
+        />
 
         {pageCount > 1 && (
           <ReactPaginate
