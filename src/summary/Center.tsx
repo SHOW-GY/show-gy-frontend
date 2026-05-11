@@ -155,11 +155,14 @@ export default function Center() {
       }
     };
 
-    // 종료 판정 헬퍼 — polling을 끊어도 되는 상태인지 검사
+    // 종료 판정 헬퍼 — polling을 끊어도 되는 상태인지 검사.
+    // 텍스트가 이미 추출됐으면 status가 'pending' 등 어떤 값이든 종료한다(사용자가 볼 수 있는 상태).
+    // 그 외엔 명시적 완료/실패 상태만 종료.
     const isDoneStatus = (res: any): boolean => {
       const status = res?.data?.status;
       const hasText = !!res?.data?.extracted_data?.text;
-      if ((status === 'completed' || status === 'editing' || status === 'approved') && hasText) return true;
+      if (hasText) return true;
+      if (status === 'completed' || status === 'editing' || status === 'approved') return true;
       if (status === 'failed' || status === 'ocr_process') return true;
       return false;
     };
