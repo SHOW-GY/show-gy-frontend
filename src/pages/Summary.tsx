@@ -10,7 +10,7 @@ import showgy from '../assets/image/showgy.png';
 
 import Layout from '../components/Layout';
 import { getTeamInfo } from '../apis/cooperation';
-import { uploadDocument } from '../apis/documentApi';
+import { uploadDocument, summarizeDocuments } from '../apis/documentApi';
 
 interface TeamOption {
   team_id: string;
@@ -28,7 +28,17 @@ export default function Summary() {
   const [userNickname, setUserNickname] = useState<string>('사용자');
   const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('personal');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  // 각 파일에 대응하는 doc_type 평행 배열. 파일 추가 시 'general' 기본값 push,
+  // 삭제 시 같은 idx 제거. summarizeDocuments 호출 시 함께 전송.
+  const [docTypes, setDocTypes] = useState<string[]>([]);
+  const DOC_TYPE_OPTIONS: { value: string; label: string }[] = [
+    { value: 'general', label: '일반' },
+    { value: 'template', label: '양식' },
+    { value: 'paper', label: '논문' },
+    { value: 'meeting', label: '회의록' },
+    { value: 'official_report', label: '공문·보고서' },
+  ];
   const [isUploading, setIsUploading] = useState(false);
   const [isTeamLoading, setIsTeamLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -85,18 +95,53 @@ export default function Summary() {
   };
 
   {/*파일 관련 코드*/}
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFile(file);
+  const isAcceptedFile = (file: File) => {
+    const allowed = ['.pdf', '.doc', '.docx', '.txt', '.md'];
+    const name = file.name.toLowerCase();
+    return allowed.some((ext) => name.endsWith(ext));
+  };
+
+  const appendFiles = (incoming: FileList | File[]) => {
+    const arr = Array.from(incoming);
+    const accepted: File[] = [];
+    const rejected: string[] = [];
+    for (const f of arr) {
+      if (isAcceptedFile(f)) accepted.push(f);
+      else rejected.push(f.name);
+    }
+    if (rejected.length > 0) {
+      setErrorMessage(`지원하지 않는 파일 형식: ${rejected.join(', ')} (.pdf, .doc, .docx, .txt, .md)`);
+    } else {
       setErrorMessage('');
+    }
+    if (accepted.length > 0) {
+      // uploadedFiles와 docTypes 동시 갱신 (dedup 결과와 인덱스가 1:1로 유지되도록 함수형 setter 안에서 처리)
+      setUploadedFiles((prev) => {
+        const seen = new Set(prev.map((f) => `${f.name}::${f.size}`));
+        const merged = [...prev];
+        const addedCount: number[] = [];
+        for (const f of accepted) {
+          const key = `${f.name}::${f.size}`;
+          if (!seen.has(key)) {
+            merged.push(f);
+            seen.add(key);
+            addedCount.push(1);
+          }
+        }
+        // setUploadedFiles 콜백 안에서 setDocTypes를 호출하면 stale closure 위험 →
+        // 동기적으로 prev 길이 기반 차이만큼 docTypes 추가
+        setDocTypes((prevTypes) => [...prevTypes, ...addedCount.map(() => 'general')]);
+        return merged;
+      });
     }
   };
 
-  const isAcceptedFile = (file: File) => {
-    const allowed = ['.pdf', '.doc', '.docx', '.txt'];
-    const name = file.name.toLowerCase();
-    return allowed.some((ext) => name.endsWith(ext));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      appendFiles(e.target.files);
+      // input value 초기화 — 같은 파일 재선택 가능하도록
+      e.target.value = '';
+    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -107,23 +152,19 @@ export default function Summary() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-    if (!isAcceptedFile(file)) {
-      setErrorMessage('지원하지 않는 파일 형식입니다. (.pdf, .doc, .docx, .txt)');
-      return;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      appendFiles(e.dataTransfer.files);
     }
-    setUploadedFile(file);
-    setErrorMessage('');
   };
 
-  {/*파일 제거 핸들러*/}
-  const handleFileRemove = () => {
-    setUploadedFile(null);
-    const fileInput = document.getElementById('summary-file-input') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
+  {/*개별 파일 제거 — uploadedFiles와 docTypes를 같은 idx에서 함께 제거*/}
+  const handleFileRemove = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    setDocTypes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDocTypeChange = (index: number, newType: string) => {
+    setDocTypes((prev) => prev.map((t, i) => (i === index ? newType : t)));
   };
 
   {/*텍스트 입력 핸들러*/}
@@ -136,25 +177,39 @@ export default function Summary() {
   };
 
   const handleSearch = async () => {
-    if (!uploadedFile && !searchQuery.trim()) {
+    const hasFiles = uploadedFiles.length > 0;
+    const trimmedQuery = searchQuery.trim();
+
+    if (!hasFiles && !trimmedQuery) {
       setErrorMessage('파일을 업로드하거나 문서 내용을 입력해주세요.');
       return;
     }
-    if (uploadedFile && selectedTeam === 'personal') {
+    if (hasFiles && selectedTeam === 'personal') {
       setErrorMessage('소속된 팀이 없어 문서 업로드에 실패했습니다. 팀에 가입한 뒤 다시 시도해주세요.');
       return;
     }
     setIsUploading(true);
     setErrorMessage('');
     try {
-      if (uploadedFile) {
-        const res = await uploadDocument({
+      if (hasFiles) {
+        // 파일이 있으면 무조건 요약 엔드포인트로 — query 가 비었으면 백엔드 기본 동작 수행
+        if (!trimmedQuery) {
+          setErrorMessage('요약 관점을 입력해주세요. (예: "예산 관련 부분만 정리해줘")');
+          setIsUploading(false);
+          return;
+        }
+        const res = await summarizeDocuments({
           team_name: selectedTeam,
-          file: uploadedFile
+          query: trimmedQuery,
+          files: uploadedFiles,
+          doc_types: docTypes,
         });
-        // 이전 업로드 잔존 데이터 제거
         localStorage.removeItem('uploadedDocument');
-        navigate(`/summary/center/${res.id}`);
+        navigate(`/summary/center/${res.data.document_id}`);
+      } else {
+        // 파일 없이 텍스트만 입력한 경우 — 기존 draftText 흐름 유지 (직접 입력 모드)
+        localStorage.setItem('draft_document', trimmedQuery);
+        navigate('/summary/center', { state: { draftText: trimmedQuery } });
       }
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
@@ -163,7 +218,7 @@ export default function Summary() {
       } else if (typeof detail === 'string') {
         setErrorMessage(detail);
       } else {
-        setErrorMessage('문서 업로드에 실패했습니다.');
+        setErrorMessage('요약 생성에 실패했습니다.');
       }
     } finally {
       setIsUploading(false);
@@ -206,11 +261,42 @@ export default function Summary() {
         </div>
 
         <div className="summary-input-area">
-          {uploadedFile && (
-            <div className="uploaded-file-preview">
-              <div className="file-icon">PDF</div>
-              <span className="file-name">{uploadedFile.name}</span>
-              <button className="file-remove-btn" onClick={handleFileRemove}>×</button>
+          {uploadedFiles.length > 0 && (
+            <div className="uploaded-file-list" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+              {uploadedFiles.map((file, idx) => {
+                const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
+                const currentType = docTypes[idx] || 'general';
+                return (
+                  <div key={`${file.name}-${idx}`} className="uploaded-file-preview">
+                    <div className="file-icon">{ext}</div>
+                    <span className="file-name">{file.name}</span>
+                    <select
+                      value={currentType}
+                      onChange={(e) => handleDocTypeChange(idx, e.target.value)}
+                      aria-label={`${file.name} 문서 유형`}
+                      disabled={isUploading}
+                      style={{
+                        marginLeft: 6,
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        border: '1px solid #ccc',
+                        fontSize: 12,
+                        background: '#fff',
+                        cursor: isUploading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {DOC_TYPE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      className="file-remove-btn"
+                      onClick={() => handleFileRemove(idx)}
+                      aria-label={`${file.name} 제거`}
+                    >×</button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div
@@ -220,26 +306,33 @@ export default function Summary() {
           >
             <textarea
               className="summary-text-input"
-              placeholder="문서 내용을 입력하세요."
-              aria-label="문서 내용을 입력하세요"
+              placeholder={uploadedFiles.length > 0 ? "요약 관점을 입력하세요. (예: 예산 관련 부분만 비교해줘)" : "문서 내용을 입력하세요."}
+              aria-label="요약 관점을 입력하세요"
               value={searchQuery}
               onChange={handleInputChange}
               rows={1}
               style={{ resize: 'none' }}
+              disabled={isUploading}
             />
             {errorMessage && (
               <div className="summary-error-msg" aria-live="polite" style={{ color: '#ff6b6b', marginTop: 8 }}>
                 {errorMessage}
               </div>
             )}
+            {isUploading && (
+              <div className="summary-uploading-msg" aria-live="polite" style={{ color: '#888', marginTop: 8, fontSize: 13 }}>
+                요약 생성 중… (최대 1~2분 소요)
+              </div>
+            )}
             <div className="summary-upload-group">
-              <input 
-                type="file" 
-                id="summary-file-input" 
-                className="summary-file-input" 
+              <input
+                type="file"
+                id="summary-file-input"
+                className="summary-file-input"
                 aria-label="파일 업로드"
                 onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.txt"
+                accept=".pdf,.doc,.docx,.txt,.md"
+                multiple
               />
               <label htmlFor="summary-file-input" className="summary-upload-hit">
                 <img src={fileuploadIcon} alt="파일 업로드" className="summary-upload-icon" />

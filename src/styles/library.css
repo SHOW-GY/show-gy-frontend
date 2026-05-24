@@ -547,7 +547,8 @@
 .alldoc .files-table-header,
 .alldoc .files-table-row{
   display: grid;
-  grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr;
+  /* 마지막 50px = 삭제 휴지통 아이콘 열 */
+  grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr 50px;
   gap: 12px;
   padding: 14px 18px;
   align-items: center;
@@ -594,7 +595,8 @@
 
   .alldoc .files-table-header,
   .alldoc .files-table-row{
-    grid-template-columns: 1fr 110px;
+    /* mobile: 프로젝트명 / 수정날짜 / 삭제 — 팀명/팀장은 :nth-child로 숨김 */
+    grid-template-columns: 1fr 110px 40px;
     padding: 12px 14px;
     gap: 10px;
   }

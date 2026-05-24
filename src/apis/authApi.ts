@@ -2,7 +2,6 @@ import apiClient from './client';
 import {
   LoginRequest,
   LoginResponse,
-  RefreshTokenResponse,
   CheckUserIdRequest,
   CheckUserIdResponse,
   RequestEmailVerificationRequest,
@@ -41,23 +40,8 @@ export const logout = async (): Promise<void> => {
   }
 };
 
-{/* Refresh Token */}
-export const refreshToken = async (): Promise<string> => {
-  const refreshToken = localStorage.getItem('refresh_token');
-  
-  if (!refreshToken) {
-    throw new Error('Refresh token not found');
-  }
-  
-  const response = await apiClient.post<RefreshTokenResponse>('/api/v1/auth/refresh');
-  
-  if (response.data.data?.access_token) {
-    localStorage.setItem('access_token', response.data.data.access_token);
-    return response.data.data.access_token;
-  }
-  
-  throw new Error('Failed to refresh token');
-};
+{/* Refresh Token: 자동 갱신은 client.ts response interceptor 가 401 받았을 때 처리.
+    별도 함수는 필요 없음 — backend 가 httpOnly 쿠키로 access/refresh 다 관리. */}
 
 {/* Request Email Verification */}
 export const requestEmailVerification = async (

@@ -154,10 +154,9 @@ export function useMypage() {
     if (window.confirm('정말로 회원탈퇴를 하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       try {
         await deleteUser();
+        // access/refresh 토큰은 httpOnly 쿠키라 JS 로 못 지움. 백엔드 delete API 가 쿠키 제거 책임.
         localStorage.removeItem('user');
         localStorage.removeItem('user_id');
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
         alert('회원탈퇴가 완료되었습니다.');
         navigate('/login');
       } catch (error) {

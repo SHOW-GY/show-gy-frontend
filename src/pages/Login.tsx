@@ -2,7 +2,7 @@ import '../styles/design.css';
 import '../styles/login.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../apis';
+import { login, getErrorMessage } from '../apis';
 import Layout from '../components/Layout';
 
 export default function Login() {
@@ -30,12 +30,7 @@ export default function Login() {
       if (error.response?.status === 404) {
         alert('로그인에 실패하였습니다');
       } else {
-        const errorMessage = error.response?.data?.detail 
-          ? (typeof error.response.data.detail === 'string' 
-            ? error.response.data.detail 
-            : JSON.stringify(error.response.data.detail))
-          : error.message || '로그인에 실패했습니다.';
-        alert(errorMessage);
+        alert(getErrorMessage(error, '로그인에 실패했습니다.'));
       }
     } finally {
       setLoading(false);

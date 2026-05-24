@@ -91,6 +91,53 @@ export const uploadDocument = async ({ team_name, file }: UploadDocumentRequest)
   return res.data;
 };
 
+{/* 멀티 파일 + 사용자 질의 → 요약 Document 생성. 응답의 document_id 로 /summary/center/{id} 이동. */}
+export interface SummarizeDocumentsResponse {
+  status: string;
+  data: {
+    document_id: number;
+    title: string;
+  };
+}
+
+export const summarizeDocuments = async ({
+  team_name,
+  query,
+  files,
+  doc_types,
+}: {
+  team_name: string;
+  query: string;
+  files: File[];
+  doc_types?: string[];
+}) => {
+  const formData = new FormData();
+  formData.append("team_name", team_name);
+  formData.append("query", query);
+  for (const f of files) {
+    formData.append("files", f);
+  }
+  // doc_types는 files와 같은 순서로 보내야 함. 비어있으면 백엔드가 전부 'general' 처리.
+  if (doc_types && doc_types.length > 0) {
+    for (const t of doc_types) {
+      formData.append("doc_types", t);
+    }
+  }
+
+  const res = await apiClient.post<SummarizeDocumentsResponse>(
+    `/api/v1/document/summarize`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+      withCredentials: true,
+      // Claude 호출 + 텍스트 추출 합쳐 30~90초 걸릴 수 있음
+      timeout: 120_000,
+    }
+  );
+
+  return res.data;
+};
+
 {/* 단건 문서 조회 — staleMs > 0 이고 캐시가 신선하면 네트워크 없이 반환 */}
 export const getDocumentById = async (
   documentId: number,

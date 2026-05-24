@@ -166,7 +166,8 @@
 
 .carousel-root .recent-table-header{
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    /* 마지막 50px = 삭제(휴지통 아이콘) 열 */
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 50px;
     gap: 16px;
     padding: 14px 28px;
     background: rgba(139, 92, 246, 0.08);
@@ -189,7 +190,8 @@
 
 .carousel-root .recent-table-row{
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    /* 마지막 50px = 삭제(휴지통 아이콘) 열 */
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 50px;
     gap: 16px;
     padding: 14px 28px;
     border-bottom: 1.5px solid rgba(0, 0, 0, 0.35);

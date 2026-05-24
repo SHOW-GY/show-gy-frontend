@@ -17,6 +17,7 @@ import '../styles/animations.css';
 import "../assets/font/font.css";
 import '../styles/summary.css';
 import { renderKatexHtml } from "./mathBlot";
+import { convertAllTableSyntax } from "./table/parseTableSyntax";
 import { useQuillInit } from "./hooks/useQuillInit";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
@@ -63,9 +64,11 @@ export default function Center() {
   const draftText = (location.state as any)?.draftText as string | null;
   
   const uploadErrorMessage = (location.state as any)?.uploadErrorMessage as string | null;
-  const [documentId, setDocumentId] = useState<number | undefined>(
-    paramDocumentId ? Number(paramDocumentId) : undefined
-  );
+  // 원본 doc id를 documentId로 잡으면, 복사본 생성 후 setDocumentId(copyId) 시점에
+  // [documentId] 의존 cleanup이 원본 id로 releaseEditing PATCH를 보내서 원본 status를
+  // 'pending'으로 잘못 바꿔버린다. 결과: waitForExtraction이 'pending'을 보고 폴링 진입 →
+  // 로딩 화면이 60초 이상 멈춤. copy id가 결정된 뒤에만 documentId를 세팅한다.
+  const [documentId, setDocumentId] = useState<number | undefined>(undefined);
   const [documentText, setDocumentText] = useState<string>("");
   const [documentTitle, setDocumentTitle] = useState<string>("");
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(!!paramDocumentId);
@@ -138,6 +141,8 @@ export default function Center() {
       // delta_document가 있으면 우선 사용 (편집 서식 보존)
       if (doc.extracted_data?.delta_document?.ops) {
         quill.setContents(doc.extracted_data.delta_document);
+        // setContents는 source='api'라 useQuillInit의 text-change 핸들러가 ::table 변환을 안 함 → 명시 호출
+        convertAllTableSyntax(quill);
       }
       // [DISABLED 2026-05-06] visual_html 분기 — 백엔드 비주얼 파이프라인 비활성화로 미사용.
       // 재활성화 시 아래 블록 주석 해제 + 백엔드 run_extraction_pipeline의 2-b 블록도 함께 활성화.
@@ -772,6 +777,7 @@ export default function Center() {
             (!editedSentences || editedSentences.length === 0) &&
             delta.ops.length > 0) {
           quill.setContents(delta as any);
+          convertAllTableSyntax(quill);
         }
 
         // 팀장 스타일 적용 트리거 — formatHints를 Quill 전체에 즉시 적용

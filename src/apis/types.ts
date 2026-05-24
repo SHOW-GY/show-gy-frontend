@@ -34,15 +34,6 @@ export interface LoginResponse {
   }
 }
 
-{/* Refresh Token */}
-export interface RefreshTokenResponse {
-  status: string;
-  message: string;
-  data: {
-    access_token: string;
-  };
-}
-
 // API 응답 타입
 export interface ApiResponse<T = any> {
   success: boolean;

@@ -178,6 +178,10 @@ export default function Chatbot({
   // deleteIds 비어있으면 "전체 보관" 의미 (API 호출 없이 로컬 메시지만).
   const handleNegativeBatchSubmit = async (deleteIds: number[]) => {
     if (deleteIds.length === 0) {
+      // 사용자가 모두 유지를 선택했으므로 부정문 하이라이트(빨강/밑줄/볼드)를 원상복구.
+      // 삭제 흐름은 final_edit 응답에서 자동 해제되지만, 이 분기는 API 호출이 없어
+      // 명시적으로 해제해야 함.
+      onClearHighlight?.();
       setMessages(prev => [...prev,
         { role: 'user', content: '전체 보관' },
         { role: 'bot', content: '제안된 문장을 모두 보관했습니다.' },
