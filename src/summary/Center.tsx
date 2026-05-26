@@ -22,7 +22,7 @@ import { useQuillInit } from "./hooks/useQuillInit";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
-import { getDocumentById, saveDocumentContent, editDocument, releaseEditing, getApprovedDocuments, evaluateDocument, getLeaderStyle } from '../apis/documentApi';
+import { getDocumentById, saveDocumentContent, editDocument, releaseEditing, getApprovedDocuments, evaluateDocument, getLeaderStyle, submitDocument } from '../apis/documentApi';
 import type { LeaderStyleResponse } from '../apis/documentApi';
 import type {
   FormatHints,
@@ -69,6 +69,9 @@ export default function Center() {
   // 'pending'으로 잘못 바꿔버린다. 결과: waitForExtraction이 'pending'을 보고 폴링 진입 →
   // 로딩 화면이 60초 이상 멈춤. copy id가 결정된 뒤에만 documentId를 세팅한다.
   const [documentId, setDocumentId] = useState<number | undefined>(undefined);
+  // 현재 화면의 doc 이 작업본인지 식별 — null/undefined 이면 원본
+  const [docSourceId, setDocSourceId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentText, setDocumentText] = useState<string>("");
   const [documentTitle, setDocumentTitle] = useState<string>("");
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(!!paramDocumentId);
@@ -205,11 +208,13 @@ export default function Center() {
             const copyRes = await getDocumentById(targetId);
             if (cancelled) return;
             setDocumentId(copyRes.data.id);
+            setDocSourceId(copyRes.data.source_document_id ?? null);
             setDocumentTitle(copyRes.data.title || '');
             titleInitializedRef.current = true;
             applyDocToEditor(copyRes.data);
           } else {
             setDocumentId(initialRes.data.id);
+            setDocSourceId(initialRes.data.source_document_id ?? null);
             setDocumentTitle(initialRes.data.title || '');
             titleInitializedRef.current = true;
             applyDocToEditor(initialRes.data);
@@ -217,6 +222,7 @@ export default function Center() {
         } catch (editErr) {
           // start-editing 실패해도 원본은 로드
           setDocumentId(initialRes.data.id);
+          setDocSourceId(initialRes.data.source_document_id ?? null);
           setDocumentTitle(initialRes.data.title || '');
           titleInitializedRef.current = true;
           applyDocToEditor(initialRes.data);
@@ -995,6 +1001,32 @@ export default function Center() {
                   style={{ fontSize: '11px', fontWeight: 600, padding: '8px 4px' }}
                 >
                   평가
+                </button>
+              )}
+
+              {documentId && docSourceId != null && (
+                <button
+                  className="left-pane-btn"
+                  onClick={async () => {
+                    if (isSubmitting) return;
+                    if (!confirm('팀장에게 검토를 위해 제출하시겠습니까?')) return;
+                    setIsSubmitting(true);
+                    try {
+                      // 제출 전 마지막 저장 (잔류 변경 보존)
+                      await handleSaveNow?.();
+                      const r = await submitDocument(documentId);
+                      alert(r.message || '제출되었습니다. 팀장 승인을 기다려주세요.');
+                    } catch (e: any) {
+                      alert(e?.response?.data?.message || '제출에 실패했습니다.');
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  title="팀장에게 검토 요청"
+                  style={{ fontSize: '11px', fontWeight: 600, padding: '8px 4px', background: '#3b82f6', color: '#fff' }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? '제출중' : '제출'}
                 </button>
               )}
             </div>

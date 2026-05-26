@@ -24,26 +24,38 @@ export default function Chatbot({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
-  const historyLoadedRef = useRef(false);
+  // 같은 documentId에 대한 중복 fetch 방지 + documentId 바뀌면 새로 fetch
+  const lastLoadedDocIdRef = useRef<string | null>(null);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   useAutoScroll({ chatContainerRef, messages, isLoading });
 
-  // 대화 내역 복원 — 문서 로드 시 한 번만
+  // 대화 내역 복원 — documentId가 바뀔 때마다 다시 불러옴.
+  // 같은 documentId에 대해서는 한 번만 호출 (React 18 StrictMode 이중 mount 대비)
   useEffect(() => {
-    if (!documentId || historyLoadedRef.current) return;
-    historyLoadedRef.current = true;
+    if (!documentId) return;
+    const docKey = String(documentId);
+    if (lastLoadedDocIdRef.current === docKey) return;
+    lastLoadedDocIdRef.current = docKey;
+
+    // 문서 전환 시 이전 대화 잔류 방지 — 항상 초기 상태로 reset 후 fetch
+    setMessages([INITIAL_MESSAGE]);
+    setSessionId('');
+    setSelectedTopicId('');
 
     (async () => {
       try {
-        const sessRes = await getChatSessions(String(documentId));
+        const sessRes = await getChatSessions(docKey);
         const sessions = sessRes.data || [];
         if (sessions.length === 0) return;
 
-        const shortId = extractShortSessionId(sessions[0].session_id);
+        // 메시지 전송용 sessionId 는 short (백엔드 request_llm 키 조립 규약에 맞춤)
+        // history 호출은 full thread_id 를 보내야 source family 통합 때 정확한 Redis 키를 찾음
+        const fullId = sessions[0].session_id;
+        const shortId = extractShortSessionId(fullId);
         setSessionId(shortId);
 
-        const histRes = await getChatHistory(String(documentId), shortId);
+        const histRes = await getChatHistory(docKey, fullId);
         const history = histRes.data || [];
         if (history.length === 0) return;
 
@@ -52,7 +64,7 @@ export default function Chatbot({
           setMessages(restored);
         }
       } catch {
-        // 대화 내역 없음 — 기본 상태 유지
+        // 대화 내역 없음/에러 — 위에서 reset한 기본 상태 유지
       }
     })();
   }, [documentId]);

@@ -283,3 +283,61 @@ export const releaseEditing = async (
   invalidateDocumentCache(Number(document_id));
   return res.data;
 };
+
+{/* 작업본을 팀장 검토 대기 상태로 제출 */}
+export const submitDocument = async (documentId: number) => {
+  const res = await apiClient.post<{ status: string; message: string; approver_id: string }>(
+    `/api/v1/document/${documentId}/submit`,
+    {},
+    { withCredentials: true }
+  );
+  invalidateDocumentCache(documentId);
+  return res.data;
+};
+
+{/* 팀장이 제출된 작업본을 반려 (재제출 가능) */}
+export const rejectDocument = async (documentId: number, reason?: string) => {
+  const res = await apiClient.post<{ status: string; message: string }>(
+    `/api/v1/document/${documentId}/reject`,
+    { reason: reason ?? '' },
+    { withCredentials: true }
+  );
+  invalidateDocumentCache(documentId);
+  return res.data;
+};
+
+{/* 팀장이 승인 */}
+export const approveDocument = async (documentId: number) => {
+  const res = await apiClient.post<{ status: string; message: string; archived_previous?: number }>(
+    `/api/v1/document/approve/${documentId}`,
+    {},
+    { withCredentials: true }
+  );
+  invalidateDocumentCache(documentId);
+  return res.data;
+};
+
+export type ReviewQueueItem = {
+  document_id: number;
+  title: string;
+  creator_id: string;
+  source_document_id: number | null;
+  register_date: string | null;
+};
+
+{/* 팀장 검토 대기 큐 (해당 팀의 submitted) */}
+export const getReviewQueue = async (teamCode: string) => {
+  const res = await apiClient.get<{ status: string; data: ReviewQueueItem[] }>(
+    `/api/v1/document/team/${encodeURIComponent(teamCode)}/review-queue`,
+    { withCredentials: true }
+  );
+  return res.data.data;
+};
+
+export const getReviewQueueCount = async (teamCode: string) => {
+  const res = await apiClient.get<{ status: string; data: { count: number } }>(
+    `/api/v1/document/team/${encodeURIComponent(teamCode)}/review-queue-count`,
+    { withCredentials: true }
+  );
+  return res.data.data.count;
+};

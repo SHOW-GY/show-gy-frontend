@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import cameraIcon from "../../../assets/icons/camera.png";
 import {
   uploadProfileImage,
-  getProfileImagePath,
-  buildProfileImageUrl,
+  fetchProfileImageBlobUrl,
 } from "../../../apis/profileImageApi";
 
 // TODO: 개인정보 수정 기능 구현 필요
@@ -27,20 +26,24 @@ export default function ProfilePanel({ userInfo, onLogout, onDeleteUser }: Profi
   // (선택 직후) 로컬 미리보기 URL
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
 
-  // 1) 페이지 진입 시: GET으로 현재 프로필 경로 가져오기 → 표시
+  // 1) 페이지 진입 시: blob으로 본인 이미지 받아서 표시 (없으면 카메라 아이콘 유지)
   useEffect(() => {
+    let revokedUrl: string | null = null;
     const run = async () => {
       try {
-        const data = await getProfileImagePath();
-        if (data?.profile_path) {
-          setProfilePath(data.profile_path);
-          setProfileImgUrl(buildProfileImageUrl(data.profile_path));
+        const blobUrl = await fetchProfileImageBlobUrl();
+        if (blobUrl) {
+          revokedUrl = blobUrl;
+          setProfileImgUrl(blobUrl);
         }
       } catch (e) {
-        // 프로필 이미지가 아직 없을 수도 있으니 조용히 무시
+        // 401/네트워크 오류 등은 조용히 무시 (카메라 아이콘 표시)
       }
     };
     run();
+    return () => {
+      if (revokedUrl) URL.revokeObjectURL(revokedUrl);
+    };
   }, []);
 
   const onClickAvatar = () => {
@@ -63,18 +66,17 @@ export default function ProfilePanel({ userInfo, onLogout, onDeleteUser }: Profi
         before_file_path: profilePath, // 기존 경로 있으면 전달
       });
 
-      // 4) 저장 성공 후: POST 응답 경로로 반영
+      // 4) 저장 성공 후: 새 이미지를 blob으로 다시 받아서 반영 (이전 blob URL revoke)
       if (saved?.profile_path) {
         setProfilePath(saved.profile_path);
-        setProfileImgUrl(buildProfileImageUrl(saved.profile_path));
+        const freshBlobUrl = await fetchProfileImageBlobUrl();
+        if (freshBlobUrl) {
+          setProfileImgUrl((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return freshBlobUrl;
+          });
+        }
       }
-
-      // 5) 네 요구대로 "GET으로 다시" 확인하고 싶으면 여기서 한번 더:
-      // const data = await getProfileImagePath();
-      // if (data?.profile_path) {
-      //   setProfilePath(data.profile_path);
-      //   setProfileImgUrl(buildProfileImageUrl(data.profile_path));
-      // }
     } catch (err) {
       alert("프로필 이미지 업로드에 실패했습니다.");
       // 실패하면 미리보기 취소

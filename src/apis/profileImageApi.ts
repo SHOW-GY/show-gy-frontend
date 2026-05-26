@@ -59,3 +59,17 @@ export async function getProfileImagePath() {
   );
   return res.data;
 }
+
+// 본인 프로필 이미지를 binary로 받아 blob URL 생성. 호출자가 unmount 시 revoke 책임.
+// 이미지가 없으면 (404) null 반환.
+export async function fetchProfileImageBlobUrl(): Promise<string | null> {
+  try {
+    const res = await apiClient.get<Blob>("/api/v1/user/profile_image_blob", {
+      responseType: "blob",
+    });
+    return URL.createObjectURL(res.data);
+  } catch (e: any) {
+    if (e?.response?.status === 404) return null;
+    throw e;
+  }
+}
