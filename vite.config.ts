@@ -1,14 +1,52 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+
+      manifest: {
+        name: 'SHOW-GY',
+        short_name: 'SHOW-GY',
+        description: 'SHOW-GY PWA App',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        scope: '/',
+
+        icons: [
+          {
+            src: '/icons/logo-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/icons/logo-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+        ],
+      },
+
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+      },
+
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
+
   base: '/',
+
   server: {
     port: 5173,
-    // dev 전용: /api 호출을 라이브 EC2 backend로 프록시.
-    // VITE_BACKEND_URL을 빈 문자열로 두면 axios baseURL이 비어 relative URL이 되고
-    // 이 proxy가 잡아 EC2로 전달한다 → 브라우저 origin은 localhost지만 CORS 회피.
     proxy: {
       '/api': {
         target: 'https://api.show-gy.com',
@@ -18,12 +56,15 @@ export default defineConfig({
       },
     },
   },
+
   css: {
     devSourcemap: false,
   },
+
   optimizeDeps: {
     include: ['quill-mention'],
   },
+
   build: {
     outDir: 'docs',
     emptyOutDir: true,
