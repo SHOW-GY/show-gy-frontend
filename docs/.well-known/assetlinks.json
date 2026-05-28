@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.showgy.app",
+        "sha256_cert_fingerprints": ["A0:81:D6:3D:3B:A4:91:6F:98:1F:AD:8C:CB:78:35:25:FC:D8:4A:13:BA:76:AA:A9:42:5B:3B:4A:F1:62:A6:0C"]
+      }
+    }]
