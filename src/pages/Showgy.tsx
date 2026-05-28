@@ -6,7 +6,7 @@ import sukjae from '../assets/image/Suckjae.jpeg';
 import yongmin from '../assets/image/Yongmin.jpeg';
 import chaewoo from '../assets/image/Chaewoo.png';
 import sungchul from '../assets/image/sungchul.jpeg';
-import wonjun from '../assets/image/Wonjun.jpg';
+import wonjun from '../assets/image/Wonjun.jpeg';
 import gaeun from '../assets/image/Gaeun.jpeg';
 import hyojin from '../assets/image/Hyojin.jpeg';
 
