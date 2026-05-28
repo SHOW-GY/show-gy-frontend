@@ -9,14 +9,17 @@ export default defineConfig({
       registerType: 'autoUpdate',
 
       manifest: {
+        id : '/',
         name: 'SHOW-GY',
         short_name: 'SHOW-GY',
         description: 'SHOW-GY PWA App',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
+        orientation : 'portrait',
         start_url: '/',
         scope: '/',
+        categories: ['productivity', 'education', 'utilities'],
 
         icons: [
           {
@@ -28,6 +31,21 @@ export default defineConfig({
             src: '/icons/logo-512.png',
             sizes: '512x512',
             type: 'image/png',
+          },
+        ],
+
+        screenshots: [
+          {
+            src: '/screenshots/desktop-1.jpeg',
+            sizes: '1280x720',
+            type: 'image/jpeg',
+            form_factor: 'wide',
+          },
+          {
+            src: '/screenshots/mobile-1.jpeg',
+            sizes: '390x844',
+            type: 'image/jpeg',
+            form_factor: 'narrow',
           },
         ],
       },
