@@ -2,12 +2,12 @@ import Layout from '../components/Layout';
 import '../styles/information.css';
 import '../assets/font/font.css';
 
-import sukjae from '../assets/image/Suckjae.gif';
+import sukjae from '../assets/image/Suckjae.jpeg';
 import yongmin from '../assets/image/Yongmin.webp';
 import chaewoo from '../assets/image/Chaewoo.png';
-import sungchul from '../assets/image/sungchul.png';
+import sungchul from '../assets/image/sungchul.jpeg';
 import wonjun from '../assets/image/Wonjun.jpg';
-import gaeun from '../assets/image/Gaeun.jpg';
+import gaeun from '../assets/image/Gaeun.jpeg';
 import hyojin from '../assets/image/Hyojin.jpg';
 
 {/*SHOW-GY 팀원 소개 페이지 */}
