@@ -4,7 +4,7 @@ import '../assets/font/font.css';
 
 import sukjae from '../assets/image/Suckjae.jpeg';
 import yongmin from '../assets/image/Yongmin.jpeg';
-import chaewoo from '../assets/image/Chaewoo.png';
+import chaewoo from '../assets/image/Chaewoo.jpeg';
 import sungchul from '../assets/image/sungchul.jpeg';
 import wonjun from '../assets/image/Wonjun.jpeg';
 import gaeun from '../assets/image/Gaeun.jpeg';
