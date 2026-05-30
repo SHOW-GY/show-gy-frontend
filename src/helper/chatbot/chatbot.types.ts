@@ -45,6 +45,8 @@ export interface ChatbotProps {
   onFeedback?: (items: ChatbotFeedbackItem[]) => void;
   // 검색 참고자료 — Search 탭으로 push
   onReferences?: (sources: ChatbotReferenceSource[]) => void;
+  // 직전 제안 적용 — revised_document 를 받아 Quill 에디터에 직접 덮어쓰기
+  onApplyDocument?: (revisedDocument: string) => void;
 }
 
 export interface ChatMessage {

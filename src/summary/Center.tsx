@@ -845,6 +845,15 @@ export default function Center() {
         } as any);
       };
 
+      // 챗봇이 직전 제안을 적용한 '보완된 전체 문서'를 받아 Quill 에 통째로 반영.
+      // LLM 응답이 plain text 또는 약한 markdown 이므로 applyMarkdown 으로 일관되게 렌더링.
+      const handleApplyDocument = (revisedDocument: string) => {
+        if (!quill || !revisedDocument) return;
+        // 부정문 하이라이트 잔류 방지 (같은 클로저 안의 handler 직접 호출)
+        handleClearHighlight();
+        void applyMarkdown(quill, revisedDocument, suppressRef);
+      };
+
       return (
         <>
           <div style={{
@@ -863,6 +872,7 @@ export default function Center() {
               onClearHighlight={handleClearHighlight}
               onFeedback={setFeedbackItems}
               onReferences={setReferenceSources}
+              onApplyDocument={handleApplyDocument}
             />
           </div>
           <div style={{ display: activeTab === 'feedback' ? 'block' : 'none', height: '100%' }}>

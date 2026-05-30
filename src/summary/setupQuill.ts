@@ -2,6 +2,7 @@ import Quill from "quill";
 import ImageResize from "@mgreminger/quill-image-resize-module";
 import { Mention } from "quill-mention";
 import { SgMathBlockBlot } from "./mathBlot";
+import { SgDividerBlot } from "./dividerBlot";
 
 const Q: any = (Quill as any).default ?? Quill;
 (window as any).Quill = Q;
@@ -35,5 +36,6 @@ Q.register(Font, true);
 Q.register("modules/imageResize", ImageResize);
 Q.register("modules/mention", Mention);
 Q.register(SgMathBlockBlot, true);
+Q.register(SgDividerBlot, true);
 
 export { Q };

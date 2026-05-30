@@ -103,6 +103,47 @@
 /* ===========================
    CHAT INPUT BAR
 =========================== */
+.panel-input-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: auto;
+  gap: 6px;
+}
+
+.panel-attached-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #78350f;
+}
+
+.panel-attached-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.panel-attached-file-remove {
+  background: transparent;
+  border: none;
+  color: #78350f;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.panel-attached-file-remove:hover {
+  color: #92400e;
+}
+
 .panel-input-bar {
   position: relative !important;
   left: auto !important;

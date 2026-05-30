@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendChatbotMessage, getChatSessions, getChatHistory } from '../../apis/chatbotApi';
+import { sendChatbotMessage, getChatSessions, getChatHistory, extractChatAttachment } from '../../apis/chatbotApi';
 import { ChatbotProps, ChatMessage } from './chatbot.types';
 import { INITIAL_MESSAGE } from './chatbot.constants';
 import { parseResponseToMessage, extractShortSessionId, convertHistoryToMessages } from './chatbot.parsers';
@@ -18,12 +18,16 @@ export default function Chatbot({
   onClearHighlight,
   onFeedback,
   onReferences,
+  onApplyDocument,
 }: ChatbotProps) {
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
+  // 챗봇 입력창에 첨부한 참고 문서 (PDF/TXT/MD → backend 추출 텍스트)
+  const [attachedFileName, setAttachedFileName] = useState<string>('');
+  const [attachedText, setAttachedText] = useState<string>('');
   // 같은 documentId에 대한 중복 fetch 방지 + documentId 바뀌면 새로 fetch
   const lastLoadedDocIdRef = useRef<string | null>(null);
 
@@ -111,6 +115,15 @@ export default function Chatbot({
       onFeedback?.(feedbackItems);
     }
 
+    // apply_document → 직전 제안을 Quill 에디터에 직접 덮어쓰기.
+    // 응답 계약: final_response = explain string (채팅창), data.revised_document = 본문.
+    if (response.response_type === 'apply_document') {
+      const revised: string | undefined = response.data?.revised_document;
+      if (revised) {
+        onApplyDocument?.(revised);
+      }
+    }
+
     // selection_main_topic 또는 임의 응답에 reference_sources가 있으면 참고자료 탭에 push
     const refs = response.data?.reference_sources;
     if (Array.isArray(refs) && refs.length > 0) {
@@ -127,9 +140,19 @@ export default function Chatbot({
     if (!chatInput.trim() || isLoading) return;
 
     const userMessage = chatInput.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    // 첨부 파일 이름이 있으면 사용자 메시지에 표시 (말풍선)
+    const userMessageDisplay = attachedFileName
+      ? `📎 ${attachedFileName}\n${userMessage}`
+      : userMessage;
+    setMessages(prev => [...prev, { role: 'user', content: userMessageDisplay }]);
     setChatInput('');
     setIsLoading(true);
+
+    // 첨부 텍스트는 한 번 전송 후 자동 해제
+    const inputDocsToSend = attachedText || undefined;
+    const sentFileName = attachedFileName;
+    setAttachedFileName('');
+    setAttachedText('');
 
     try {
       const response = await sendChatbotMessage(
@@ -139,10 +162,16 @@ export default function Chatbot({
         deltaDocument,
         selectedTopicId || undefined,
         undefined,
-        sessionId || undefined
+        sessionId || undefined,
+        inputDocsToSend,
       );
       handleResponse(response);
     } catch (error) {
+      // 실패 시 첨부 상태 복구 (사용자가 재시도 가능)
+      if (sentFileName && inputDocsToSend) {
+        setAttachedFileName(sentFileName);
+        setAttachedText(inputDocsToSend);
+      }
       setMessages(prev => [...prev, {
         role: 'bot',
         content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.'
@@ -150,6 +179,30 @@ export default function Chatbot({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 파일 첨부 — backend 에서 텍스트 추출 후 state 에 보관, 다음 메시지에 input_docs 로 전송
+  const handleAttachFile = async (file: File) => {
+    try {
+      const res = await extractChatAttachment(file);
+      if (res?.status === 'success' && res.data?.text) {
+        setAttachedFileName(res.data.filename || file.name);
+        setAttachedText(res.data.text);
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'bot',
+          content: '첨부 파일에서 텍스트를 추출하지 못했습니다.',
+        }]);
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.detail || '첨부 파일 처리 중 오류가 발생했습니다.';
+      setMessages(prev => [...prev, { role: 'bot', content: msg }]);
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setAttachedFileName('');
+    setAttachedText('');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -251,6 +304,9 @@ export default function Chatbot({
         onChatInputChange={setChatInput}
         onSendMessage={handleSendMessage}
         onKeyPress={handleKeyPress}
+        attachedFileName={attachedFileName}
+        onAttachFile={handleAttachFile}
+        onRemoveAttachment={handleRemoveAttachment}
       />
     </>
   );

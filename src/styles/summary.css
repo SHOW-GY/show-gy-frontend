@@ -1246,3 +1246,92 @@ body.sg-table-resizing-row { cursor: row-resize !important; user-select: none !i
 
   .file-name{ max-width: 200px; }
 }
+
+/* =========================
+  Quill 에디터 시각 위계 — 요약 결과 깔끔 정리
+  H1/H2/H3 사이즈·여백 조정 + 단락/리스트 간격 통일
+========================= */
+.ql-editor h1 {
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 700;
+  margin: 32px 0 16px;
+  letter-spacing: -0.01em;
+}
+.ql-editor h1:first-child {
+  margin-top: 0;
+}
+
+.ql-editor h2 {
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 700;
+  /* border 대신 위쪽 큰 margin 으로 섹션 분리 — backspace 사고 방지 */
+  margin: 40px 0 12px;
+  letter-spacing: -0.005em;
+}
+
+.ql-editor h3 {
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 24px 0 8px;
+  color: #374151;
+}
+
+/* 헤딩 직후 단락은 위 여백 제거 — 헤딩과 내용 너무 떨어지지 않게 */
+.ql-editor h1 + p,
+.ql-editor h2 + p,
+.ql-editor h3 + p,
+.ql-editor h1 + ul,
+.ql-editor h2 + ul,
+.ql-editor h3 + ul,
+.ql-editor h1 + ol,
+.ql-editor h2 + ol,
+.ql-editor h3 + ol {
+  margin-top: 0;
+}
+
+/* 단락 가독성 — line-height + 여백 통일 */
+.ql-editor p {
+  line-height: 1.7;
+  margin: 8px 0;
+}
+
+/* 리스트 인덴트/간격 정리 */
+.ql-editor ul,
+.ql-editor ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+.ql-editor li {
+  line-height: 1.7;
+  margin: 3px 0;
+}
+.ql-editor li > p {
+  margin: 0;
+}
+
+/* 인용구 */
+.ql-editor blockquote {
+  border-left: 3px solid #d1d5db;
+  padding: 4px 12px;
+  margin: 12px 0;
+  color: #6b7280;
+  font-style: normal;
+}
+
+/* SgDividerBlot — Quill 콘텐츠로 박힌 가로선 (BlockEmbed `divider`).
+   섹션 사이 시각 구분. 사용자가 Backspace 로 지울 수 있고 PDF/외부 어디서나 보존. */
+.ql-editor hr.sg-divider {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 28px 0 20px;
+  height: 0;
+  background: transparent;
+}
+
+/* 단락 줄바꿈 안전 */
+.ql-editor p {
+  word-wrap: break-word;
+}

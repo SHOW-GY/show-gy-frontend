@@ -296,6 +296,20 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
       };
     }
 
+    case 'apply_document': {
+      // 직전 제안을 에디터에 직접 반영. 채팅창에는 explain 만 보여준다.
+      // 새 응답 계약: final_response = explain string, data.revised_document = 본문 (별도 필드).
+      // revised_document 는 Chatbot.tsx handleResponse → onApplyDocument 로 에디터에 전달.
+      const explain =
+        (typeof finalResponse === 'string' && finalResponse) ||
+        '문서에 적용했어요.';
+      return {
+        role: 'bot',
+        content: explain,
+        responseType,
+      };
+    }
+
     case 'exception':
       const errMsg = (typeof finalResponse === 'string' ? finalResponse : null)
         || data.exception_final_response
