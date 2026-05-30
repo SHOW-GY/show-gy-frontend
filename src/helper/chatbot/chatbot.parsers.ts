@@ -181,9 +181,10 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
     case 'selection_main_topic':
       // 주제문 배열 → 라디오 버튼 표시
       if (Array.isArray(finalResponse)) {
+        const count = finalResponse.length;
         return {
           role: 'bot',
-          content: '다음 중에서 선택해주세요:',
+          content: `문서에서 주제문 ${count}개를 추출했어요. 아래에서 검사할 주제 하나를 클릭하면 그 주제와 맞지 않는 문장(부정문)을 바로 찾아드릴게요.`,
           selections: finalResponse,
           responseType,
         };
@@ -196,6 +197,15 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
       if (nsl && Array.isArray(nsl)) {
         const nsr = data.negative_sentence_reason || (finalResponse as any)?.negative_sentence_reason || [];
         const nid = data.negative_id_list || (finalResponse as any)?.negative_id_list || [];
+        const count = nsl.length;
+        // 부정문 0개 — 카드 없이 안내만
+        if (count === 0) {
+          return {
+            role: 'bot',
+            content: '이 주제와 맞지 않는 문장은 없어요. 문서가 선택한 주제와 일관되게 작성되어 있습니다.',
+            responseType,
+          };
+        }
         const negatives = nsl.map((sentence: string, idx: number) => ({
           sentence,
           reason: nsr[idx] || '삭제 제안',
@@ -203,7 +213,7 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
         }));
         return {
           role: 'bot',
-          content: '다음 문장들을 삭제하시겠습니까?',
+          content: `이 주제와 맞지 않는 문장이 ${count}개 있어요. 수정하거나 삭제할 문장을 아래에서 선택해주세요.`,
           negatives,
           responseType,
         };
