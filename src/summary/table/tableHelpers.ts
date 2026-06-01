@@ -61,16 +61,44 @@ export function getTableSize(table: HTMLTableElement): { rows: number; cols: num
 export function ensureColGroup(table: HTMLTableElement) {
   const { cols } = getTableSize(table);
   let cg = table.querySelector("colgroup");
+  const hadColgroup = !!cg;
   if (!cg) {
     cg = document.createElement("colgroup");
     table.insertBefore(cg, table.firstChild);
   }
 
-  while (cg.children.length < cols) cg.appendChild(document.createElement("col"));
+  // 첫 호출(아직 colgroup 없던 시점)이면 현재 셀들의 자연 너비를 측정해서 col 에 박는다.
+  // 안 그러면 table-layout: fixed 박는 순간 균등 분할로 강제됨 — 사용자가 본 갑작스러운 표 크기 변경.
+  let initialWidths: number[] | null = null;
+  if (!hadColgroup) {
+    const firstRow = table.querySelector("tr");
+    if (firstRow) {
+      const cells = Array.from(firstRow.querySelectorAll("td, th")) as HTMLElement[];
+      initialWidths = cells.map((c) => c.getBoundingClientRect().width);
+    }
+  }
+  // 표 전체 width 도 px 로 고정 (100% 강제는 부모 변동에 흔들림 + content-based 손실)
+  const tableWidthBefore = table.getBoundingClientRect().width;
+
+  while (cg.children.length < cols) {
+    const idx = cg.children.length;
+    const col = document.createElement("col");
+    if (initialWidths && initialWidths[idx] && initialWidths[idx] > 0) {
+      col.style.width = `${initialWidths[idx]}px`;
+    }
+    cg.appendChild(col);
+  }
   while (cg.children.length > cols) cg.removeChild(cg.lastChild!);
 
   table.style.tableLayout = "fixed";
-  table.style.width = table.style.width || "100%";
+  // 기존 width 가 있으면 유지. 없으면 측정한 px 사용 (100% 회피).
+  if (!table.style.width) {
+    if (tableWidthBefore > 0) {
+      table.style.width = `${tableWidthBefore}px`;
+    } else {
+      table.style.width = "100%";
+    }
+  }
   return cg as HTMLTableColElement;
 }
 
