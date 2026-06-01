@@ -19,6 +19,7 @@ import '../styles/summary.css';
 import { renderKatexHtml } from "./mathBlot";
 import { convertAllTableSyntax } from "./table/parseTableSyntax";
 import { useQuillInit } from "./hooks/useQuillInit";
+import { ChartInsertModal } from "./ChartInsertModal";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
@@ -164,13 +165,19 @@ export default function Center() {
     };
 
     // 종료 판정 헬퍼 — polling을 끊어도 되는 상태인지 검사.
-    // 텍스트가 이미 추출됐으면 status가 'pending' 등 어떤 값이든 종료한다(사용자가 볼 수 있는 상태).
+    // 텍스트 *또는 delta_document* 가 있으면 사용자가 볼 수 있는 상태 → 종료.
+    // (summarize 흐름은 text 없이 delta_document 만 있는 경우가 있음 — 그때도 종료해야 무한 polling 회피)
     // 그 외엔 명시적 완료/실패 상태만 종료.
     const isDoneStatus = (res: any): boolean => {
       const status = res?.data?.status;
-      const hasText = !!res?.data?.extracted_data?.text;
-      if (hasText) return true;
-      if (status === 'completed' || status === 'editing' || status === 'approved') return true;
+      const extracted = res?.data?.extracted_data;
+      const hasText = !!extracted?.text;
+      const hasDelta = !!extracted?.delta_document &&
+        (Array.isArray(extracted.delta_document?.ops)
+          ? extracted.delta_document.ops.length > 0
+          : true);
+      if (hasText || hasDelta) return true;
+      if (status === 'completed' || status === 'editing' || status === 'approved' || status === 'pending') return true;
       if (status === 'failed' || status === 'ocr_process') return true;
       return false;
     };
@@ -349,6 +356,9 @@ export default function Center() {
     return only;
   };
 
+  {/* 차트 삽입 모달 (/chart 슬래시 명령으로 열림) */ }
+  const [chartModalOpen, setChartModalOpen] = useState(false);
+
   {/* Quill 에디터 초기화 */ }
   useQuillInit({
     editorRef,
@@ -375,7 +385,36 @@ export default function Center() {
     savedRangeRef,
     setDocumentText,
     getUniformFontInRange,
+    openChartModal: () => setChartModalOpen(true),
   });
+
+  {/* 차트 모달 삽입 핸들러 — mermaid 코드 -> SVG -> image embed 로 현재 커서 위치에 삽입 */ }
+  const handleChartInsert = async (mermaidCode: string) => {
+    const quill = quillRef.current;
+    if (!quill || !mermaidCode) return;
+    // ```mermaid ... ``` 펜스 제거하고 본체만 추출
+    const match = mermaidCode.match(/```mermaid\s*\n([\s\S]+?)\n```/);
+    const body = match ? match[1] : mermaidCode.trim();
+    try {
+      const mermaidLib = (await import("mermaid")).default;
+      mermaidLib.initialize({
+        startOnLoad: false,
+        theme: "default",
+        securityLevel: "loose",
+        flowchart: { htmlLabels: true, curve: "basis" },
+      });
+      const id = `sg-chart-${Date.now()}`;
+      const { svg } = await mermaidLib.render(id, body);
+      const dataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+      const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+      quill.insertEmbed(range.index, "image", dataUrl, "user");
+      quill.insertText(range.index + 1, "\n", "user");
+      quill.setSelection(range.index + 2, 0, "silent");
+    } catch (e) {
+      console.error("차트 렌더 실패:", e);
+      alert("차트 코드 문법 오류로 렌더에 실패했어요. mermaid 문법을 확인해주세요.");
+    }
+  };
 
   {/* 글꼴 크기 업데이트 */ }
   useEffect(() => {
@@ -1676,6 +1715,12 @@ export default function Center() {
         </div>,
         document.body
       )}
+
+      <ChartInsertModal
+        open={chartModalOpen}
+        onClose={() => setChartModalOpen(false)}
+        onInsert={handleChartInsert}
+      />
     </Layout>
   );
 }
