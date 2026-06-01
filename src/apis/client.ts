@@ -72,6 +72,7 @@ apiClient.interceptors.response.use(
       '/api/v1/auth/login',
       '/api/v1/auth/logout',
       '/api/v1/auth/email',
+      '/api/v1/auth/email/verify',
       '/api/v1/auth/first_email',
       '/api/v1/auth/generate_first_email',
       '/api/v1/auth/checking_user_id',
