@@ -42,7 +42,6 @@ type UseQuillInitArgs = {
   savedRangeRef: MutableRefObject<{ index: number; length: number } | null>;
   setDocumentText: Dispatch<SetStateAction<string>>;
   getUniformFontInRange: (quill: Quill, index: number, length: number) => string | null;
-  openChartModal: () => void;
 };
 
 export function useQuillInit({
@@ -70,7 +69,6 @@ export function useQuillInit({
   savedRangeRef,
   setDocumentText,
   getUniformFontInRange,
-  openChartModal,
 }: UseQuillInitArgs) {
   useEffect(() => {
     const el = editorRef.current;
@@ -158,7 +156,6 @@ export function useQuillInit({
                   pickImageFile,
                   readAsDataURL,
                   insert3x3Table,
-                  openChartModal,
                 })
               );
             },
@@ -192,7 +189,7 @@ export function useQuillInit({
       if (!range) return true;
 
       const before = quill.getText(Math.max(0, range.index - 50), 50);
-      const m = before.match(/\/(math|code|text|image|table|chart)$/i);
+      const m = before.match(/\/(math|code|text|image|table)$/i);
       if (!m) return true;
 
       const cmd = m[1].toLowerCase();
@@ -200,7 +197,6 @@ export function useQuillInit({
         pickImageFile,
         readAsDataURL,
         insert3x3Table,
-        openChartModal,
       });
       return false;
     });

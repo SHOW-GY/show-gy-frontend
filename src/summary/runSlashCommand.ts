@@ -7,7 +7,6 @@ export type SlashCommandHelpers = {
   pickImageFile: () => Promise<File | null>;
   readAsDataURL: (file: File) => Promise<string>;
   insert3x3Table: (q: Quill) => void;
-  openChartModal: () => void;
 };
 
 {/*슬래시 명령어 실행하는 로직 */ }
@@ -74,12 +73,5 @@ export async function runSlashCommand(
 
   if (cmd === "table") {
     helpers.insert3x3Table(q);
-    return;
-  }
-
-  if (cmd === "chart") {
-    // 모달 열기 — 모달의 onInsert 콜백이 applyMarkdown 으로 mermaid 코드를 본문에 박는다.
-    helpers.openChartModal();
-    return;
   }
 }
