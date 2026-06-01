@@ -15,12 +15,16 @@ import ProtectedRoute from "./components/ProtectedRoute";
 export default function App() {
   const location = useLocation();
 
-  {/* 앱이 처음 로드될 때, 로그인 상태를 확인하기 위해 /me API를 호출 */}
+  {/* 앱이 처음 로드될 때, 로그인 상태를 확인하기 위해 /me API를 호출.
+      Public(비로그인 접근 가능) 페이지에선 호출 X — 비로그인 사용자가 강제 로그아웃 + /login redirect 되는 것 방지. */}
   useEffect(() => {
-    const isAuthPage =
+    const isPublicPage =
+      location.pathname === "/" ||                     // Home (랜딩)
       location.pathname === "/login" ||
-      location.pathname === "/login/signup";
-    if (isAuthPage) return;
+      location.pathname === "/login/signup" ||
+      location.pathname === "/showgy" ||               // SHOW-GY 팀 소개
+      location.pathname === "/preview/team-rule";      // 팀 규칙 프리뷰
+    if (isPublicPage) return;
     syncAuthFromMe().catch(() => {});
   }, [location.pathname]);
 
