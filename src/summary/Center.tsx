@@ -19,7 +19,6 @@ import '../styles/summary.css';
 import { renderKatexHtml } from "./mathBlot";
 import { convertAllTableSyntax } from "./table/parseTableSyntax";
 import { useQuillInit } from "./hooks/useQuillInit";
-import { ChartInsertModal } from "./ChartInsertModal";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
@@ -356,9 +355,6 @@ export default function Center() {
     return only;
   };
 
-  {/* 차트 삽입 모달 (/chart 슬래시 명령으로 열림) */ }
-  const [chartModalOpen, setChartModalOpen] = useState(false);
-
   {/* Quill 에디터 초기화 */ }
   useQuillInit({
     editorRef,
@@ -385,36 +381,7 @@ export default function Center() {
     savedRangeRef,
     setDocumentText,
     getUniformFontInRange,
-    openChartModal: () => setChartModalOpen(true),
   });
-
-  {/* 차트 모달 삽입 핸들러 — mermaid 코드 -> SVG -> image embed 로 현재 커서 위치에 삽입 */ }
-  const handleChartInsert = async (mermaidCode: string) => {
-    const quill = quillRef.current;
-    if (!quill || !mermaidCode) return;
-    // ```mermaid ... ``` 펜스 제거하고 본체만 추출
-    const match = mermaidCode.match(/```mermaid\s*\n([\s\S]+?)\n```/);
-    const body = match ? match[1] : mermaidCode.trim();
-    try {
-      const mermaidLib = (await import("mermaid")).default;
-      mermaidLib.initialize({
-        startOnLoad: false,
-        theme: "default",
-        securityLevel: "loose",
-        flowchart: { htmlLabels: true, curve: "basis" },
-      });
-      const id = `sg-chart-${Date.now()}`;
-      const { svg } = await mermaidLib.render(id, body);
-      const dataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
-      const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
-      quill.insertEmbed(range.index, "image", dataUrl, "user");
-      quill.insertText(range.index + 1, "\n", "user");
-      quill.setSelection(range.index + 2, 0, "silent");
-    } catch (e) {
-      console.error("차트 렌더 실패:", e);
-      alert("차트 코드 문법 오류로 렌더에 실패했어요. mermaid 문법을 확인해주세요.");
-    }
-  };
 
   {/* 글꼴 크기 업데이트 */ }
   useEffect(() => {
@@ -1715,12 +1682,6 @@ export default function Center() {
         </div>,
         document.body
       )}
-
-      <ChartInsertModal
-        open={chartModalOpen}
-        onClose={() => setChartModalOpen(false)}
-        onInsert={handleChartInsert}
-      />
     </Layout>
   );
 }
