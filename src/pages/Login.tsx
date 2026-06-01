@@ -74,7 +74,15 @@ export default function Login() {
           {loading ? '로그인 중...' : '로그인'}
         </button>
 
-        <div className="login-footer-links">
+        <div className="login-footer-links" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <span className="login-link" onClick={() => navigate('/login/find-id')} style={{ cursor: 'pointer' }}>
+            아이디 찾기
+          </span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span className="login-link" onClick={() => navigate('/login/reset-password')} style={{ cursor: 'pointer' }}>
+            비밀번호 재설정
+          </span>
+          <span style={{ opacity: 0.4 }}>|</span>
           <span className="login-link" onClick={() => navigate('/login/signup')} style={{ cursor: 'pointer' }}>
             회원가입
           </span>

@@ -78,3 +78,54 @@ export const checkUserIdAvailability = async (
   const response = await apiClient.post<CheckUserIdResponse>('/api/v1/auth/checking_user_id', payload);
   return response.data;
 };
+
+{/* ───────────────────────────────────────────────
+   비로그인 흐름 — 아이디 찾기 / 비밀번호 재설정
+   - generate_first_email + email/verify  →  user_id 반환 (아이디 찾기)
+   - generate_first_email + first_email   →  reset_token 반환 (비번 재설정 1단계)
+   - re-password (reset_token + user_pw)   →  비밀번호 변경
+   ─────────────────────────────────────────────── */}
+
+{/* 비로그인 이메일 코드 발송 (JWT 없이) */}
+export const notLoginGenerateEmail = async (
+  email: string
+): Promise<{ status: string }> => {
+  const response = await apiClient.post('/api/v1/auth/generate_first_email', { email });
+  return response.data;
+};
+
+{/* 아이디 찾기 — 코드 검증 → user_id 반환 */}
+export const findUserIdByEmail = async (
+  email: string,
+  code: string
+): Promise<{ status: string; data: { user_id: string } | null }> => {
+  const response = await apiClient.post('/api/v1/auth/email/verify', {
+    email,
+    code: parseInt(code),
+  });
+  return response.data;
+};
+
+{/* 비번 재설정 1단계 — 코드 검증 → reset_token 반환 */}
+export const verifyFirstEmail = async (
+  email: string,
+  code: string
+): Promise<{ reset_token: string }> => {
+  const response = await apiClient.post('/api/v1/auth/first_email', {
+    email,
+    code: parseInt(code),
+  });
+  return response.data;
+};
+
+{/* 비번 재설정 2단계 — reset_token + 새 비밀번호 */}
+export const resetPassword = async (
+  resetToken: string,
+  userPw: string
+): Promise<{ status: string }> => {
+  const response = await apiClient.post('/api/v1/user/re-password', {
+    reset_token: resetToken,
+    user_pw: userPw,
+  });
+  return response.data;
+};
