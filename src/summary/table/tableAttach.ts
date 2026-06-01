@@ -194,6 +194,61 @@ export function attachTableInteractions({
     else tb.insertColumnRight();
   }
 
+  {/* 표의 열 크기 조절하는 로직 — boundaryIndex 와 startX 받아 i열/i+1열 동시 조정.
+     colgroup 의 <col width> 뿐 아니라 각 <td> 의 inline width 도 같이 박아야 한다.
+     이유: 일부 표는 td.style.width 가 콘텐츠 측정값으로 우선해서 col.width 가 무시됨. */ }
+  function startColResize(table: HTMLTableElement, boundaryIndex: number, startX: number) {
+    ensureColGroup(table);
+    // table-layout: fixed 강제 + width px 고정 (auto 면 col.width 무시되므로)
+    table.style.tableLayout = "fixed";
+    if (!table.style.width || table.style.width === "100%") {
+      table.style.width = `${table.getBoundingClientRect().width}px`;
+    }
+
+    const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
+    const colA = cols[boundaryIndex];
+    const colB = cols[boundaryIndex + 1] ?? null;
+    if (!colA) return;
+
+    const startWA = colA.getBoundingClientRect().width;
+    const startWB = colB ? colB.getBoundingClientRect().width : 0;
+
+    document.body.classList.add("sg-table-resizing-col");
+
+    const applyCellWidths = (widthA: number, widthB: number | null) => {
+      const rows = Array.from(table.querySelectorAll("tr"));
+      for (const row of rows) {
+        const cellA = (row as HTMLTableRowElement).cells[boundaryIndex];
+        const cellB = (row as HTMLTableRowElement).cells[boundaryIndex + 1];
+        if (cellA) cellA.style.width = `${widthA}px`;
+        if (cellB && widthB != null) cellB.style.width = `${widthB}px`;
+      }
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const nextA = Math.max(MIN_COL_W, startWA + dx);
+      colA.style.width = `${nextA}px`;
+      let nextB: number | null = null;
+      if (colB) {
+        nextB = Math.max(MIN_COL_W, startWB - (nextA - startWA));
+        colB.style.width = `${nextB}px`;
+      }
+      applyCellWidths(nextA, nextB);
+      tableApiRef.current.refresh?.();
+    };
+
+    const onUp = () => {
+      document.body.classList.remove("sg-table-resizing-col");
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      tableApiRef.current.refresh?.();
+    };
+
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+  }
+
   {/* 표의 행 크기 조절하는 로직 */ }
   function startRowResize(rowEl: HTMLTableRowElement, startY: number) {
     const startH = rowEl.getBoundingClientRect().height;
@@ -286,6 +341,8 @@ export function attachTableInteractions({
 
       hoveredTableRef.current = table;
       updateTablePlusPosition(table);
+
+      startColResize(table, colHit.boundaryIndex, colHit.startX);
       return;
     }
 
