@@ -25,9 +25,17 @@ export async function applyMarkdown(
   md: string,
   suppressRef: { current: boolean }
 ) {
+  // 0. 마크다운 표 normalize — LLM 응답에 헤더 행과 구분자/데이터 행 사이 빈 줄이 끼면
+  //    marked 가 표를 두 개로 잘라서 헤더만 별도 작은 표로 보임. 빈 줄 제거.
+  let normalizedMd = md;
+  // 패턴 1: | header | header |\n\n| --- | --- |  → 빈 줄 제거
+  normalizedMd = normalizedMd.replace(/(\|[^\n]+\|)\s*\n\s*\n(\s*\|[\s|:-]+\|)/g, "$1\n$2");
+  // 패턴 2: | header | header |\n\n| data | data |  → 빈 줄 제거 (구분자 누락 시 fallback)
+  normalizedMd = normalizedMd.replace(/(\|[^\n]+\|)\s*\n\s*\n(\s*\|[^\n]+\|)/g, "$1\n$2");
+
   // 1. $$...$$ 수식 블록을 placeholder로 치환 (marked가 처리 못하므로)
   const mathBlocks: string[] = [];
-  const processedMd = md.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) => {
+  const processedMd = normalizedMd.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) => {
     const idx = mathBlocks.length;
     mathBlocks.push(tex.trim());
     return `${MATH_PLACEHOLDER_PREFIX}${idx}${MATH_PLACEHOLDER_SUFFIX}`;
