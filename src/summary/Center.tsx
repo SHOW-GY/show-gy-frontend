@@ -969,7 +969,8 @@ export default function Center() {
     if (!quill || !saved) return;
 
     quill.setSelection(saved.index, saved.length, "silent");
-    quill.format(name as any, value);
+    // source="user" 명시 — userOnly:true history 가 기록하도록 (Cmd+Z 가능)
+    quill.format(name as any, value, "user" as any);
     quill.focus();
   };
 
@@ -1242,7 +1243,8 @@ export default function Center() {
                                   if (!quill || !saved) return;
 
                                   quill.setSelection(saved.index, saved.length, "silent");
-                                  quill.formatText(saved.index, saved.length, "font", f.key);
+                                  // source="user" 명시 — userOnly:true history 가 기록하도록 (Cmd+Z 가능)
+                                  quill.formatText(saved.index, saved.length, "font", f.key, "user" as any);
                                   quill.focus();
 
                                   setSelectedFont(f.key);
@@ -1285,7 +1287,8 @@ export default function Center() {
                                   if (!quill || !saved) return;
 
                                   quill.setSelection(saved.index, saved.length, "silent");
-                                  quill.formatText(saved.index, saved.length, "size", sizeValue);
+                                  // source="user" 명시 — userOnly:true history 가 기록하도록 (Cmd+Z 가능)
+                                  quill.formatText(saved.index, saved.length, "size", sizeValue, "user" as any);
                                   quill.focus();
 
                                   setFtMenu(null);
