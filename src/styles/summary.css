@@ -54,10 +54,17 @@
   border: 1px solid #d1d5db;
   padding: 4px 8px;
   vertical-align: middle;
-  text-align: left;
+  text-align: center;
   white-space: normal;
   word-break: break-word;
   min-width: 40px;
+}
+
+/* 표 안 단락도 가운데 정렬 (Quill 이 셀 안에 <p> 를 넣을 때 대비) */
+.ql-editor table th p,
+.ql-editor table td p {
+  text-align: center;
+  margin: 0;
 }
 
 .ql-editor table th {
