@@ -22,8 +22,7 @@ export default function App() {
       location.pathname === "/" ||                     // Home (랜딩)
       location.pathname === "/login" ||
       location.pathname === "/login/signup" ||
-      location.pathname === "/showgy" ||               // SHOW-GY 팀 소개
-      location.pathname === "/preview/team-rule";      // 팀 규칙 프리뷰
+      location.pathname === "/showgy";                 // SHOW-GY 팀 소개
     if (isPublicPage) return;
     syncAuthFromMe().catch(() => {});
   }, [location.pathname]);
