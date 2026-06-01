@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRecentDocuments } from '../apis/documentApi';
+import { getRecentDocuments, moveToTrash } from '../apis/documentApi';
+import garbage from '../assets/icons/Garbage.png';
 import '../styles/carousel.css';
 
 interface RecentFile {
@@ -44,7 +45,8 @@ export default function Recent() {
 					id: doc.id,
 					projectName: doc.title,
 					updatedAt: doc.access_at ? new Date(doc.access_at).toLocaleDateString('ko-KR') : '',
-					teamName: doc.team_id,
+					// team_name(표시명) 우선, 없으면 team_id(코드)로 폴백
+					teamName: doc.team_name || doc.team_id,
 					leader: doc.team_leader,
 				})));
 			} catch (e) {
@@ -161,6 +163,20 @@ export default function Recent() {
 		navigate(`/summary/center/${docId}`);
 	};
 
+	const handleMoveToTrash = async (fileId: number, fileName: string, e: React.MouseEvent) => {
+		// 행 클릭 navigation이 발화하지 않도록 stopPropagation
+		e.stopPropagation();
+		if (!window.confirm(`"${fileName}" 문서를 휴지통으로 이동하시겠어요?`)) return;
+		try {
+			await moveToTrash({ document_id: String(fileId) });
+			setRecentProjects(prev => prev.filter(f => f.id !== fileId));
+			setRecentFiles(prev => prev.filter(f => f.id !== fileId));
+		} catch (err) {
+			console.error('휴지통 이동 실패:', err);
+			window.alert('휴지통 이동에 실패했습니다. 잠시 후 다시 시도해주세요.');
+		}
+	};
+
 	if (isLoading) {
 		return <div className="carousel-root"><h1 className="carousel-title">로딩 중...</h1></div>;
 	}
@@ -210,6 +226,7 @@ export default function Recent() {
 					<div className="recent-table-col">수정 날짜</div>
 					<div className="recent-table-col">팀명</div>
 					<div className="recent-table-col">팀장</div>
+					<div className="recent-table-col" style={{ textAlign: 'center' }}>삭제</div>
 				</div>
 				<div className="recent-table-body">
 					{recentProjects.map((row) => (
@@ -223,6 +240,29 @@ export default function Recent() {
 							<div className="recent-table-cell">{row.updatedAt}</div>
 							<div className="recent-table-cell">{row.teamName}</div>
 							<div className="recent-table-cell">{row.leader}</div>
+							<div className="recent-table-cell" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'visible' }}>
+								<button
+									type="button"
+									onClick={(e) => handleMoveToTrash(row.id, row.projectName, e)}
+									aria-label={`${row.projectName} 휴지통으로 이동`}
+									title="휴지통으로 이동"
+									style={{
+										background: 'transparent',
+										border: 'none',
+										padding: 4,
+										cursor: 'pointer',
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'center',
+										borderRadius: 4,
+										opacity: 0.7,
+									}}
+									onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)'; }}
+									onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.7'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+								>
+									<img src={garbage} alt="" style={{ width: 18, height: 18 }} />
+								</button>
+							</div>
 						</div>
 					))}
 				</div>

@@ -88,7 +88,8 @@ export async function sendChatbotMessage(
   deltaDocument?: DeltaDocument,
   topicId?: string,
   negativeId?: string,
-  sessionId?: string
+  sessionId?: string,
+  inputDocs?: string,
 ): Promise<ChatbotResponse> {
   const request: ChatbotCallRequest = {
     action,
@@ -96,7 +97,21 @@ export async function sendChatbotMessage(
     ...(deltaDocument && { delta_document: deltaDocument }),
     ...(topicId && { topic_id: topicId }),
     ...(negativeId && { negative_id: negativeId }),
+    ...(inputDocs && { input_docs: inputDocs }),
   };
 
   return postChatbotCall(documentId, request, sessionId);
+}
+
+/** 챗봇 입력창 첨부 파일 → 텍스트 추출 (PDF/TXT/MD) */
+export async function extractChatAttachment(file: File): Promise<{
+  status: string;
+  data: { filename: string; text: string; char_count: number };
+}> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await apiClient.post('/api/v1/chatbot/extract-attachment', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
 }

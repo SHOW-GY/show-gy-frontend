@@ -85,6 +85,26 @@ export function insertParsedTable(quill: Quill, rows: string[][], startIndex: nu
   }
 }
 
+{/* 초기 로드 시 전체 문서를 스캔해 모든 ::table 마커를 한 번에 표로 변환.
+    detectAndConvertTableSyntax는 커서 위치 기반이라 setContents 직후엔 안 먹음 → 이 함수 사용.
+    여러 표를 순차 처리 (requestAnimationFrame 사이 Quill DOM 안정화 대기). */}
+export function convertAllTableSyntax(quill: Quill): void {
+  const step = () => {
+    const text = quill.getText();
+    const match = text.match(/::table\s*([\s\S]*?)\s*::endtable/);
+    if (!match) return;
+    const { rows, success } = parseTableSyntax(text);
+    if (!success || rows.length === 0) return;
+    const start = match.index ?? text.indexOf('::table');
+    const end = start + match[0].length;
+    quill.setSelection(start, 0, 'silent');
+    insertParsedTable(quill, rows, start, end);
+    // 다음 표가 있다면 DOM 안정화 후 재귀 처리
+    requestAnimationFrame(() => requestAnimationFrame(step));
+  };
+  step();
+}
+
 {/* 텍스트 변경 시 ::table 구문을 감지하고 표로 변환 */}
 export function detectAndConvertTableSyntax(quill: Quill) {
   const range = quill.getSelection(true);

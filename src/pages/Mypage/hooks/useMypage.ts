@@ -55,31 +55,14 @@ export function useMypage() {
   {/*팀 참가 핸들러 */}
   const handleJoinTeam = async (teamCode: string) => {
     try {
+      // 백엔드: 즉시 가입이 아니라 신청만 생성 → 카드에 바로 추가하지 않음
       const result = await participateTeam({ team_code: teamCode });
-      const newCard: TeamCard = {
-        team_name: result.data.team_name,
-        team_code: teamCode,
-        leader_id: result.data.user_id,
-      };
-
-      setTeamCards((prev) => {
-        if (prev.some((t) => t.team_code === newCard.team_code)) return prev;
-        return [newCard, ...prev];
-      });
-      alert(`${result.message}\n참가한 팀: ${result.data.team_name}`);
-      const res2 = await getTeamInfo();
-      const teams2 = Array.isArray(res2.data) ? res2.data : [];
-      setTeamCards(
-        teams2.map((t: any) => ({
-          team_name: t.team_name,
-          team_code: t.team_id,
-          leader_id: t.leader_id ?? "",
-        }))
-      );
-      setPage(0);
-
-    } catch (error) {
-      alert("팀 참가에 실패했습니다. 팀 코드를 확인해주세요.");
+      alert(`${result.message ?? "가입 신청이 접수되었습니다."}\n팀: ${result.data?.team_name ?? teamCode}`);
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message ||
+        "팀 참가 신청에 실패했습니다. 팀 코드를 확인해주세요.";
+      alert(msg);
     }
   };
 
@@ -154,10 +137,9 @@ export function useMypage() {
     if (window.confirm('정말로 회원탈퇴를 하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       try {
         await deleteUser();
+        // access/refresh 토큰은 httpOnly 쿠키라 JS 로 못 지움. 백엔드 delete API 가 쿠키 제거 책임.
         localStorage.removeItem('user');
         localStorage.removeItem('user_id');
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
         alert('회원탈퇴가 완료되었습니다.');
         navigate('/login');
       } catch (error) {

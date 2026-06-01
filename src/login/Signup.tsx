@@ -3,7 +3,7 @@ import '../styles/design.css';
 import '../styles/login.css';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUser, requestEmailVerification, verifyEmailCode, checkUserIdAvailability } from '../apis';
+import { createUser, requestEmailVerification, verifyEmailCode, checkUserIdAvailability, getErrorMessage } from '../apis';
 
 export default function Signup() {
   const [userId, setUserId] = useState('');
@@ -47,12 +47,7 @@ export default function Signup() {
         alert(message || '이미 사용 중인 아이디입니다.');
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail 
-        ? (typeof error.response.data.detail === 'string' 
-          ? error.response.data.detail 
-          : JSON.stringify(error.response.data.detail))
-        : error.message || '아이디 중복 확인에 실패했습니다.';
-      alert(errorMessage);
+      alert(getErrorMessage(error, '아이디 중복 확인에 실패했습니다.'));
     }
   };
 
@@ -149,12 +144,7 @@ export default function Signup() {
       alert('회원가입이 완료되었습니다!');
       navigate('/login');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail 
-        ? (typeof error.response.data.detail === 'string' 
-          ? error.response.data.detail 
-          : JSON.stringify(error.response.data.detail))
-        : error.message || '회원가입에 실패했습니다.';
-      alert(errorMessage);
+      alert(getErrorMessage(error, '회원가입에 실패했습니다.'));
     } finally {
       setLoading(false);
     }

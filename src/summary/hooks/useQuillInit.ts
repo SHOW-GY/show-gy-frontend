@@ -253,20 +253,22 @@ export function useQuillInit({
     const handleNativeSelectionChange = () => {
       const nativeSelection = window.getSelection();
       const nativeText = nativeSelection?.toString() || "";
-      
+
       if (nativeText.length > 0) {
         const quillRange = quill.getSelection();
         if (!quillRange || quillRange.length === 0) {
-          
+
           if (mathOpenRef.current) return;
           if (!nativeSelection || nativeSelection.rangeCount === 0) return;
-          
+
           const nativeRange = nativeSelection.getRangeAt(0);
           const container = nativeRange.commonAncestorContainer;
-          const parentElement = container.nodeType === Node.TEXT_NODE 
-            ? container.parentElement 
+          const parentElement = container.nodeType === Node.TEXT_NODE
+            ? container.parentElement
             : container as HTMLElement;
-          
+
+          // Quill 본문(.center-document) 밖의 선택(채팅창 등)은 무시
+          if (!parentElement?.closest('.center-document')) return;
           if (parentElement?.closest('.sg-math-block')) return;
           if (parentElement?.closest('table')) return;
           if (parentElement?.closest('.ql-code-block-container')) return;

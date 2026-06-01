@@ -21,7 +21,8 @@ export default function Trash() {
 				id: doc.id,
 				name: doc.title,
 				date: doc.access_at ? new Date(doc.access_at).toLocaleDateString('ko-KR') : '',
-				teamName: doc.team_id,
+				// team_name(표시명) 우선, 없으면 team_id(코드)로 폴백
+				teamName: doc.team_name || doc.team_id,
 				teamLeader: doc.team_leader,
 			})));
 		} catch (e) {

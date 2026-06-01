@@ -42,6 +42,50 @@ export function classifyEditChanges(editedList: Array<{ original: string; edited
   return { toneCount, formatCount, otherCount };
 }
 
+// 백엔드 raw action 을 사용자 친화 라벨로 매핑.
+// 챗봇 패널 좌측 사용자 메시지에 표시됨 — "first" 같은 내부 키워드 노출 방지.
+const ACTION_LABELS: Record<string, string> = {
+  first: '📊 문서 분석 요청',
+  selection_main_topic: '✅ 주제 선택',
+  selection_negative_topic: '✅ 부정문 확인',
+  edit_document: '✏️ 편집 요청',
+  final_edit: '✏️ 편집 요청',
+  summary: '📋 요약 요청',
+  qa: '❓ 질문',
+  general_chat: '💬 대화',
+  apply_leader_style: '🎨 팀장 스타일 적용',
+};
+
+function deltaToPlainText(delta: any, maxLen = 300): string {
+  // Quill Delta ops에서 텍스트만 추출. attribute의 header/list 등 무시.
+  const ops = delta?.ops;
+  if (!Array.isArray(ops)) return '';
+  let acc = '';
+  for (const op of ops) {
+    if (typeof op?.insert === 'string') {
+      acc += op.insert;
+      if (acc.length >= maxLen) break;
+    }
+  }
+  acc = acc.replace(/\n+/g, ' ').trim();
+  return acc.length > maxLen ? acc.slice(0, maxLen) + '…' : acc;
+}
+
+function labelForUserContent(item: { content: any; action?: string }): string {
+  // 1) string content
+  if (typeof item.content === 'string') {
+    const raw = item.content;
+    const m = raw.match(/^Action:\s*(\S+)/);
+    if (m && ACTION_LABELS[m[1]]) return ACTION_LABELS[m[1]];
+    return raw;
+  }
+  // 2) Delta 객체 content — action 라벨 + 본문 미리보기를 함께 (사용자가 "다 보이게" 요구)
+  const baseLabel = (item.action && ACTION_LABELS[item.action]) || '메시지';
+  const preview = deltaToPlainText(item.content);
+  if (preview) return `${baseLabel}\n\n📄 ${preview}`;
+  return baseLabel;
+}
+
 /** Redis 대화 내역 → ChatMessage[] 변환 */
 export function convertHistoryToMessages(
   history: Array<{ role: string; content: any; response_type?: string; action?: string }>,
@@ -49,9 +93,7 @@ export function convertHistoryToMessages(
   const restored: ChatMessage[] = [INITIAL_MESSAGE];
   for (const item of history) {
     if (item.role === 'user') {
-      const content = typeof item.content === 'string'
-        ? item.content
-        : (item.action || '메시지');
+      const content = labelForUserContent(item);
       restored.push({ role: 'user', content });
     } else if (item.role === 'assistant') {
       const data = typeof item.content === 'string'
@@ -60,15 +102,61 @@ export function convertHistoryToMessages(
       const rt = item.response_type || '';
       const fr = data.final_response;
 
+      // selection_main_topic — 주제 후보 리스트 그대로 복원
+      if (rt === 'selection_main_topic' && Array.isArray(fr)) {
+        restored.push({
+          role: 'bot',
+          content: '다음 중에서 선택해주세요:',
+          selections: fr,
+          responseType: rt,
+        });
+        continue;
+      }
+
+      // negative_selection — 부정문/사유 리스트 복원
+      if (rt === 'negative_selection') {
+        const nsl = data.negative_sentence_list || (fr as any)?.negative_sentence_list;
+        if (Array.isArray(nsl) && nsl.length > 0) {
+          const nsr = data.negative_sentence_reason || (fr as any)?.negative_sentence_reason || [];
+          const nid = data.negative_id_list || (fr as any)?.negative_id_list || [];
+          const negatives = nsl.map((sentence: string, idx: number) => ({
+            sentence,
+            reason: nsr[idx] || '삭제 제안',
+            negativeId: nid[idx] ?? idx,
+          }));
+          restored.push({
+            role: 'bot',
+            content: '다음 문장들을 삭제하시겠습니까?',
+            negatives,
+            responseType: rt,
+          });
+          continue;
+        }
+      }
+
+      // final_edit — 변경 통계로 풀어서 표시
+      if (rt === 'final_edit' || rt === 'edit_document') {
+        const removed: string[] = data.removed_sentences || [];
+        const edited: Array<{ original: string; edited_sentence: string }> = data.edited_sentences || [];
+        const lines: string[] = ['✏️ 문서 편집이 적용되었습니다.'];
+        if (removed.length > 0) lines.push(`  • 삭제: ${removed.length}건`);
+        if (edited.length > 0) lines.push(`  • 수정: ${edited.length}건`);
+        // 수정 예시 최대 3개
+        const preview = edited.slice(0, 3);
+        for (const e of preview) {
+          const o = (e.original || '').slice(0, 40);
+          const n = (e.edited_sentence || '').slice(0, 40);
+          if (o && n && o !== n) lines.push(`    "${o}" → "${n}"`);
+        }
+        if (edited.length > 3) lines.push(`    … 외 ${edited.length - 3}건`);
+        restored.push({ role: 'bot', content: lines.join('\n'), responseType: rt });
+        continue;
+      }
+
+      // summary / qa / general_chat / exception — 텍스트 응답 그대로
       let text = '';
       if (rt === 'summary' || rt === 'qa' || rt === 'general_chat' || rt === 'exception') {
         text = typeof fr === 'string' ? fr : (data.exception_final_response || '응답');
-      } else if (rt === 'selection_main_topic') {
-        text = '주제문이 생성되었습니다.';
-      } else if (rt === 'negative_selection') {
-        text = '부정문 분석이 완료되었습니다.';
-      } else if (rt === 'final_edit') {
-        text = '문서 편집이 적용되었습니다.';
       } else {
         text = typeof fr === 'string' ? fr : '응답을 받았습니다.';
       }
@@ -93,9 +181,10 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
     case 'selection_main_topic':
       // 주제문 배열 → 라디오 버튼 표시
       if (Array.isArray(finalResponse)) {
+        const count = finalResponse.length;
         return {
           role: 'bot',
-          content: '다음 중에서 선택해주세요:',
+          content: `문서에서 주제문 ${count}개를 추출했어요. 아래에서 검사할 주제 하나를 클릭하면 그 주제와 맞지 않는 문장(부정문)을 바로 찾아드릴게요.`,
           selections: finalResponse,
           responseType,
         };
@@ -108,6 +197,15 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
       if (nsl && Array.isArray(nsl)) {
         const nsr = data.negative_sentence_reason || (finalResponse as any)?.negative_sentence_reason || [];
         const nid = data.negative_id_list || (finalResponse as any)?.negative_id_list || [];
+        const count = nsl.length;
+        // 부정문 0개 — 카드 없이 안내만
+        if (count === 0) {
+          return {
+            role: 'bot',
+            content: '이 주제와 맞지 않는 문장은 없어요. 문서가 선택한 주제와 일관되게 작성되어 있습니다.',
+            responseType,
+          };
+        }
         const negatives = nsl.map((sentence: string, idx: number) => ({
           sentence,
           reason: nsr[idx] || '삭제 제안',
@@ -115,7 +213,7 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
         }));
         return {
           role: 'bot',
-          content: '다음 문장들을 삭제하시겠습니까?',
+          content: `이 주제와 맞지 않는 문장이 ${count}개 있어요. 수정하거나 삭제할 문장을 아래에서 선택해주세요.`,
           negatives,
           responseType,
         };
@@ -204,6 +302,20 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
       return {
         role: 'bot',
         content: '문서 편집이 완료되었습니다.',
+        responseType,
+      };
+    }
+
+    case 'apply_document': {
+      // 직전 제안을 에디터에 직접 반영. 채팅창에는 explain 만 보여준다.
+      // 새 응답 계약: final_response = explain string, data.revised_document = 본문 (별도 필드).
+      // revised_document 는 Chatbot.tsx handleResponse → onApplyDocument 로 에디터에 전달.
+      const explain =
+        (typeof finalResponse === 'string' && finalResponse) ||
+        '문서에 적용했어요.';
+      return {
+        role: 'bot',
+        content: explain,
         responseType,
       };
     }

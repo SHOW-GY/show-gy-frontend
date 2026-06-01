@@ -17,11 +17,12 @@ import '../styles/animations.css';
 import "../assets/font/font.css";
 import '../styles/summary.css';
 import { renderKatexHtml } from "./mathBlot";
+import { convertAllTableSyntax } from "./table/parseTableSyntax";
 import { useQuillInit } from "./hooks/useQuillInit";
 import { applyMarkdown } from "./utils/markdown";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
-import { getDocumentById, saveDocumentContent, editDocument, releaseEditing, getApprovedDocuments, evaluateDocument, getLeaderStyle } from '../apis/documentApi';
+import { getDocumentById, saveDocumentContent, editDocument, releaseEditing, getApprovedDocuments, evaluateDocument, getLeaderStyle, submitDocument } from '../apis/documentApi';
 import type { LeaderStyleResponse } from '../apis/documentApi';
 import type {
   FormatHints,
@@ -63,9 +64,14 @@ export default function Center() {
   const draftText = (location.state as any)?.draftText as string | null;
   
   const uploadErrorMessage = (location.state as any)?.uploadErrorMessage as string | null;
-  const [documentId, setDocumentId] = useState<number | undefined>(
-    paramDocumentId ? Number(paramDocumentId) : undefined
-  );
+  // 원본 doc id를 documentId로 잡으면, 복사본 생성 후 setDocumentId(copyId) 시점에
+  // [documentId] 의존 cleanup이 원본 id로 releaseEditing PATCH를 보내서 원본 status를
+  // 'pending'으로 잘못 바꿔버린다. 결과: waitForExtraction이 'pending'을 보고 폴링 진입 →
+  // 로딩 화면이 60초 이상 멈춤. copy id가 결정된 뒤에만 documentId를 세팅한다.
+  const [documentId, setDocumentId] = useState<number | undefined>(undefined);
+  // 현재 화면의 doc 이 작업본인지 식별 — null/undefined 이면 원본
+  const [docSourceId, setDocSourceId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentText, setDocumentText] = useState<string>("");
   const [documentTitle, setDocumentTitle] = useState<string>("");
   const [isLoadingDoc, setIsLoadingDoc] = useState<boolean>(!!paramDocumentId);
@@ -138,6 +144,8 @@ export default function Center() {
       // delta_document가 있으면 우선 사용 (편집 서식 보존)
       if (doc.extracted_data?.delta_document?.ops) {
         quill.setContents(doc.extracted_data.delta_document);
+        // setContents는 source='api'라 useQuillInit의 text-change 핸들러가 ::table 변환을 안 함 → 명시 호출
+        convertAllTableSyntax(quill);
       }
       // [DISABLED 2026-05-06] visual_html 분기 — 백엔드 비주얼 파이프라인 비활성화로 미사용.
       // 재활성화 시 아래 블록 주석 해제 + 백엔드 run_extraction_pipeline의 2-b 블록도 함께 활성화.
@@ -200,11 +208,13 @@ export default function Center() {
             const copyRes = await getDocumentById(targetId);
             if (cancelled) return;
             setDocumentId(copyRes.data.id);
+            setDocSourceId(copyRes.data.source_document_id ?? null);
             setDocumentTitle(copyRes.data.title || '');
             titleInitializedRef.current = true;
             applyDocToEditor(copyRes.data);
           } else {
             setDocumentId(initialRes.data.id);
+            setDocSourceId(initialRes.data.source_document_id ?? null);
             setDocumentTitle(initialRes.data.title || '');
             titleInitializedRef.current = true;
             applyDocToEditor(initialRes.data);
@@ -212,6 +222,7 @@ export default function Center() {
         } catch (editErr) {
           // start-editing 실패해도 원본은 로드
           setDocumentId(initialRes.data.id);
+          setDocSourceId(initialRes.data.source_document_id ?? null);
           setDocumentTitle(initialRes.data.title || '');
           titleInitializedRef.current = true;
           applyDocToEditor(initialRes.data);
@@ -772,6 +783,7 @@ export default function Center() {
             (!editedSentences || editedSentences.length === 0) &&
             delta.ops.length > 0) {
           quill.setContents(delta as any);
+          convertAllTableSyntax(quill);
         }
 
         // 팀장 스타일 적용 트리거 — formatHints를 Quill 전체에 즉시 적용
@@ -833,6 +845,15 @@ export default function Center() {
         } as any);
       };
 
+      // 챗봇이 직전 제안을 적용한 '보완된 전체 문서'를 받아 Quill 에 통째로 반영.
+      // LLM 응답이 plain text 또는 약한 markdown 이므로 applyMarkdown 으로 일관되게 렌더링.
+      const handleApplyDocument = (revisedDocument: string) => {
+        if (!quill || !revisedDocument) return;
+        // 부정문 하이라이트 잔류 방지 (같은 클로저 안의 handler 직접 호출)
+        handleClearHighlight();
+        void applyMarkdown(quill, revisedDocument, suppressRef);
+      };
+
       return (
         <>
           <div style={{
@@ -851,6 +872,7 @@ export default function Center() {
               onClearHighlight={handleClearHighlight}
               onFeedback={setFeedbackItems}
               onReferences={setReferenceSources}
+              onApplyDocument={handleApplyDocument}
             />
           </div>
           <div style={{ display: activeTab === 'feedback' ? 'block' : 'none', height: '100%' }}>
@@ -947,7 +969,8 @@ export default function Center() {
     if (!quill || !saved) return;
 
     quill.setSelection(saved.index, saved.length, "silent");
-    quill.format(name as any, value);
+    // source="user" 명시 — userOnly:true history 가 기록하도록 (Cmd+Z 가능)
+    quill.format(name as any, value, "user" as any);
     quill.focus();
   };
 
@@ -989,6 +1012,32 @@ export default function Center() {
                   style={{ fontSize: '11px', fontWeight: 600, padding: '8px 4px' }}
                 >
                   평가
+                </button>
+              )}
+
+              {documentId && docSourceId != null && (
+                <button
+                  className="left-pane-btn"
+                  onClick={async () => {
+                    if (isSubmitting) return;
+                    if (!confirm('팀장에게 검토를 위해 제출하시겠습니까?')) return;
+                    setIsSubmitting(true);
+                    try {
+                      // 제출 전 마지막 저장 (잔류 변경 보존)
+                      await handleSaveNow?.();
+                      const r = await submitDocument(documentId);
+                      alert(r.message || '제출되었습니다. 팀장 승인을 기다려주세요.');
+                    } catch (e: any) {
+                      alert(e?.response?.data?.message || '제출에 실패했습니다.');
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  title="팀장에게 검토 요청"
+                  style={{ fontSize: '11px', fontWeight: 600, padding: '8px 4px', background: '#3b82f6', color: '#fff' }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? '제출중' : '제출'}
                 </button>
               )}
             </div>
@@ -1194,7 +1243,8 @@ export default function Center() {
                                   if (!quill || !saved) return;
 
                                   quill.setSelection(saved.index, saved.length, "silent");
-                                  quill.formatText(saved.index, saved.length, "font", f.key);
+                                  // source="user" 명시 — userOnly:true history 가 기록하도록 (Cmd+Z 가능)
+                                  quill.formatText(saved.index, saved.length, "font", f.key, "user" as any);
                                   quill.focus();
 
                                   setSelectedFont(f.key);
@@ -1237,7 +1287,8 @@ export default function Center() {
                                   if (!quill || !saved) return;
 
                                   quill.setSelection(saved.index, saved.length, "silent");
-                                  quill.formatText(saved.index, saved.length, "size", sizeValue);
+                                  // source="user" 명시 — userOnly:true history 가 기록하도록 (Cmd+Z 가능)
+                                  quill.formatText(saved.index, saved.length, "size", sizeValue, "user" as any);
                                   quill.focus();
 
                                   setFtMenu(null);

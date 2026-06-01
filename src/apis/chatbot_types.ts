@@ -18,6 +18,8 @@ export interface ChatbotCallRequest {
   delta_document?: DeltaDocument;
   topic_id?: string;
   negative_id?: string;
+  // 챗봇 입력창 첨부 파일에서 추출된 텍스트
+  input_docs?: string;
 }
 
 {/* 챗봇 응답 - 통합 */}
@@ -42,15 +44,26 @@ export interface NegativeSentenceResponse {
 
 export interface ChatbotResponse {
   status: 'success' | 'error';
-  response_type: 'selection_main_topic' | 'negative_selection' | 'final_edit' | 'exception';
+  response_type:
+    | 'selection_main_topic'
+    | 'negative_selection'
+    | 'final_edit'
+    | 'exception'
+    | 'apply_document';
   data?: {
-    final_response?: ChatbotMainTopic[] | NegativeSentenceResponse | DeltaDocument | string;
+    final_response?:
+      | ChatbotMainTopic[]
+      | NegativeSentenceResponse
+      | DeltaDocument
+      | string;
     exception_final_response?: string;
     session_id?: string;
     negative_sentence_list?: string[];
     negative_id_list?: number[];
     negative_sentence_reason?: string[];
     highlighted_delta?: DeltaDocument;
+    // apply_document 전용: 보완된 전체 문서 본문. backend chat_log 에 다시 저장되지 않아도 무방.
+    revised_document?: string;
     [key: string]: any;
   };
   message?: string | null;

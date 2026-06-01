@@ -8,11 +8,14 @@ const redirectToLogin = () => {
   window.location.replace('/#/login');
 };
 
-/* 강제 로그아웃 */
+/* 강제 로그아웃: 인증 실패 확정 시. 이미 로그인 페이지면 redirect 스킵해 루프 방지. */
 const forceLogout = () => {
   localStorage.removeItem('user');
   window.dispatchEvent(new Event('userLogout'));
-  // redirectToLogin();
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#/login')) {
+    redirectToLogin();
+  }
 };
 
 /* Axios 인스턴스 생성 */
@@ -61,13 +64,35 @@ apiClient.interceptors.response.use(
     const originalRequest: any = error.config ?? {};
 
     const url = (originalRequest?.url ?? '') as string;
-    const isApiCall =
-      url.startsWith('/api/') || url.startsWith('api/');
+    // 인증 흐름을 시작/종료하는 엔드포인트들 — 여기서 401이 와도 refresh 자동 시도하면 안 됨.
+    // 이유: login/logout/회원가입/비번재설정/이메일인증의 401은 만료가 아니라 본인 입력 오류이므로
+    // refresh가 또 401을 받으면서 그 메시지("refresh_token 쿠키가 없습니다")가 원래 호출자에게 노출됨.
+    const AUTH_FLOW_PATHS = [
+      '/api/v1/auth/refresh',
+      '/api/v1/auth/login',
+      '/api/v1/auth/logout',
+      '/api/v1/auth/email',
+      '/api/v1/auth/first_email',
+      '/api/v1/auth/generate_first_email',
+      '/api/v1/auth/checking_user_id',
+      '/api/v1/user/re-password',
+    ];
+    const isAuthFlowCall = AUTH_FLOW_PATHS.some((p) => url.includes(p));
+    const isRefreshCall = url.includes('/api/v1/auth/refresh');
 
     const status = error.response?.status;
     if (!error.response && !originalRequest._logoutHandled) {
       originalRequest._logoutHandled = true;
       forceLogout();
+      return Promise.reject(error);
+    }
+    // refresh 호출이 401이면 refresh 자체가 만료된 것 → 바로 reject (outer catch에서 forceLogout)
+    if (status === 401 && isRefreshCall) {
+      return Promise.reject(error);
+    }
+    // 인증 엔드포인트의 401은 진짜 인증 실패 — refresh 자동 시도/forceLogout 모두 건너뛰고
+    // 원래 호출자가 에러 메시지를 그대로 사용하게 한다.
+    if (status === 401 && isAuthFlowCall) {
       return Promise.reject(error);
     }
     if (status === 401 && !originalRequest._retry) {
@@ -106,6 +131,16 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/* 에러 메시지 표준 추출 — 백엔드 통합 포맷 {error_code, message, path} 우선,
+   외부/구 포맷 호환 위해 detail 도 fallback. */
+export function getErrorMessage(error: any, fallback = '요청에 실패했습니다.'): string {
+  const data = error?.response?.data;
+  if (typeof data?.message === 'string' && data.message) return data.message;
+  if (typeof data?.detail === 'string' && data.detail) return data.detail;
+  if (data?.detail) return JSON.stringify(data.detail);
+  return error?.message || fallback;
+}
 
 export const syncAuthFromMe = async () => {
   try {
