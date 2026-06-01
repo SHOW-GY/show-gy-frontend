@@ -27,7 +27,7 @@ export default function Summary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userNickname, setUserNickname] = useState<string>('사용자');
   const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<string>('personal');
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   // 각 파일에 대응하는 doc_type 평행 배열. 파일 추가 시 'general' 기본값 push,
   // 삭제 시 같은 idx 제거. summarizeDocuments 호출 시 함께 전송.
@@ -71,10 +71,16 @@ export default function Summary() {
         setTeamOptions(teams);
 
         const saved = localStorage.getItem("team_name");
-        if (saved && (saved === "personal" || teams.some(t => t.team_name === saved))) {
+        if (saved && teams.some(t => t.team_name === saved)) {
           setSelectedTeam(saved);
+        } else if (teams.length > 0) {
+          // 팀이 있는데 저장된 선택이 없거나 더 이상 유효하지 않으면 첫 팀으로
+          setSelectedTeam(teams[0].team_name);
+          localStorage.setItem("team_name", teams[0].team_name);
         } else {
-          setSelectedTeam("personal");
+          // 팀 0개: 빈 값. UI 가 팀 없음 안내로 분기
+          setSelectedTeam("");
+          localStorage.removeItem("team_name");
         }
       } catch (err) {
         setErrorMessage("팀 정보를 불러오지 못했습니다.");
@@ -90,8 +96,7 @@ export default function Summary() {
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTeamName = e.target.value;
     setSelectedTeam(newTeamName);
-    if (newTeamName === "personal") localStorage.removeItem("team_name");
-    else localStorage.setItem("team_name", newTeamName);
+    localStorage.setItem("team_name", newTeamName);
   };
 
   {/*파일 관련 코드*/}
@@ -184,8 +189,8 @@ export default function Summary() {
       setErrorMessage('파일을 업로드하거나 문서 내용을 입력해주세요.');
       return;
     }
-    if (hasFiles && selectedTeam === 'personal') {
-      setErrorMessage('소속된 팀이 없어 문서 업로드에 실패했습니다. 팀에 가입한 뒤 다시 시도해주세요.');
+    if (!selectedTeam) {
+      setErrorMessage('소속된 팀이 없어 이용할 수 없습니다. 팀을 생성하거나 참여해주세요.');
       return;
     }
     setIsUploading(true);
@@ -232,29 +237,52 @@ export default function Summary() {
         <div className="blob-pink"></div>
         <div className="blob-cyan"></div>
 
-        <div className="summary-team-selector">
-          <div className="summary-team-prompt">
-            <img src={showgy} alt="showgy" className="summary-team-avatar" />
-            <div className="summary-team-bubble">당신의 팀을 선택해주세요</div>
+        {/* 팀 0개: select/입력 영역 대신 팀 가입·생성 안내. 1개 이상: 기존 선택 UI */}
+        {!isTeamLoading && teamOptions.length === 0 ? (
+          <div className="summary-team-selector">
+            <div className="summary-team-prompt">
+              <img src={showgy} alt="showgy" className="summary-team-avatar" />
+              <div className="summary-team-bubble">
+                소속된 팀이 없어 이용할 수 없어요. 팀을 생성하거나 참여해주세요.
+              </div>
+            </div>
+            <div className="summary-team-select-wrap">
+              <button
+                type="button"
+                className="summary-team-select"
+                onClick={() => navigate('/mypage')}
+                style={{ cursor: 'pointer', textAlign: 'center', fontWeight: 600 }}
+              >
+                팀 생성 / 참여하러 가기
+              </button>
+            </div>
           </div>
-          <div className="summary-team-select-wrap">
-            <select
-              className="summary-team-select"
-              value={selectedTeam}
-              onChange={handleTeamChange}
-              disabled={isTeamLoading}
-              aria-label="팀 선택"
-            >
-              <option value="personal">개인용</option>
-              {teamOptions.map((team) => (
-                <option key={team.team_id} value={team.team_name}>
-                  {team.team_name}
-                </option>
-              ))}
-            </select>
+        ) : (
+          <div className="summary-team-selector">
+            <div className="summary-team-prompt">
+              <img src={showgy} alt="showgy" className="summary-team-avatar" />
+              <div className="summary-team-bubble">당신의 팀을 선택해주세요</div>
+            </div>
+            <div className="summary-team-select-wrap">
+              <select
+                className="summary-team-select"
+                value={selectedTeam}
+                onChange={handleTeamChange}
+                disabled={isTeamLoading}
+                aria-label="팀 선택"
+              >
+                {teamOptions.map((team) => (
+                  <option key={team.team_id} value={team.team_name}>
+                    {team.team_name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* 팀이 있을 때만 안녕하세요 + 입력 영역 렌더링 */}
+        {teamOptions.length > 0 && (<>
         <div className="summary-hero-title">
           <p className="hero-title-main animate-reveal-left">안녕하세요, {userNickname}님</p>
           <p className="hero-title-sub animate-reveal-left">원하는 문서를 업로드 또는 작성해주세요.</p>
@@ -348,6 +376,7 @@ export default function Summary() {
             </div>
           </div>
         </div>
+        </>)}
 
         <div className="summary-university-info">한양대학교 ERICA x 롯데이노베이트</div>
 
