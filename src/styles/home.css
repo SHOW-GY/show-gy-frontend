@@ -182,6 +182,12 @@
   }
 }
 
+@media (max-width: 767px){
+  .card-upload-button {
+    display: none;
+  }
+}
+
 .service-title{
   width: min(972px, 100%);
   height: auto;
@@ -206,136 +212,313 @@
   margin: 0 auto;
 }
 
-.service-card-emoji {
-  width: 17.73px;
-  height: 76.80px;
-  left: 443.56px;
-  top: 41px;
-  position: absolute;
-  text-align: center;
-  justify-content: center;
-  display: flex;
-  flex-direction: column;
-  color: #F8FAFC;
-  font-size: 48px;
-  font-family: Space Grotesk;
-  font-weight: 400;
-  line-height: 76.80px;
-  word-wrap: break-word;
+/* ===== 1st Card (Upload) Styles ===== */
+.service-card-upload {
+  width: 1076px;
+  max-width: 100%;
+  height: 554px;
+  position: relative;
+  background: rgba(139, 92, 246, 0.08);
+  overflow: hidden;
+  border-radius: 20px;
+  outline: 1px rgba(139, 92, 246, 0.30) solid;
+  outline-offset: -1px;
+  backdrop-filter: blur(7.50px);
 }
 
-.service-card-main-text {
-  width: 300px;
-  height: 59px;
-  left: 76px;
-  top: 118px;
+.card-upload-title {
+  width: 249px;
+  height: 77px;
+  left: 90px;
+  top: 83px;
   position: absolute;
-  justify-content: center;
-  display: flex;
-  flex-direction: column;
   color: #F6C9DE;
-  font-size: 32px;
+  font-size: 26px;
   font-family: Orbitron;
   font-weight: 600;
-  text-transform: uppercase;
   line-height: 40px;
   letter-spacing: 1px;
   word-wrap: break-word;
 }
 
-.service-card-gradient {
-  width: 896.83px;
-  height: 551.32px;
-  left: -893.78px;
-  top: 1.34px;
+.card-upload-subtitle {
+  left: 90px;
+  top: 170px;
   position: absolute;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0) 0%, rgba(245, 158, 11, 0.10) 50%, rgba(245, 158, 11, 0) 100%);
-}
-
-.service-features-box {
-  width: 315px;
-  height: 160px;
-  left: 79px;
-  top: 284px;
-  position: absolute;
-  background: rgba(139, 92, 246, 0.08);
-  overflow: hidden;
-  border-radius: 20px;
-  outline: 1px rgba(139, 92, 246, 0.30) solid;
-  outline-offset: -1px;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.service-balloon-box {
-  width: 315px;
-  height: 80px;
-  left: 79px;
-  top: 284px;
-  position: absolute;
-  background: rgba(139, 92, 246, 0.08);
-  overflow: hidden;
-  border-radius: 20px;
-  outline: 1px rgba(139, 92, 246, 0.30) solid;
-  outline-offset: -1px;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.service-feature-icon {
-  width: 35px;
-  height: 35px;
-  left: 36px;
-  top: 16px;
-  position: absolute;
-}
-
-.service-pen-icon {
-  width: 35px;
-  height: 35px;
-  left: 36px;
-  top: 100px;
-  position: absolute;
-}
-
-.service-feature-item {
-  width: 200px;
-  height: 44.49px;
-  left: 86px;
-  position: absolute;
-  justify-content: center;
-  display: flex;
-  flex-direction: column;
-  color: #E2E8F0;
-  font-size: 15px;
-  font-family: Space Grotesk;
-  font-weight: 400;
-  line-height: 25.60px;
-  word-wrap: break-word;
-}
-
-.service-feature-item-1 {
-  top: 16.26px;
-}
-
-.service-feature-item-2 {
-  top: 95px;
-}
-
-.service-description {
-  left: 79px;
-  top: 203px;
-  position: absolute;
-  text-align: center;
-  justify-content: center;
-  display: flex;
-  flex-direction: column;
   color: #E2E8F0;
   font-size: 18px;
   font-family: Space Grotesk;
   font-weight: 400;
   line-height: 25.60px;
   word-wrap: break-word;
+}
+
+.card-upload-button {
+  width: 95px;
+  height: 31px;
+  left: 180px;
+  top: 415px;
+  position: absolute;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 8px;
+  outline: 1px rgba(139, 92, 246, 0.30) solid;
+  outline-offset: -1px;
+  backdrop-filter: blur(7.50px);
+  border: none;
+}
+
+.card-upload-button-text {
+  width: 60px;
+  height: 17px;
+  position: absolute;
+  left: 25px;
+  top: 7px;
+  color: #E2E8F0;
+  font-size: 12px;
+  font-family: Source Code Pro;
+}
+
+.card-upload-info-box {
+  width: 360px;
+  height: 115px;
+  left: 490px;
+  top: 345px;
+  position: absolute;
+  border-radius: 20px;
+  outline: 1px rgba(139, 92, 246, 0.30) solid;
+  outline-offset: -1px;
+  backdrop-filter: blur(7.50px);
+}
+
+.card-upload-info-text {
+  width: 307px;
+  height: 87px;
+  left: 35px;
+  top: 18px;
+  position: absolute;
+  color: #E2E8F0;
+  font-size: 14.7px;
+  font-family: Space Grotesk;
+  font-weight: 400;
+  line-height: 30px;
+  word-wrap: break-word;
+}
+
+.card-upload-img-1 {
+  width: 270px;
+  height: 110px;
+  left: 120px;
+  top: 238px;
+  position: absolute;
+}
+
+.card-upload-img-2 {
+  width: 98px;
+  height: 80px;
+  left: 420px;
+  top: 80px;
+  position: absolute;
+}
+
+.card-upload-img-3 {
+  width: 200px;
+  height: 155px;
+  left: 605px;
+  top: 67px;
+  position: absolute;
+}
+
+.card-upload-img-4 {
+  width: 225px;
+  height: 155px;
+  left: 570px;
+  top: 200px;
+  position: absolute;
+}
+
+/* ===== 2nd Card Styles ===== */
+.service-card-team {
+  position: relative;
+}
+
+.card-team-title {
+  position: absolute;
+  left: 100px;
+  top: 105px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #F6C9DE;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.card-team-subtitle {
+  position: absolute;
+  left: 100px;
+  top: 150px;
+  font-size: 16px;
+  color: #E2E8F0;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.card-team-info-box {
+  position: absolute;
+  left: 100px;
+  top: 270px;
+  width: 330px;
+  height: 91px;
+  border-radius: 18px;
+  background: rgba(139, 92, 246, 0.08);
+  outline: 1px rgba(139, 92, 246, 0.30) solid;
+}
+
+.card-team-info-text {
+  position: absolute;
+  left: 35px;
+  top: 18px;
+  font-size: 14.7px;
+  color: #E2E8F0;
+  line-height: 30px;
+}
+
+.card-team-image-1 {
+  position: absolute;
+  left: 440px;
+  top: 195px;
+}
+
+
+/* ===== 3rdCard Styles ===== */
+.service-card-chatbot {
+  position: relative;
+}
+
+.card-chatbot-title {
+  width: 400px;
+  height: 50px;
+  position: absolute;
+  left: 450px;
+  top: 105.5px;
+  color: #f6c9de;
+  font-size: 28px;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: 1px;
+  word-wrap: break-word;
+}
+
+.card-chatbot-subtitle {
+  position: absolute;
+  left: 450px;
+  top: 150px;
+  color: #e2e8f0;
+  font-size: 16px;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 400;
+  line-height: 25.6px;
+  word-wrap: break-word;
+}
+
+.card-chatbot-info-box {
+  width: 380px;
+  height: 105px;
+  position: absolute;
+  left: 450px;
+  top: 225px;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 20px;
+  outline: 1px rgba(139, 92, 246, 0.3) solid;
+  outline-offset: -1px;
+}
+
+.card-chatbot-info-text {
+  width: 321.23px;
+  height: 84.45px;
+  position: absolute;
+  left: 36.33px;
+  top: 23px;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 400;
+  line-height: 30px;
+  word-wrap: break-word;
+}
+
+.card-chatbot-image {
+  width: 382px;
+  height: 234px;
+  position: absolute;
+  left: 85px;
+  top: 185px;
+}
+
+/*==== 4th Card Styles =====*/
+.service-card-tech {
+  position: relative;
+}
+
+.card-tech-title {
+  width: 247px;
+  height: 79px;
+  position: absolute;
+  left: 105px;
+  top: 100px;
+  color: #f6c9de;
+  font-size: 30px;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 600;
+  line-height: 38px;
+  letter-spacing: 1px;
+  word-wrap: break-word;
+}
+
+.card-tech-subtitle {
+  position: absolute;
+  left: 105px;
+  top: 185px;
+  color: #e2e8f0;
+  font-size: 16px;
+  font-family: "Space Grotesk", sans-serif;
+  word-wrap: break-word;
+}
+
+.card-tech-info-box {
+  width: 350px;
+  height: 94px;
+  position: absolute;
+  left: 100px;
+  top: 300px;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 20px;
+  outline: 1px rgba(139, 92, 246, 0.3) solid;
+  outline-offset: -1px;
+}
+
+.card-tech-info-text {
+  width: 347.35px;
+  height: 60px;
+  position: absolute;
+  left: 29.29px;
+  top: 19px;
+  color: #e2e8f0;
+  font-size: 14.5px;
+  font-family: "Space Grotesk", sans-serif;
+  line-height: 30px;
+  word-wrap: break-word;
+}
+
+.card-tech-main-image {
+  width: 450px;
+  height: 240px;
+  position: absolute;
+  left: 415px;
+  top: 140px;
+}
+
+.card-tech-main-image img {
+  width: 100%;
+  height: 100%;
 }
 
 .how-to-use-container{
@@ -377,14 +560,6 @@
   border-radius: 2px;
 }
 
-.service-desktop-img {
-  width: 1100px;
-  height: auto;
-  left : 400px;
-  top : 180px;
-  position: absolute;
-}
-
 .carousel-viewport {
   width: 100%;
   height: var(--card-h);
@@ -423,6 +598,10 @@
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
     padding: 0 14px;
+  }
+
+  .card-upload-button {
+    display: none;
   }
 
   .carousel-viewport.is-mobile{
@@ -466,6 +645,222 @@
     opacity: 1 !important;
     pointer-events: auto !important;
   }
+
+  /* ===== 1st Card 모바일 요소 조절 ===== */
+  .card-upload-title {
+    width: 100% !important;
+    height: auto !important;
+    left: 35px !important;
+    top: 35px !important;
+    font-size: 16px;
+    margin-bottom: 12px;
+    line-height: 23px;
+
+  }
+
+  .card-upload-subtitle {
+    width: 100% !important;
+    height: auto !important;
+    left: 35px !important;
+    top: 85px !important;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .card-upload-info-box {
+    width: 290px !important;
+    height: 90px !important;
+    left: 30px !important;
+    top: 300px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 12px;
+  }
+
+  .card-upload-info-text {
+    width: 100% !important;
+    height: auto !important;
+    left: 30px !important;
+    top: 12px !important;
+    font-size: 11.5px;
+    line-height: 23px;
+  }
+
+  .card-upload-img-1 {
+    width: 130px !important;
+    height: 80px !important;
+    left: 30px !important;
+    top: 125px !important;
+  }
+
+  .card-upload-img-1 img {
+  width: 100%;
+  height: 100%;
+}
+
+  .card-upload-img-3 {
+    width: 130px !important;
+    height: 80px !important;
+    left: 190px !important;
+    top: 125px !important;
+  }
+
+  .card-upload-img-3 img {
+  width: 100%;
+  height: 100%;
+}
+
+  .card-upload-img-4 {
+    width: 150px !important;
+    height: 80px !important;
+    left: 170px !important;
+    top: 212px !important;
+  }
+
+   .card-upload-img-4 img {
+  width: 100%;
+  height: 100%;
+}
+
+ /* ===== 2nd Card 모바일 요소 조절 ===== */
+  .card-team-title {
+    width: 100% !important;
+    height: auto !important;
+    left: 38px !important;
+    top: 56px !important;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .card-team-subtitle {
+    width: 100% !important;
+    height: auto !important;
+    left: 38px !important;
+    top: 83px !important;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .card-team-info-box {
+    width: 260px !important;
+    height: 70px !important;
+    left: 35px !important;
+    top: 120px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 12px;
+  }
+
+  .card-team-info-text {
+    width: 100% !important;
+    height: auto !important;
+    left: 23px !important;
+    top: 15px !important;
+    font-size: 11.5px;
+    line-height: 21.5px;
+  }
+
+  .card-team-image-1 {
+    width: 290px !important;
+    height: 160px !important;
+    left: 33px !important;
+    top: 215px !important;
+  }
+
+  .card-team-image-1 img {
+  width: 100%;
+  height: 100%;
+}
+
+ /* ===== 3rd Card 모바일 요소 조절 ===== */
+  .card-chatbot-title {
+    width: 100% !important;
+    height: auto !important;
+    left: 35px !important;
+    top: 50px !important;
+    font-size: 15px;
+  }
+
+  .card-chatbot-subtitle {
+    width: 100% !important;
+    height: auto !important;
+    left: 35px !important;
+    top: 80px !important;
+    font-size: 12px;
+  }
+
+  .card-chatbot-info-box {
+    width: 285px !important;
+    height: 70px !important;
+    left: 30px !important;
+    top: 120px !important;
+  }
+
+  .card-chatbot-info-text {
+    width: 100% !important;
+    height: auto !important;
+    left: 26px !important;
+    top: 14px !important;
+    font-size: 11.5px;
+    line-height: 21.5px;
+  }
+
+  .card-chatbot-image {
+    width: 280px !important;
+    height: auto !important;
+    left: auto !important;
+    left: 35px !important;
+    top: 210px !important;
+  }
+
+  .card-chatbot-image img {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== 4th Card 모바일 요소 조절 ===== */
+  .card-tech-title {
+    width: 100% !important;
+    height: auto !important;
+    left: 38px !important;
+    top: 58px !important;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .card-tech-subtitle {
+    width: 100% !important;
+    height: auto !important;
+    left: 38px !important;
+    top: 108px !important;
+    font-size: 12px;
+  }
+
+  .card-tech-info-box {
+    width: 280px !important;
+    height: 70px !important;
+    left: 30px !important;
+    top: 145px !important;
+  }
+
+  .card-tech-info-text {
+    width: 100% !important;
+    height: auto !important;
+    left: 25px !important;
+    top: 16px !important;
+    font-size: 11.5px;
+    line-height: 20px;
+  }
+
+  .card-tech-main-image {
+    width: 315px !important;
+    height: auto !important;
+    left: 10px !important;
+    top: 230px !important;
+  }
+
+  .card-tech-main-image img {
+  width: 100%;
+  height: 100%;
+}
 
   /* 버튼은 모바일에서 숨김 */
   .carousel-controls {
@@ -531,43 +926,6 @@
     outline: 1px solid rgba(139,92,246,0.5);
   }
 
-  .service-card-main-text{
-    font-size: 20px;
-    line-height: 1.4;
-    text-align: left;
-  }
-
-  .service-features-box,
-  .service-balloon-box{
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-  }
-
-  .service-feature-icon,
-  .service-pen-icon{
-    position: static !important;
-    width: 28px;
-    height: 28px;
-  }
-
-  .service-feature-item{
-    position: static !important;
-    width: 100%;
-    font-size: 14px;
-    line-height: 1.4;
-  }
-
-  .service-description{
-    font-size: 13px;
-    line-height: 1.5;
-    opacity: 0.85;
-  }
-
-  .service-desktop-img{
-    display: none;
-  }
 }
 
 .prev-button,
@@ -725,6 +1083,7 @@
   font-weight: 700;
   background: linear-gradient(90deg, #F59E0B, #EC4899);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -820,7 +1179,7 @@
   }
 } */
 
-@media (max-height: 760px){
+/* @media (max-height: 760px){
   .hero{
     min-height: auto;
     padding: 84px 16px 28px;
@@ -846,4 +1205,4 @@
   .about{
     padding-top: 44px;
   }
-}
+} */
