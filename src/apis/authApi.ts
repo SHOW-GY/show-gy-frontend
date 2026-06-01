@@ -86,11 +86,24 @@ export const checkUserIdAvailability = async (
    - re-password (reset_token + user_pw)   →  비밀번호 변경
    ─────────────────────────────────────────────── */}
 
-{/* 비로그인 이메일 코드 발송 (JWT 없이) */}
+{/* 비로그인 이메일 코드 발송 (JWT 없이) — 아이디 찾기용. user_id 검증 X */}
 export const notLoginGenerateEmail = async (
   email: string
 ): Promise<{ status: string }> => {
   const response = await apiClient.post('/api/v1/auth/generate_first_email', { email });
+  return response.data;
+};
+
+{/* 비밀번호 찾기용 — user_id + email 매칭 검증 후 코드 발송 (backend type=True 분기) */}
+export const requestResetPasswordEmail = async (
+  userId: string,
+  email: string
+): Promise<{ status: string }> => {
+  const response = await apiClient.post('/api/v1/auth/email', {
+    type: true,
+    user_id: userId,
+    email: email,
+  });
   return response.data;
 };
 

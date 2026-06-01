@@ -1,20 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { notLoginGenerateEmail, verifyFirstEmail, resetPassword } from '../apis/authApi';
+import { requestResetPasswordEmail, verifyFirstEmail, resetPassword } from '../apis/authApi';
 import { getErrorMessage } from '../apis/client';
 import '../styles/design.css';
 import '../styles/login.css';
 
 /**
  * 비밀번호 재설정 흐름:
- * 1) 이메일 입력 → /api/v1/auth/generate_first_email 코드 발송
+ * 1) 아이디 + 이메일 입력 → /api/v1/auth/email (type=True) — 매칭 검증 + 코드 발송
  * 2) 코드 확인 → /api/v1/auth/first_email → reset_token 받음
  * 3) 새 비밀번호 입력 → /api/v1/user/re-password (reset_token + user_pw)
  */
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [userId, setUserId] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [resetToken, setResetToken] = useState('');
@@ -23,17 +24,17 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
 
   const handleSendCode = async () => {
-    if (!email) {
-      alert('이메일을 입력해주세요.');
+    if (!userId || !email) {
+      alert('아이디와 이메일을 모두 입력해주세요.');
       return;
     }
     setLoading(true);
     try {
-      await notLoginGenerateEmail(email);
+      await requestResetPasswordEmail(userId, email);
       alert('인증 코드를 이메일로 발송했어요. 메일함을 확인해주세요.');
       setStep(2);
     } catch (e: any) {
-      alert(getErrorMessage(e, '코드 발송에 실패했습니다.'));
+      alert(getErrorMessage(e, '아이디와 이메일이 일치하지 않거나 코드 발송에 실패했습니다.'));
     } finally {
       setLoading(false);
     }
@@ -96,6 +97,17 @@ export default function ResetPassword() {
           {step === 1 && (
             <>
               <div className="login-form-group">
+                <label className="login-label">아이디</label>
+                <input
+                  type="text"
+                  className="login-input"
+                  placeholder="가입 시 등록한 아이디"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  maxLength={20}
+                />
+              </div>
+              <div className="login-form-group">
                 <label className="login-label">가입한 이메일</label>
                 <input
                   type="email"
@@ -105,6 +117,9 @@ export default function ResetPassword() {
                   onChange={(e) => setEmail(e.target.value)}
                   maxLength={50}
                 />
+              </div>
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
+                ※ 아이디와 이메일이 일치하는 경우에만 인증 코드가 발송됩니다.
               </div>
               <button className="login-button" onClick={handleSendCode} disabled={loading}>
                 {loading ? '발송 중...' : '인증 코드 받기'}
