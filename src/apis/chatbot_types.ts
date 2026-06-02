@@ -20,6 +20,8 @@ export interface ChatbotCallRequest {
   negative_id?: string;
   // 챗봇 입력창 첨부 파일에서 추출된 텍스트
   input_docs?: string;
+  // 첨부 문서 역할 — 'template'(구조만 차용) | 'content'(본문으로 통째 교체)
+  input_docs_kind?: 'template' | 'content';
 }
 
 {/* 챗봇 응답 - 통합 */}

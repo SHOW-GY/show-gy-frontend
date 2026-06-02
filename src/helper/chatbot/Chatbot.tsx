@@ -1,6 +1,34 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendChatbotMessage, getChatSessions, getChatHistory, extractChatAttachment } from '../../apis/chatbotApi';
-import { ChatbotProps, ChatMessage } from './chatbot.types';
+import { sendChatbotMessage, sendChatbotMessageStream, getChatSessions, getChatHistory, extractChatAttachment } from '../../apis/chatbotApi';
+import type { ChatbotStreamEvent } from '../../apis/chatbotApi';
+import { ChatbotProps, ChatMessage, ChatStep } from './chatbot.types';
+
+// AI 사고 단계 키 → 사용자 표시 한글 라벨.
+// 알 수 없는 키가 들어오면 키 그대로 표시 (개발 중에만 노출).
+const STEP_LABELS: Record<string, string> = {
+  // LangGraph 노드
+  filtering: '금칙어 검사 중',
+  domain_guard: '주제 적합성 확인 중',
+  style_intent: '팀장 스타일 의도 파악 중',
+  dispatcher_agent: '답변 생성 중',
+  tool_node: '도구 실행 중',
+  unified_response_node: '응답 정리 중',
+  ban_check: '금칙어 후처리 중',
+  // 도구
+  qa_tool: '문서에서 답 찾는 중',
+  summary_tool: '문서 요약 생성 중',
+  flex_document_tool: '문서 수정 중',
+  apply_leader_style_tool: '팀장 스타일 적용 중',
+  apply_last_suggestion_tool: '이전 제안 적용 중',
+  restore_markdown_format_tool: '서식 복원 중',
+  diff_summary_tool: '변경 사항 정리 중',
+  reject_out_of_scope_tool: '범위 외 요청 판단 중',
+  apply_input_docs_tool: '첨부 문서 적용 중',
+  external_search_tool: '외부 자료 검색 중',
+  undo_apply_tool: '이전 상태 복원 중',
+};
+
+const labelFor = (key: string) => STEP_LABELS[key] || key;
 import { INITIAL_MESSAGE } from './chatbot.constants';
 import { parseResponseToMessage, extractShortSessionId, convertHistoryToMessages } from './chatbot.parsers';
 import { useAutoScroll } from './hooks/useAutoScroll';
@@ -23,11 +51,14 @@ export default function Chatbot({
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
   // 챗봇 입력창에 첨부한 참고 문서 (PDF/TXT/MD → backend 추출 텍스트)
   const [attachedFileName, setAttachedFileName] = useState<string>('');
   const [attachedText, setAttachedText] = useState<string>('');
+  // 첨부 문서 역할 — 사용자가 라디오로 선택. 첨부 있는데 미선택이면 send 불가.
+  const [attachedKind, setAttachedKind] = useState<'template' | 'content' | null>(null);
   // 같은 documentId에 대한 중복 fetch 방지 + documentId 바뀌면 새로 fetch
   const lastLoadedDocIdRef = useRef<string | null>(null);
 
@@ -138,46 +169,218 @@ export default function Chatbot({
   // 사용자 메시지 전송
   const handleSendMessage = async () => {
     if (!chatInput.trim() || isLoading) return;
+    // 가드 제거 — kind 미선택이어도 전송 허용. AI 가 query 보고 추론.
 
     const userMessage = chatInput.trim();
     // 첨부 파일 이름이 있으면 사용자 메시지에 표시 (말풍선)
+    const kindLabel = attachedKind === 'template' ? '양식' : attachedKind === 'content' ? '내용' : '';
     const userMessageDisplay = attachedFileName
-      ? `📎 ${attachedFileName}\n${userMessage}`
+      ? `📎 ${attachedFileName}${kindLabel ? ` (${kindLabel})` : ''}\n${userMessage}`
       : userMessage;
     setMessages(prev => [...prev, { role: 'user', content: userMessageDisplay }]);
     setChatInput('');
     setIsLoading(true);
 
-    // 첨부 텍스트는 한 번 전송 후 자동 해제
+    // 첨부 텍스트는 세션 동안 유지 — 사용자가 × 클릭하거나 세션 종료까지.
+    // "다시 적용해줘"/"다른 형식으로" 같은 후속 요청에 재활용 가능.
     const inputDocsToSend = attachedText || undefined;
+    const inputDocsKindToSend = attachedKind || undefined;
     const sentFileName = attachedFileName;
-    setAttachedFileName('');
-    setAttachedText('');
+    const sentKind = attachedKind;
+
+    // 스트림 모드 — 빈 봇 메시지 placeholder 를 추가하고 토큰/step 이 올 때마다 갱신.
+    // final 시점에 기존 handleResponse 와 동일한 후처리 (revised_document, format_hints 등).
+    let placeholderInserted = false;
+    let isStreamingNow = false;
+    let accumulated = '';
+
+    const ensurePlaceholder = () => {
+      if (placeholderInserted) return;
+      setMessages(prev => [...prev, { role: 'bot', content: '', steps: [] }]);
+      placeholderInserted = true;
+    };
+
+    const updateLastBot = (updater: (msg: ChatMessage) => ChatMessage) => {
+      ensurePlaceholder();
+      setMessages(prev => {
+        const next = [...prev];
+        for (let i = next.length - 1; i >= 0; i--) {
+          if (next[i].role === 'bot') {
+            next[i] = updater(next[i]);
+            break;
+          }
+        }
+        return next;
+      });
+    };
+
+    const upsertLastBotMessage = (text: string) => {
+      updateLastBot(msg => ({ ...msg, content: text }));
+    };
+
+    const pushStep = (key: string) => {
+      updateLastBot(msg => {
+        const steps: ChatStep[] = msg.steps ? [...msg.steps] : [];
+        steps.push({ key, label: labelFor(key), done: false, startedAt: performance.now() });
+        return { ...msg, steps };
+      });
+    };
+
+    const completeStep = (key: string, serverElapsedMs?: number) => {
+      updateLastBot(msg => {
+        const steps: ChatStep[] = msg.steps ? [...msg.steps] : [];
+        // 같은 key 중 가장 마지막의 미완료 step 을 완료 처리
+        for (let i = steps.length - 1; i >= 0; i--) {
+          if (steps[i].key === key && !steps[i].done) {
+            const elapsedMs = serverElapsedMs ?? (steps[i].startedAt
+              ? Math.round(performance.now() - steps[i].startedAt!)
+              : undefined);
+            steps[i] = { ...steps[i], done: true, elapsedMs };
+            break;
+          }
+        }
+        return { ...msg, steps };
+      });
+    };
 
     try {
-      const response = await sendChatbotMessage(
+      await sendChatbotMessageStream(
         documentId ? String(documentId) : '',
         'first',
-        userMessage,
-        deltaDocument,
-        selectedTopicId || undefined,
-        undefined,
-        sessionId || undefined,
-        inputDocsToSend,
+        (evt: ChatbotStreamEvent) => {
+          switch (evt.type) {
+            case 'session':
+              if (evt.session_id) setSessionId(evt.session_id);
+              break;
+            case 'token':
+              if (!isStreamingNow) {
+                isStreamingNow = true;
+                setIsStreaming(true);
+              }
+              accumulated += evt.text;
+              // ⟦FEEDBACK⟧ 마커는 사용자에게 안 보이게 — 마커 직전까지만 표시
+              {
+                const markerIdx = accumulated.indexOf('⟦FEEDBACK⟧');
+                const displayed = markerIdx === -1 ? accumulated : accumulated.slice(0, markerIdx).trimEnd();
+                upsertLastBotMessage(displayed);
+              }
+              break;
+            case 'step':
+              if (!isStreamingNow) {
+                isStreamingNow = true;
+                setIsStreaming(true);
+              }
+              if (evt.state === 'start') pushStep(evt.key);
+              else if (evt.state === 'done') completeStep(evt.key, evt.elapsed_ms);
+              break;
+            case 'tool':
+              // 레거시 호환 — 이미 'step' 으로 처리되므로 무시
+              break;
+            case 'final':
+              // 기존 handleResponse 호환 형태로 가공
+              const fakeResponse = {
+                status: 'success',
+                response_type: evt.response_type,
+                data: evt.data,
+                title: evt.title || '',
+                session_id: evt.data?.session_id,
+              };
+              // session_id
+              const sid = fakeResponse.data?.session_id;
+              if (sid) setSessionId(sid);
+              // final_edit / apply_document / negative_selection 등 부수효과는 handleResponse 와 동일
+              if (fakeResponse.response_type === 'apply_document') {
+                const revised: string | undefined = fakeResponse.data?.revised_document;
+                if (revised) onApplyDocument?.(revised);
+              }
+              if (fakeResponse.response_type === 'final_edit') {
+                onClearHighlight?.();
+                const removed: string[] = fakeResponse.data?.removed_sentences || [];
+                const edited: any[] = fakeResponse.data?.edited_sentences || [];
+                const formatHints = fakeResponse.data?.format_hints || undefined;
+                const pdfStyleHint = fakeResponse.data?.pdf_style_hint || undefined;
+                if (removed.length > 0 || edited.length > 0) {
+                  onFinalEdit?.({ ops: [] }, removed, edited, formatHints, pdfStyleHint);
+                } else if (fakeResponse.data?.final_response?.ops) {
+                  onFinalEdit?.(fakeResponse.data.final_response, undefined, undefined, formatHints, pdfStyleHint);
+                } else if (formatHints || pdfStyleHint) {
+                  onFinalEdit?.({ ops: [] }, undefined, undefined, formatHints, pdfStyleHint);
+                }
+              }
+              // 평가/약점 응답에서 추출된 feedback_items → 피드백 탭에 push
+              const feedbackItemsFromAi = fakeResponse.data?.feedback_items;
+              if (Array.isArray(feedbackItemsFromAi) && feedbackItemsFromAi.length > 0) {
+                onFeedback?.(feedbackItemsFromAi.map((it: any) => ({
+                  sentence: String(it?.sentence || ''),
+                  reason: String(it?.reason || ''),
+                })).filter((it: any) => it.sentence));
+              }
+              if (fakeResponse.response_type === 'negative_selection' && fakeResponse.data?.negative_sentence_list) {
+                const sentences: string[] = fakeResponse.data.negative_sentence_list;
+                const reasons: string[] = fakeResponse.data.negative_sentence_reason || [];
+                onHighlight?.(sentences);
+                const feedbackItems = sentences.map((s: string, idx: number) => ({
+                  sentence: s,
+                  reason: reasons[idx] || '사유가 제공되지 않았습니다.',
+                }));
+                onFeedback?.(feedbackItems);
+              }
+              const refs = fakeResponse.data?.reference_sources;
+              if (Array.isArray(refs) && refs.length > 0) onReferences?.(refs);
+
+              // 최종 메시지는 parseResponseToMessage 결과로 교체 (token 누적과 최종 메시지가 다를 수 있음 — apply_document/negative_selection 등)
+              // steps 는 스트리밍 중 누적된 것을 유지.
+              const botMessage = parseResponseToMessage(fakeResponse as any);
+              if (placeholderInserted) {
+                setMessages(prev => {
+                  const next = [...prev];
+                  for (let i = next.length - 1; i >= 0; i--) {
+                    if (next[i].role === 'bot') {
+                      const existingSteps = next[i].steps;
+                      // general_chat 은 token 누적 텍스트가 그대로 최종이므로 content 유지, 그 외는 botMessage content
+                      const keepContent = fakeResponse.response_type === 'general_chat' && accumulated;
+                      next[i] = {
+                        ...botMessage,
+                        content: keepContent ? accumulated : botMessage.content,
+                        steps: existingSteps,
+                      };
+                      break;
+                    }
+                  }
+                  return next;
+                });
+              } else {
+                setMessages(prev => [...prev, botMessage]);
+              }
+              break;
+            case 'error':
+              upsertLastBotMessage(`오류가 발생했습니다: ${evt.message}`);
+              break;
+          }
+        },
+        {
+          query: userMessage,
+          deltaDocument,
+          topicId: selectedTopicId || undefined,
+          sessionId: sessionId || undefined,
+          inputDocs: inputDocsToSend,
+          inputDocsKind: inputDocsKindToSend,
+        },
       );
-      handleResponse(response);
     } catch (error) {
-      // 실패 시 첨부 상태 복구 (사용자가 재시도 가능)
-      if (sentFileName && inputDocsToSend) {
-        setAttachedFileName(sentFileName);
-        setAttachedText(inputDocsToSend);
+      // 첨부는 세션 유지 정책이라 별도 복구 불필요 (이미 state 에 남아있음)
+      void sentFileName; void sentKind;
+      if (!placeholderInserted) {
+        setMessages(prev => [...prev, {
+          role: 'bot',
+          content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.'
+        }]);
+      } else {
+        upsertLastBotMessage('죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.');
       }
-      setMessages(prev => [...prev, {
-        role: 'bot',
-        content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.'
-      }]);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
     }
   };
 
@@ -203,6 +406,7 @@ export default function Chatbot({
   const handleRemoveAttachment = () => {
     setAttachedFileName('');
     setAttachedText('');
+    setAttachedKind(null);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -295,6 +499,7 @@ export default function Chatbot({
       <ChatMessages
         messages={messages}
         isLoading={isLoading}
+        isStreaming={isStreaming}
         chatContainerRef={chatContainerRef}
         onSelectionClick={handleSelectionClick}
         onNegativeSubmit={handleNegativeBatchSubmit}
@@ -305,6 +510,8 @@ export default function Chatbot({
         onSendMessage={handleSendMessage}
         onKeyPress={handleKeyPress}
         attachedFileName={attachedFileName}
+        attachedKind={attachedKind}
+        onAttachKindChange={setAttachedKind}
         onAttachFile={handleAttachFile}
         onRemoveAttachment={handleRemoveAttachment}
       />

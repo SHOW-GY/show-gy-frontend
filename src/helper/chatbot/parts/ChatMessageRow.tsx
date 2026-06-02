@@ -1,8 +1,22 @@
 import React from 'react';
+import { marked } from 'marked';
 import showgy from '../../../assets/image/showgy.png';
 import { ChatMessage } from '../chatbot.types';
 import { ChatSelections } from './ChatSelections';
 import { ChatNegatives } from './ChatNegatives';
+import { ChatSteps } from './ChatSteps';
+
+// marked 설정 — inline HTML 비허용, 줄바꿈 = <br>
+marked.setOptions({ breaks: true, gfm: true });
+
+function renderMarkdownToHtml(text: string): string {
+  try {
+    const html = marked.parse(text || '', { async: false }) as string;
+    return html;
+  } catch {
+    return text;
+  }
+}
 
 interface ChatMessageRowProps {
   message: ChatMessage;
@@ -27,7 +41,18 @@ export function ChatMessageRow({
         />
       )}
       <div className={`panel-chat-message ${message.role === 'user' ? 'user-message' : 'bot-message'}`}>
-        <p className="chat-message-text">{message.content}</p>
+        {message.role === 'bot' && message.steps && message.steps.length > 0 && (
+          <ChatSteps steps={message.steps} />
+        )}
+        {message.role === 'bot' ? (
+          // 봇 응답은 마크다운 렌더링 (별표/헤딩/리스트 처리)
+          <div
+            className="chat-message-text chat-message-markdown"
+            dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(message.content) }}
+          />
+        ) : (
+          <p className="chat-message-text">{message.content}</p>
+        )}
         
         {message.negatives && message.negatives.length > 0 && (
           <ChatNegatives
