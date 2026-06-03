@@ -10,6 +10,7 @@ const STEP_LABELS: Record<string, string> = {
   filtering: '금칙어 검사 중',
   domain_guard: '주제 적합성 확인 중',
   style_intent: '팀장 스타일 의도 파악 중',
+  plan: '계획 수립 중',
   dispatcher_agent: '답변 생성 중',
   tool_node: '도구 실행 중',
   unified_response_node: '응답 정리 중',
@@ -193,6 +194,7 @@ export default function Chatbot({
     let placeholderInserted = false;
     let isStreamingNow = false;
     let accumulated = '';
+    let feedbackMarkerHit = false;  // ⟦FEEDBACK⟧ 마커 감지 후 그 이후 토큰은 누적 중단 (사용자 노출 방지)
 
     const ensurePlaceholder = () => {
       if (placeholderInserted) return;
@@ -257,12 +259,20 @@ export default function Chatbot({
                 isStreamingNow = true;
                 setIsStreaming(true);
               }
+              if (feedbackMarkerHit) {
+                // 마커 이후 토큰은 누적/표시 모두 중단 — unified_response_node 가 JSON 파싱 담당
+                break;
+              }
               accumulated += evt.text;
-              // ⟦FEEDBACK⟧ 마커는 사용자에게 안 보이게 — 마커 직전까지만 표시
               {
                 const markerIdx = accumulated.indexOf('⟦FEEDBACK⟧');
-                const displayed = markerIdx === -1 ? accumulated : accumulated.slice(0, markerIdx).trimEnd();
-                upsertLastBotMessage(displayed);
+                if (markerIdx !== -1) {
+                  // 마커 시작 감지 — accumulated 자체를 마커 직전까지로 자르고 flag set.
+                  // 이후 token 은 위 가드에서 차단되어 final.content 에 마커 안 들어감.
+                  accumulated = accumulated.slice(0, markerIdx).trimEnd();
+                  feedbackMarkerHit = true;
+                }
+                upsertLastBotMessage(accumulated);
               }
               break;
             case 'step':
@@ -330,7 +340,12 @@ export default function Chatbot({
 
               // 최종 메시지는 parseResponseToMessage 결과로 교체 (token 누적과 최종 메시지가 다를 수 있음 — apply_document/negative_selection 등)
               // steps 는 스트리밍 중 누적된 것을 유지.
+              // botMessage.content 에도 마커 잔존 가능성 안전망 — 한 번 더 strip.
               const botMessage = parseResponseToMessage(fakeResponse as any);
+              if (botMessage.content && typeof botMessage.content === 'string') {
+                const mIdx = botMessage.content.indexOf('⟦FEEDBACK⟧');
+                if (mIdx !== -1) botMessage.content = botMessage.content.slice(0, mIdx).trimEnd();
+              }
               if (placeholderInserted) {
                 setMessages(prev => {
                   const next = [...prev];

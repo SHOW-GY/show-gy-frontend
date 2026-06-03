@@ -72,18 +72,17 @@ function deltaToPlainText(delta: any, maxLen = 300): string {
 }
 
 function labelForUserContent(item: { content: any; action?: string }): string {
-  // 1) string content
+  // 1) string content (현재 backend 정책 — 새 메시지부터는 query 또는 "Action: xxx" 둘 중 하나)
   if (typeof item.content === 'string') {
     const raw = item.content;
     const m = raw.match(/^Action:\s*(\S+)/);
     if (m && ACTION_LABELS[m[1]]) return ACTION_LABELS[m[1]];
     return raw;
   }
-  // 2) Delta 객체 content — action 라벨 + 본문 미리보기를 함께 (사용자가 "다 보이게" 요구)
-  const baseLabel = (item.action && ACTION_LABELS[item.action]) || '메시지';
-  const preview = deltaToPlainText(item.content);
-  if (preview) return `${baseLabel}\n\n📄 ${preview}`;
-  return baseLabel;
+  // 2) Delta 객체 content (이전 backend 가 본문 JSON 을 통째 저장한 레거시 메시지)
+  // → 사용자 메시지 풍선에는 action 라벨만. 본문 preview 노출 X.
+  if (item.action && ACTION_LABELS[item.action]) return ACTION_LABELS[item.action];
+  return '메시지';
 }
 
 /** Redis 대화 내역 → ChatMessage[] 변환 */
