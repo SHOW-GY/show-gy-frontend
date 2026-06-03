@@ -10,11 +10,18 @@ import { ChatSteps } from './ChatSteps';
 marked.setOptions({ breaks: true, gfm: true });
 
 function renderMarkdownToHtml(text: string): string {
+  // ⟦FEEDBACK⟧ ... ⟦/FEEDBACK⟧ 마커 잔존 방어 — 어느 경로로 들어와도 (token 누적/final/history 복원) 노출 차단
+  let cleaned = text || '';
+  const mStart = cleaned.indexOf('⟦FEEDBACK⟧');
+  if (mStart !== -1) cleaned = cleaned.slice(0, mStart).trimEnd();
+  // 닫는 마커만 따로 남은 케이스도 처리
+  const mEnd = cleaned.indexOf('⟦/FEEDBACK⟧');
+  if (mEnd !== -1) cleaned = cleaned.slice(0, mEnd).trimEnd();
   try {
-    const html = marked.parse(text || '', { async: false }) as string;
+    const html = marked.parse(cleaned, { async: false }) as string;
     return html;
   } catch {
-    return text;
+    return cleaned;
   }
 }
 
