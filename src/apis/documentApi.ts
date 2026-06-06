@@ -138,6 +138,15 @@ export const summarizeDocuments = async ({
   return res.data;
 };
 
+// 문서 원본 파일(PDF 등)을 blob 으로 받아 objectURL 반환 — 팀장 검토 PDF 미리보기용
+export const getDocumentFileUrl = async (documentId: number): Promise<string> => {
+  const res = await apiClient.get(`/api/v1/document/${documentId}/file`, {
+    responseType: 'blob',
+    withCredentials: true,
+  });
+  return URL.createObjectURL(res.data as Blob);
+};
+
 {/* 단건 문서 조회 — staleMs > 0 이고 캐시가 신선하면 네트워크 없이 반환 */}
 export const getDocumentById = async (
   documentId: number,

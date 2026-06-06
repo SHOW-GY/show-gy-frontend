@@ -13,13 +13,29 @@ import {
   type JoinRequest,
   type TeamMember,
 } from '../../../apis/cooperation';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 import {
   approveDocument,
+  getDocumentById,
   getReviewQueue,
   getReviewQueueCount,
   rejectDocument,
   type ReviewQueueItem,
 } from '../../../apis/documentApi';
+
+// Quill Delta → 서식 보존 HTML (detached Quill 인스턴스 사용)
+function deltaToHtml(delta: any): string {
+  try {
+    const Q: any = (Quill as any).default ?? Quill;
+    const tmp = document.createElement('div');
+    const q = new Q(tmp);
+    q.setContents(delta);
+    return q.root.innerHTML;
+  } catch {
+    return '';
+  }
+}
 
 // TODO: 팀 클릭 시 상세 페이지 이동 기능 구현 필요
 
@@ -70,6 +86,11 @@ export default function TeamSection({
   const [reviewList, setReviewList] = useState<ReviewQueueItem[]>([]);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewBusyId, setReviewBusyId] = useState<number | null>(null);
+  // 문서 미리보기 (팀장 검토용) — delta 를 서식 보존 HTML 로 렌더
+  const [previewDoc, setPreviewDoc] = useState<{ id: number; title: string; html: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const closePreview = () => setPreviewDoc(null);
 
   const refreshPendingCounts = async () => {
     try {
@@ -130,6 +151,24 @@ export default function TeamSection({
       alert(e?.response?.data?.message || '승인 실패');
     } finally {
       setReviewBusyId(null);
+    }
+  };
+
+  const handlePreview = async (docId: number, title: string) => {
+    setPreviewLoading(true);
+    setPreviewDoc({ id: docId, title, html: '' });
+    try {
+      const res = await getDocumentById(docId, { force: true });
+      const delta = (res.data as any)?.extracted_data?.delta_document;
+      let html = '';
+      if (delta?.ops) html = deltaToHtml(delta);
+      if (!html.trim()) html = '<p style="color:#888">(표시할 본문이 없습니다)</p>';
+      setPreviewDoc({ id: docId, title, html });
+    } catch (e: any) {
+      alert(e?.response?.data?.message || '문서를 불러오지 못했습니다.');
+      setPreviewDoc(null);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -417,6 +456,16 @@ export default function TeamSection({
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button
                             disabled={busy}
+                            onClick={() => handlePreview(r.document_id, r.title)}
+                            style={{
+                              padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd',
+                              background: '#f3f4f6', color: '#374151', cursor: busy ? 'wait' : 'pointer',
+                            }}
+                          >
+                            보기
+                          </button>
+                          <button
+                            disabled={busy}
                             onClick={() => handleReviewApprove(r.document_id)}
                             style={{
                               padding: '6px 14px', borderRadius: 6, border: 'none',
@@ -441,6 +490,66 @@ export default function TeamSection({
                   })}
                 </ul>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 문서 원본(PDF) 미리보기 (팀장 검토) */}
+        {previewDoc && (
+          <div
+            onClick={closePreview}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#fff', borderRadius: 12, padding: 20,
+                width: 'min(960px, 96vw)', height: '92vh', display: 'flex', flexDirection: 'column',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <strong style={{ fontSize: 17 }}>📄 {previewDoc.title}</strong>
+                <button onClick={closePreview} style={{ border: 'none', background: 'transparent', fontSize: 20, cursor: 'pointer' }}>×</button>
+              </div>
+              {previewLoading ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>불러오는 중…</div>
+              ) : (
+                <div
+                  style={{
+                    flex: 1, overflow: 'auto', background: '#f3f4f6',
+                    border: '1px solid #eee', borderRadius: 8, padding: '24px 0',
+                    display: 'flex', justifyContent: 'center',
+                  }}
+                >
+                  {/* A4 느낌의 문서 페이지 */}
+                  <div className="ql-snow" style={{ width: 'min(820px, 96%)', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.12)', borderRadius: 4 }}>
+                    <div
+                      className="ql-editor"
+                      style={{ minHeight: 400, padding: '48px 56px' }}
+                      dangerouslySetInnerHTML={{ __html: previewDoc.html }}
+                    />
+                  </div>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+                <button
+                  disabled={previewLoading || reviewBusyId === previewDoc.id}
+                  onClick={() => { const id = previewDoc.id; closePreview(); handleReviewApprove(id); }}
+                  style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: '#3b82f6', color: '#fff', cursor: 'pointer' }}
+                >
+                  승인
+                </button>
+                <button
+                  disabled={previewLoading || reviewBusyId === previewDoc.id}
+                  onClick={() => { const id = previewDoc.id; closePreview(); handleReviewReject(id); }}
+                  style={{ padding: '8px 18px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', color: '#c0392b', cursor: 'pointer' }}
+                >
+                  반려
+                </button>
+              </div>
             </div>
           </div>
         )}

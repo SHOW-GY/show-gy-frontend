@@ -149,6 +149,33 @@ export default function Summary() {
     }
   };
 
+  // 서비스 제공 샘플 양식 — public/templates/ 의 PDF 를 fetch 해 File 로 만들어 'template' 으로 추가
+  const SAMPLE_TEMPLATES = [
+    { file: 'template-meeting.pdf', label: '회의록 양식' },
+    { file: 'template-report.pdf', label: '결과 보고서' },
+    { file: 'template-proposal.pdf', label: '아이디어 제안서' },
+    { file: 'template-project.pdf', label: '프로젝트 기획서' },
+  ];
+
+  const addSampleTemplate = async (fileName: string, label: string) => {
+    try {
+      const res = await fetch(`/templates/${fileName}`);
+      if (!res.ok) throw new Error('not found');
+      const blob = await res.blob();
+      const file = new File([blob], `${label}.pdf`, { type: 'application/pdf' });
+      setUploadedFiles((prev) => {
+        const key = `${file.name}::${file.size}`;
+        if (prev.some((f) => `${f.name}::${f.size}` === key)) return prev;
+        // 샘플 양식은 doc_type='template' 로 자동 지정
+        setDocTypes((prevTypes) => [...prevTypes, 'template']);
+        return [...prev, file];
+      });
+      setErrorMessage('');
+    } catch {
+      setErrorMessage('샘플 양식을 불러오지 못했습니다.');
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -289,6 +316,25 @@ export default function Summary() {
         </div>
 
         <div className="summary-input-area">
+          {/* 서비스 제공 샘플 양식 — 클릭 시 template 으로 업로드 목록에 추가 */}
+          <div className="sample-template-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#9aa0b4' }}>📄 양식이 없다면 이것을 써보세요</span>
+            {SAMPLE_TEMPLATES.map((t) => (
+              <button
+                key={t.file}
+                type="button"
+                onClick={() => addSampleTemplate(t.file, t.label)}
+                disabled={isUploading}
+                style={{
+                  padding: '4px 12px', borderRadius: 14, border: '1px solid rgba(150,130,228,0.4)',
+                  background: 'rgba(150,120,245,0.12)', color: '#c4b5fd', fontSize: 12,
+                  cursor: isUploading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                + {t.label}
+              </button>
+            ))}
+          </div>
           {uploadedFiles.length > 0 && (
             <div className="uploaded-file-list" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
               {uploadedFiles.map((file, idx) => {

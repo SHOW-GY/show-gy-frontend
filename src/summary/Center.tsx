@@ -88,6 +88,9 @@ export default function Center() {
   // 챗봇이 push하는 사이드 패널 데이터 (탭 전환에도 보존)
   const [feedbackItems, setFeedbackItems] = useState<ChatbotFeedbackItem[]>([]);
   const [referenceSources, setReferenceSources] = useState<ChatbotReferenceSource[]>([]);
+  // apply 후 강제 리렌더용 — 챗봇에 전달되는 deltaDocument 스냅샷을 갱신해 재평가가 최신 본문을 채점하게 함
+  const [docVersion, setDocVersion] = useState(0);
+  void docVersion;
 
   // 평가 관련 state
   const [showEvalModal, setShowEvalModal] = useState(false);
@@ -857,7 +860,20 @@ export default function Center() {
         if (!quill || !revisedDocument) return;
         // 부정문 하이라이트 잔류 방지 (같은 클로저 안의 handler 직접 호출)
         handleClearHighlight();
-        void applyMarkdown(quill, revisedDocument, suppressRef);
+        // undo(되돌리기)는 *원본 HTML*(previous_document)을 복원한다. 이걸 마크다운 파서에 넣으면
+        // 태그가 깨져 양식이 풀리므로, HTML 로 보이면 마크다운 변환 없이 그대로 붙여 서식 보존.
+        const looksLikeHtml = /<\/?(p|h[1-6]|ul|ol|li|div|table|tr|td|strong|em|b|i|br|span)\b/i.test(revisedDocument);
+        if (looksLikeHtml) {
+          suppressRef.current = true;
+          quill.setText("");
+          quill.clipboard.dangerouslyPasteHTML(revisedDocument);
+          setTimeout(() => { suppressRef.current = false; }, 0);
+          setDocVersion((v) => v + 1);
+          return;
+        }
+        // apply(마크다운) 결과는 applyMarkdown 으로 렌더. 완료 후 강제 리렌더 →
+        // renderPanelContent 의 deltaDocument(quill.getContents())가 최신 본문으로 갱신.
+        void applyMarkdown(quill, revisedDocument, suppressRef).then(() => setDocVersion((v) => v + 1));
       };
 
       return (
