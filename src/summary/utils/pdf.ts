@@ -85,7 +85,13 @@ export async function exportPdf(
     const worker = html2pdf()
       .from(wrapper)
       .set({
-        margin: 10,
+        // 가로 마진은 0 — 그래야 html2pdf 내부 콘텐츠 컨테이너 너비(inner.width)가
+        // 페이지 전체폭(210mm≈794px)이 되어 wrapper(794px)와 정확히 일치한다.
+        // margin:10(사방)이면 inner.width=190mm≈718px 가 되어, 794px wrapper 가
+        // 가운데 정렬된 718px 컨테이너를 오른쪽으로 넘쳐 "오른쪽 쏠림 + 우측 잘림"이 났다.
+        // 좌우 페이지 여백은 에디터 padding(margins.left/right, 대칭)이 담당하고,
+        // 위·아래 10mm 만 html2pdf 가 매 페이지에 넣도록 [top, left, bottom, right] 로 지정.
+        margin: [10, 0, 10, 0],
         filename,
         pagebreak: {
           mode: ["avoid-all", "css", "legacy"],
