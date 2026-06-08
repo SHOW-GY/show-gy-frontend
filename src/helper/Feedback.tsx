@@ -36,7 +36,7 @@ export default function Feedback({ items = [] }: FeedbackProps) {
   return (
     <div className="panel-feedback" style={{ padding: 16, overflowY: "auto", height: "100%" }}>
       <div style={{ marginBottom: 12, color: "#fff", fontSize: 14, fontWeight: 600 }}>
-        부정문 선정 사유 ({items.length}건)
+        피드백 내역 ({items.length}건)
       </div>
       {items.map((item, idx) => {
         const isOpen = expanded.has(idx);
