@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { sendChatbotMessage, sendChatbotMessageStream, getChatSessions, getChatHistory, extractChatAttachment } from '../../apis/chatbotApi';
 import type { ChatbotStreamEvent } from '../../apis/chatbotApi';
 import { ChatbotProps, ChatMessage, ChatStep } from './chatbot.types';
+import { deltaToHtml } from '../quill/deltaToHtml';
 
 // AI 사고 단계 키 → 사용자 표시 한글 라벨.
 // 알 수 없는 키가 들어오면 키 그대로 표시 (개발 중에만 노출).
@@ -375,6 +376,9 @@ export default function Chatbot({
         },
         {
           query: userMessage,
+          // 현재 본문을 서식 포함 HTML 로 함께 전송 → 백엔드 document_raw 백업 →
+          // undo(되돌리기) 시 강조/색상 등 양식이 풀리지 않고 그대로 복원됨.
+          document: deltaToHtml(deltaDocument) || undefined,
           deltaDocument,
           topicId: selectedTopicId || undefined,
           sessionId: sessionId || undefined,

@@ -268,18 +268,15 @@ export function parseResponseToMessage(response: ChatbotApiResponse): ChatMessag
           lines.push('');
         }
 
-        // PDF 내보내기 시 적용 예정
+        // 여백 — 에디터에 실제 적용되고 PDF 내보내기에 반영됨
+        // (페이지 크기는 고정 A4폭 렌더 구조라 적용 불가 → 백엔드에서 보내지 않음)
         const pdfApplied: string[] = [];
         if (pdfStyleHint?.margins) {
           const m = pdfStyleHint.margins;
           pdfApplied.push(`여백: 위 ${m.top} / 아래 ${m.bottom} / 좌 ${m.left} / 우 ${m.right}`);
         }
-        if (pdfStyleHint?.pageSize) {
-          const ps = pdfStyleHint.pageSize;
-          pdfApplied.push(`페이지 크기: ${ps.width} × ${ps.height}`);
-        }
         if (pdfApplied.length > 0) {
-          lines.push('📄 PDF 내보내기 시 적용 예정');
+          lines.push('📄 여백 적용됨 (PDF 내보내기에 반영)');
           pdfApplied.forEach((s) => lines.push(`  • ${s}`));
         }
 

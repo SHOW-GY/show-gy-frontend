@@ -11,8 +11,9 @@ export interface FormatHints {
 }
 
 export interface PdfStyleHint {
+  // 여백만 — 에디터에 실제 적용되고 PDF 내보내기에 반영됨.
+  // pageSize 는 고정 A4폭 렌더 구조라 적용 불가 → 백엔드가 보내지 않으므로 타입에서도 제외.
   margins?: { top: number; bottom: number; left: number; right: number };
-  pageSize?: { width: number; height: number };
 }
 
 export interface ChatbotFeedbackItem {

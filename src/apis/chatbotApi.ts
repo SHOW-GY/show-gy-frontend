@@ -137,6 +137,7 @@ export async function sendChatbotMessageStream(
   onEvent: (evt: ChatbotStreamEvent) => void,
   options?: {
     query?: string;
+    document?: string;
     deltaDocument?: DeltaDocument;
     topicId?: string;
     negativeId?: string;
@@ -149,6 +150,9 @@ export async function sendChatbotMessageStream(
   const body: ChatbotCallRequest = {
     action,
     ...(options?.query && { query: options.query }),
+    // document(서식 포함 HTML) — 백엔드 document_raw 로 보관돼 undo 시 서식 복원에 쓰임.
+    // delta_document 는 본문 처리(plaintext 추출)용, document 는 양식 백업용으로 둘 다 보낸다.
+    ...(options?.document && { document: options.document }),
     ...(options?.deltaDocument && { delta_document: options.deltaDocument }),
     ...(options?.topicId && { topic_id: options.topicId }),
     ...(options?.negativeId && { negative_id: options.negativeId }),
