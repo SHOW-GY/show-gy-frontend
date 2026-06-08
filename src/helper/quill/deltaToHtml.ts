@@ -1,4 +1,7 @@
-import Quill from 'quill';
+// setupQuill 의 side-effect(글꼴/사이즈 whitelist 등록)가 먼저 실행되도록 import.
+// 그리고 그 등록이 적용된 Q 를 그대로 써야 delta→HTML 변환 때 font(ql-font-*)가 보존됨.
+// 맨 `new Quill()` 을 쓰면 커스텀 글꼴이 whitelist 에 없어 변환 중 탈락 → 글꼴만 풀린다.
+import { Q } from '../../summary/setupQuill';
 
 /**
  * Quill Delta → 서식 보존 HTML (detached Quill 인스턴스 사용).
@@ -10,7 +13,6 @@ import Quill from 'quill';
 export function deltaToHtml(delta: any): string {
   if (!delta || !delta.ops) return '';
   try {
-    const Q: any = (Quill as any).default ?? Quill;
     const tmp = document.createElement('div');
     const q = new Q(tmp);
     q.setContents(delta);

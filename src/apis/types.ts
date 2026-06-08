@@ -126,6 +126,9 @@ export interface DocumentListItem {
   team_id: string;
   team_leader: string;
   access_at: string;
+  // 작성자(팀원)가 보관함에서 상태/반려사유 확인 — 백엔드 DocumentDataSchema 와 매칭.
+  status?: string | null;
+  reject_reason?: string | null;
 }
 
 export interface GetDocumentsResponse {

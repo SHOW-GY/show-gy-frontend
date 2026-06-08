@@ -13,7 +13,6 @@ import {
   type JoinRequest,
   type TeamMember,
 } from '../../../apis/cooperation';
-import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import {
   approveDocument,
@@ -23,19 +22,9 @@ import {
   rejectDocument,
   type ReviewQueueItem,
 } from '../../../apis/documentApi';
-
-// Quill Delta → 서식 보존 HTML (detached Quill 인스턴스 사용)
-function deltaToHtml(delta: any): string {
-  try {
-    const Q: any = (Quill as any).default ?? Quill;
-    const tmp = document.createElement('div');
-    const q = new Q(tmp);
-    q.setContents(delta);
-    return q.root.innerHTML;
-  } catch {
-    return '';
-  }
-}
+// 공유 deltaToHtml — 글꼴 whitelist 등록된 Quill 을 써서 미리보기에 글꼴까지 보존.
+// (로컬 맨 Quill 버전은 커스텀 글꼴이 변환 중 탈락해 팀장 검토 화면에서 글꼴이 풀렸음)
+import { deltaToHtml } from '../../../helper/quill/deltaToHtml';
 
 // TODO: 팀 클릭 시 상세 페이지 이동 기능 구현 필요
 

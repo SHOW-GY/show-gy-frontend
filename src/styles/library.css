@@ -547,11 +547,25 @@
 .alldoc .files-table-header,
 .alldoc .files-table-row{
   display: grid;
-  /* 마지막 50px = 삭제 휴지통 아이콘 열 */
-  grid-template-columns: 1.6fr 0.9fr 0.8fr 0.8fr 50px;
+  /* 프로젝트명 / 상태 / 수정날짜 / 팀명 / 팀장 / 삭제(50px) */
+  grid-template-columns: 1.6fr 0.8fr 0.9fr 0.8fr 0.8fr 50px;
   gap: 12px;
   padding: 14px 18px;
   align-items: center;
+}
+
+/* 반려 사유 펼침 행 — 전체 폭 차지 */
+.alldoc .files-reason-row{
+  grid-column: 1 / -1;
+  margin: -4px 0 8px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.10);
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  color: #fecaca;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
 }
 
 .alldoc .files-table-col{
@@ -595,16 +609,18 @@
 
   .alldoc .files-table-header,
   .alldoc .files-table-row{
-    /* mobile: 프로젝트명 / 수정날짜 / 삭제 — 팀명/팀장은 :nth-child로 숨김 */
-    grid-template-columns: 1fr 110px 40px;
+    /* mobile: 프로젝트명 / 상태 / 삭제 — 수정날짜/팀명/팀장은 :nth-child로 숨김 */
+    grid-template-columns: 1fr 80px 40px;
     padding: 12px 14px;
     gap: 10px;
   }
 
   .alldoc .files-table-header .files-table-col:nth-child(3),
   .alldoc .files-table-header .files-table-col:nth-child(4),
+  .alldoc .files-table-header .files-table-col:nth-child(5),
   .alldoc .files-table-row .files-table-cell:nth-child(3),
-  .alldoc .files-table-row .files-table-cell:nth-child(4){
+  .alldoc .files-table-row .files-table-cell:nth-child(4),
+  .alldoc .files-table-row .files-table-cell:nth-child(5){
     display: none;
   }
 
