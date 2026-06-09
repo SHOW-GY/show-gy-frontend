@@ -1,6 +1,8 @@
 import type Quill from "quill";
 import { marked } from "marked";
 import mermaid from "mermaid";
+import { normalizeTableHtml } from "./normalizeTableHtml";
+import { ensureAllColGroups } from "../table/tableHelpers";
 
 // mention 트리거 문자(@, #) 회피 + 마크다운 특수문자 회피
 const MATH_PLACEHOLDER_PREFIX = "ZZSGMATHBLOCKZZ";
@@ -75,6 +77,10 @@ export async function applyMarkdown(
   // 마크다운 → HTML 변환
   let html = await marked.parse(mermaidProcessed);
 
+  // 표 정규화 — Quill 내장 table 모듈이 못 다루는 thead/th 를 단일 tbody+td 로 평탄화.
+  // (안 하면 헤더 행이 본문 표와 분리돼 별도 셀로 떨어져 나옴)
+  html = normalizeTableHtml(html);
+
   // mermaid placeholder를 SVG <img>로 교체
   if (mermaidSvgs.length > 0) {
     html = html.replace(/<p>@@MERMAID_(\d+)@@<\/p>/g, (_m, i) => mermaidSvgs[parseInt(i, 10)] || "");
@@ -108,6 +114,9 @@ export async function applyMarkdown(
       quill.insertEmbed(match.index, "sg-math-block", { tex });
     }
   }
+
+  // 표 colgroup 즉시 확정 — hover 시점에 auto→fixed 로 스냅되는 레이아웃 점프 방지.
+  requestAnimationFrame(() => ensureAllColGroups(quill.root as HTMLElement));
 
   setTimeout(() => (suppressRef.current = false), 0);
 

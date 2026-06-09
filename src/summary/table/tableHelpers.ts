@@ -100,6 +100,16 @@ export function ensureColGroup(table: HTMLTableElement) {
   return cg as HTMLTableColElement;
 }
 
+{ /* 에디터 안 모든 표의 colgroup 을 즉시 확정.
+     붙여넣기(apply) 직후 호출 → 표가 처음부터 fixed-layout(비율 colgroup) 상태가 되어,
+     나중에 hover/refresh 시점에 auto→fixed 로 '갑자기 고정'되는 스냅(레이아웃 점프)을 없앤다.
+     이미 colgroup 이 있는 표는 ensureColGroup 이 비율 재측정을 건너뛰므로 안전(idempotent). */}
+export function ensureAllColGroups(root: HTMLElement): void {
+  root.querySelectorAll("table").forEach((t) => {
+    try { ensureColGroup(t as HTMLTableElement); } catch { /* noop */ }
+  });
+}
+
 { /*표 안에 커서가 있는지 감지하는 로직 */}
 export function isCursorInTable(q: any): boolean {
   const table = getActiveTableEl(q);
@@ -216,8 +226,17 @@ export function findRowAtY(
 { /*표에서 현재 라인의 텍스트 가져오는 로직 */ }
 export function getColWidths(table: HTMLTableElement): number[] {
   ensureColGroup(table);
+  // 실제 렌더된 '픽셀' 너비를 첫 행 셀에서 측정한다.
+  // (colgroup col 은 % 너비라 col.style.width 를 parseFloat 하면 25%→25 처럼 비율 숫자가
+  //  픽셀로 오인돼 경계 감지(hitTestColBoundary)가 완전히 틀어진다. <col> 의
+  //  getBoundingClientRect 도 브라우저별로 0 이 나와 신뢰 불가 → 셀에서 측정.)
+  const firstRow = table.querySelector("tr");
+  if (firstRow) {
+    const cells = Array.from(firstRow.querySelectorAll("td, th")) as HTMLElement[];
+    if (cells.length) return cells.map((c) => c.getBoundingClientRect().width);
+  }
   const cols = Array.from(table.querySelectorAll("colgroup > col")) as HTMLTableColElement[];
-  return cols.map((c) => parseFloat(c.style.width || "") || c.getBoundingClientRect().width);
+  return cols.map((c) => c.getBoundingClientRect().width || parseFloat(c.style.width || "") || 0);
 }
 
 { /*표에서 현재 라인의 텍스트 가져오는 로직 */ }
@@ -242,4 +261,19 @@ export function hitTestColBoundary(table: HTMLTableElement, clientX: number) {
 export function hitTestRowBoundary(rowEl: HTMLTableRowElement, clientY: number) {
   const r = rowEl.getBoundingClientRect();
   return Math.abs(clientY - r.bottom) <= EDGE;
+}
+
+{ /* 행 경계(아래변) 대칭 감지 — clientY 가 어느 행의 bottom 에서 ±EDGE 안이면 그 행을 반환.
+     findRowAtY(포함 행) 방식은 경계 바로 아래에선 다음 행이 잡혀 감지에 실패했음(세로 리사이즈 먹통).
+     열 리사이즈처럼 '경계 기준'으로 잡아 위/아래 양쪽에서 다 인식되게 한다. */}
+export function findRowBoundary(
+  table: HTMLTableElement,
+  clientY: number
+): HTMLTableRowElement | null {
+  const rows = Array.from(table.querySelectorAll("tr")) as HTMLTableRowElement[];
+  for (const row of rows) {
+    const r = row.getBoundingClientRect();
+    if (Math.abs(clientY - r.bottom) <= EDGE) return row;
+  }
+  return null;
 }

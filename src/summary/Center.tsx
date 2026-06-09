@@ -18,8 +18,10 @@ import "../assets/font/font.css";
 import '../styles/summary.css';
 import { renderKatexHtml } from "./mathBlot";
 import { convertAllTableSyntax } from "./table/parseTableSyntax";
+import { ensureAllColGroups } from "./table/tableHelpers";
 import { useQuillInit } from "./hooks/useQuillInit";
 import { applyMarkdown } from "./utils/markdown";
+import { normalizeTableHtml } from "./utils/normalizeTableHtml";
 import { exportPdf } from "./utils/pdf";
 import { FONT_LIST, getFontLabel } from "./fonts";
 import { getDocumentById, saveDocumentContent, editDocument, releaseEditing, getApprovedDocuments, evaluateDocument, getLeaderStyle, submitDocument } from '../apis/documentApi';
@@ -149,6 +151,8 @@ export default function Center() {
         quill.setContents(doc.extracted_data.delta_document);
         // setContents는 source='api'라 useQuillInit의 text-change 핸들러가 ::table 변환을 안 함 → 명시 호출
         convertAllTableSyntax(quill);
+        // 표 colgroup 즉시 확정 — 첫 hover 때 auto→fixed 스냅 방지.
+        requestAnimationFrame(() => ensureAllColGroups(quill.root as HTMLElement));
       }
       // [DISABLED 2026-05-06] visual_html 분기 — 백엔드 비주얼 파이프라인 비활성화로 미사용.
       // 재활성화 시 아래 블록 주석 해제 + 백엔드 run_extraction_pipeline의 2-b 블록도 함께 활성화.
@@ -866,7 +870,10 @@ export default function Center() {
         if (looksLikeHtml) {
           suppressRef.current = true;
           quill.setText("");
-          quill.clipboard.dangerouslyPasteHTML(revisedDocument);
+          // 표 정규화 — thead/th 를 단일 tbody+td 로 평탄화해 헤더가 분리되지 않게.
+          quill.clipboard.dangerouslyPasteHTML(normalizeTableHtml(revisedDocument));
+          // 표 colgroup 즉시 확정 — hover 시점 auto→fixed 스냅(레이아웃 점프) 방지.
+          requestAnimationFrame(() => ensureAllColGroups(quill.root as HTMLElement));
           setTimeout(() => { suppressRef.current = false; }, 0);
           setDocVersion((v) => v + 1);
           return;

@@ -8,12 +8,11 @@ import {
   MIN_COL_W,
   MIN_ROW_H,
   ensureColGroup,
-  findRowAtY,
+  findRowBoundary,
   findTableFromEvent,
   getActiveTableEl,
   getTableSize,
   hitTestColBoundary,
-  hitTestRowBoundary,
 } from "./tableHelpers";
 
 type TableModule = {
@@ -210,8 +209,14 @@ export function attachTableInteractions({
     const colB = cols[boundaryIndex + 1] ?? null;
     if (!colA) return;
 
-    const startWA = colA.getBoundingClientRect().width;
-    const startWB = colB ? colB.getBoundingClientRect().width : 0;
+    // 시작 너비는 실제 렌더된 셀에서 측정 (% col 은 getBoundingClientRect 가 0 일 수 있음)
+    const firstRow = table.querySelector("tr") as HTMLTableRowElement | null;
+    const startWA = firstRow?.cells[boundaryIndex]?.getBoundingClientRect().width
+      ?? colA.getBoundingClientRect().width;
+    const startWB = colB
+      ? (firstRow?.cells[boundaryIndex + 1]?.getBoundingClientRect().width
+        ?? colB.getBoundingClientRect().width)
+      : 0;
 
     document.body.classList.add("sg-table-resizing-col");
 
@@ -319,8 +324,8 @@ export function attachTableInteractions({
       return;
     }
 
-    const row = findRowAtY(table, e.clientY);
-    if (row && hitTestRowBoundary(row, e.clientY)) {
+    const rowB = findRowBoundary(table, e.clientY);
+    if (rowB) {
       document.body.classList.add("sg-row-resize-cursor-body");
       root.classList.add("sg-row-resize-cursor");
     }
@@ -346,15 +351,15 @@ export function attachTableInteractions({
       return;
     }
 
-    const row = findRowAtY(table, e.clientY);
-    if (row && hitTestRowBoundary(row, e.clientY)) {
+    const rowB = findRowBoundary(table, e.clientY);
+    if (rowB) {
       e.preventDefault();
       e.stopPropagation();
 
       hoveredTableRef.current = table;
       updateTablePlusPosition(table);
 
-      startRowResize(row, e.clientY);
+      startRowResize(rowB, e.clientY);
     }
   };
 
